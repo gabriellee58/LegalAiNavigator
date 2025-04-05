@@ -2,29 +2,54 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { t } from "@/lib/i18n";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
 import ChatMessage, { TypingIndicator, ChatMessageProps } from "./ChatMessage";
 import ChatInput from "./ChatInput";
 import { sendChatMessage } from "@/lib/openai";
+import { useAuth } from "@/hooks/use-auth";
+import { Badge } from "@/components/ui/badge";
 
-// Default user ID for demo purposes
-const DEMO_USER_ID = 1;
+// Fallback user ID if auth fails
+const FALLBACK_USER_ID = 1;
 
 function ChatInterface() {
   const queryClient = useQueryClient();
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+  const { user } = useAuth();
+  
+  // Get user ID from authenticated user, fallback to demo ID if not available
+  const userId = user?.id || FALLBACK_USER_ID;
   
   // Fetch chat history
-  const { data: chatHistory, isLoading: isLoadingHistory } = useQuery({
-    queryKey: ["/api/chat/messages", DEMO_USER_ID],
+  const { data: chatHistory = [], isLoading: isLoadingHistory, error: historyError } = useQuery({
+    queryKey: ["/api/chat/messages", userId],
     staleTime: 0, // Always refresh on component mount
   });
   
   // Local state for messages
   const [messages, setMessages] = useState<ChatMessageProps[]>([]);
+  const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([
+    t("suggest_rental_laws"),
+    t("suggest_business_regulations"),
+    t("suggest_employment_rights"),
+    t("suggest_estate_planning")
+  ]);
+  
+  // Handle authentication/loading errors
+  useEffect(() => {
+    if (historyError) {
+      toast({
+        title: t("error_loading_chat"),
+        description: t("error_loading_chat_description"),
+        variant: "destructive"
+      });
+    }
+  }, [historyError, toast]);
   
   // Update local messages when chat history changes
   useEffect(() => {
-    if (chatHistory) {
+    if (chatHistory && Array.isArray(chatHistory)) {
       const formattedMessages = chatHistory.map((message: any) => ({
         role: message.role,
         content: message.content,
@@ -57,6 +82,21 @@ function ChatInterface() {
                   {t("topic_estate")}
                 </li>
               </ul>
+              <div className="mt-4">
+                <p className="text-neutral-600 text-sm">{t("suggested_questions")}</p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {suggestedQuestions.map((question, index) => (
+                    <Badge 
+                      key={index} 
+                      variant="outline" 
+                      className="cursor-pointer hover:bg-primary/10 py-2 px-3"
+                      onClick={() => handleSuggestedQuestion(question)}
+                    >
+                      {question}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
             </>
           ),
           timestamp: new Date()
@@ -65,11 +105,16 @@ function ChatInterface() {
       
       setMessages(formattedMessages);
     }
-  }, [chatHistory]);
+  }, [chatHistory, suggestedQuestions]);
+  
+  // Handle suggested question click
+  const handleSuggestedQuestion = (question: string) => {
+    sendMessage(question);
+  };
   
   // Send message mutation
   const { mutate: sendMessage, isPending: isSending } = useMutation({
-    mutationFn: (content: string) => sendChatMessage(DEMO_USER_ID, content),
+    mutationFn: (content: string) => sendChatMessage(userId, content),
     onMutate: async (content) => {
       // Optimistically update UI
       const newMessage: ChatMessageProps = {
@@ -86,28 +131,45 @@ function ChatInterface() {
       
       return { newMessage };
     },
-    onSuccess: (response) => {
+    onSuccess: (response: any) => {
       // Add AI response from server
       const aiMessage: ChatMessageProps = {
         role: "assistant",
-        content: response.aiMessage.content,
-        timestamp: new Date(response.aiMessage.timestamp)
+        content: response.aiMessage?.content || t("default_ai_response"),
+        timestamp: new Date(response.aiMessage?.timestamp || Date.now())
       };
       setMessages((prev) => [...prev, aiMessage]);
       
+      // Generate new suggested questions based on context
+      // In a real implementation, this would come from the AI
+      const newSuggestions = [
+        t("suggest_followup_1"),
+        t("suggest_followup_2"),
+        t("suggest_legal_citation"),
+        t("suggest_related_topic")
+      ];
+      setSuggestedQuestions(newSuggestions);
+      
       // Invalidate chat history query
-      queryClient.invalidateQueries({ queryKey: ["/api/chat/messages", DEMO_USER_ID] });
+      queryClient.invalidateQueries({ queryKey: ["/api/chat/messages", userId] });
       
       // Scroll to bottom
       setTimeout(() => {
         scrollToBottom();
       }, 100);
     },
-    onError: () => {
-      // Add error message
+    onError: (error) => {
+      // Show toast with error
+      toast({
+        title: t("error_sending_message"),
+        description: t("error_sending_message_description"),
+        variant: "destructive"
+      });
+      
+      // Add error message to chat
       const errorMessage: ChatMessageProps = {
         role: "assistant",
-        content: "I'm sorry, but there was an error processing your request. Please try again.",
+        content: t("error_message_text"),
         timestamp: new Date()
       };
       setMessages((prev) => [...prev, errorMessage]);
