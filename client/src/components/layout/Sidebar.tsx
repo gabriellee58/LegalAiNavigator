@@ -1,5 +1,5 @@
 import { Link, useRoute } from "wouter";
-import { t } from "@/lib/i18n";
+import { t, setLanguage, getLanguage } from "@/lib/i18n";
 
 export function Sidebar() {
   const [isLegalAssistantRoute] = useRoute("/legal-assistant");
@@ -32,42 +32,42 @@ export function Sidebar() {
           <ul>
             <li>
               <Link href="/legal-assistant">
-                <a className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isLegalAssistantRoute ? 'bg-blue-50 text-primary' : ''}`}>
+                <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isLegalAssistantRoute ? 'bg-blue-50 text-primary' : ''}`}>
                   <span className={`material-icons mr-3 ${isLegalAssistantRoute ? 'text-primary' : 'text-neutral-500'}`}>smart_toy</span>
                   <span>{t("legal_assistant")}</span>
-                </a>
+                </div>
               </Link>
             </li>
             <li>
               <Link href="/document-generator">
-                <a className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isDocumentGeneratorRoute ? 'bg-blue-50 text-primary' : ''}`}>
+                <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isDocumentGeneratorRoute ? 'bg-blue-50 text-primary' : ''}`}>
                   <span className={`material-icons mr-3 ${isDocumentGeneratorRoute ? 'text-primary' : 'text-neutral-500'}`}>description</span>
                   <span>{t("document_generator")}</span>
-                </a>
+                </div>
               </Link>
             </li>
             <li>
               <Link href="/legal-research">
-                <a className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isLegalResearchRoute ? 'bg-blue-50 text-primary' : ''}`}>
+                <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isLegalResearchRoute ? 'bg-blue-50 text-primary' : ''}`}>
                   <span className={`material-icons mr-3 ${isLegalResearchRoute ? 'text-primary' : 'text-neutral-500'}`}>search</span>
                   <span>{t("legal_research")}</span>
-                </a>
+                </div>
               </Link>
             </li>
             <li>
               <Link href="/dispute-resolution">
-                <a className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isDisputeResolutionRoute ? 'bg-blue-50 text-primary' : ''}`}>
+                <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isDisputeResolutionRoute ? 'bg-blue-50 text-primary' : ''}`}>
                   <span className={`material-icons mr-3 ${isDisputeResolutionRoute ? 'text-primary' : 'text-neutral-500'}`}>gavel</span>
                   <span>{t("dispute_resolution")}</span>
-                </a>
+                </div>
               </Link>
             </li>
             <li>
               <Link href="/compliance-checker">
-                <a className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isComplianceCheckerRoute ? 'bg-blue-50 text-primary' : ''}`}>
+                <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isComplianceCheckerRoute ? 'bg-blue-50 text-primary' : ''}`}>
                   <span className={`material-icons mr-3 ${isComplianceCheckerRoute ? 'text-primary' : 'text-neutral-500'}`}>verified</span>
                   <span>{t("compliance_checker")}</span>
-                </a>
+                </div>
               </Link>
             </li>
           </ul>
@@ -78,42 +78,42 @@ export function Sidebar() {
           <ul>
             <li>
               <Link href="/documents/contracts">
-                <a className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isContractsRoute ? 'bg-blue-50 text-primary' : ''}`}>
+                <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isContractsRoute ? 'bg-blue-50 text-primary' : ''}`}>
                   <span className={`material-icons mr-3 ${isContractsRoute ? 'text-primary' : 'text-neutral-500'}`}>assignment</span>
                   <span>{t("contracts")}</span>
-                </a>
+                </div>
               </Link>
             </li>
             <li>
               <Link href="/documents/leases">
-                <a className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isLeasesRoute ? 'bg-blue-50 text-primary' : ''}`}>
+                <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isLeasesRoute ? 'bg-blue-50 text-primary' : ''}`}>
                   <span className={`material-icons mr-3 ${isLeasesRoute ? 'text-primary' : 'text-neutral-500'}`}>home</span>
                   <span>{t("leases")}</span>
-                </a>
+                </div>
               </Link>
             </li>
             <li>
               <Link href="/documents/wills-estates">
-                <a className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isWillsEstatesRoute ? 'bg-blue-50 text-primary' : ''}`}>
+                <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isWillsEstatesRoute ? 'bg-blue-50 text-primary' : ''}`}>
                   <span className={`material-icons mr-3 ${isWillsEstatesRoute ? 'text-primary' : 'text-neutral-500'}`}>account_balance</span>
                   <span>{t("wills_estates")}</span>
-                </a>
+                </div>
               </Link>
             </li>
             <li>
               <Link href="/documents/business-formation">
-                <a className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isBusinessFormationRoute ? 'bg-blue-50 text-primary' : ''}`}>
+                <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isBusinessFormationRoute ? 'bg-blue-50 text-primary' : ''}`}>
                   <span className={`material-icons mr-3 ${isBusinessFormationRoute ? 'text-primary' : 'text-neutral-500'}`}>business</span>
                   <span>{t("business_formation")}</span>
-                </a>
+                </div>
               </Link>
             </li>
             <li>
               <Link href="/documents/ip-management">
-                <a className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isIpManagementRoute ? 'bg-blue-50 text-primary' : ''}`}>
+                <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isIpManagementRoute ? 'bg-blue-50 text-primary' : ''}`}>
                   <span className={`material-icons mr-3 ${isIpManagementRoute ? 'text-primary' : 'text-neutral-500'}`}>copyright</span>
                   <span>{t("ip_management")}</span>
-                </a>
+                </div>
               </Link>
             </li>
           </ul>
@@ -122,16 +122,16 @@ export function Sidebar() {
       
       <div className="border-t border-neutral-200 p-4">
         <Link href="/help">
-          <a className="flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary">
+          <div className="flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary">
             <span className="material-icons mr-3 text-neutral-500">help_outline</span>
             <span>{t("help_resources")}</span>
-          </a>
+          </div>
         </Link>
         <Link href="/settings">
-          <a className="flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary">
+          <div className="flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary">
             <span className="material-icons mr-3 text-neutral-500">settings</span>
             <span>{t("settings")}</span>
-          </a>
+          </div>
         </Link>
       </div>
     </div>
@@ -139,7 +139,6 @@ export function Sidebar() {
 }
 
 function LanguageSelector() {
-  const { t, setLanguage, getLanguage } = require("@/lib/i18n");
   const currentLanguage = getLanguage();
   
   return (
