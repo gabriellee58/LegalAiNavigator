@@ -5,10 +5,13 @@ import {
   generatedDocuments, type GeneratedDocument, type InsertGeneratedDocument,
   researchQueries, type ResearchQuery, type InsertResearchQuery,
   contractAnalyses, type ContractAnalysis, type InsertContractAnalysis,
-  complianceChecks, type ComplianceCheck, type InsertComplianceCheck
+  complianceChecks, type ComplianceCheck, type InsertComplianceCheck,
+  disputes, type Dispute, type InsertDispute,
+  mediationSessions, type MediationSession, type InsertMediationSession,
+  mediationMessages, type MediationMessage, type InsertMediationMessage
 } from "@shared/schema";
 import { db } from './db';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, inArray } from 'drizzle-orm';
 import session from 'express-session';
 import connectPg from 'connect-pg-simple';
 import { type json as Json } from 'drizzle-orm/pg-core';
@@ -52,6 +55,24 @@ export interface IStorage {
   getComplianceCheck(id: number): Promise<ComplianceCheck | undefined>;
   createComplianceCheck(check: InsertComplianceCheck): Promise<ComplianceCheck>;
   updateComplianceCheck(id: number, check: Partial<InsertComplianceCheck>): Promise<ComplianceCheck | undefined>;
+  
+  // Dispute resolution operations
+  getDisputesByUserId(userId: number): Promise<Dispute[]>;
+  getDispute(id: number): Promise<Dispute | undefined>;
+  createDispute(dispute: InsertDispute): Promise<Dispute>;
+  updateDispute(id: number, updates: Partial<Dispute>): Promise<Dispute | undefined>;
+  getDisputesByStatus(statuses: string[]): Promise<Dispute[]>;
+  
+  // Mediation session operations
+  getMediationSessionsByDisputeId(disputeId: number): Promise<MediationSession[]>;
+  getMediationSession(id: number): Promise<MediationSession | undefined>;
+  getMediationSessionByCode(sessionCode: string): Promise<MediationSession | undefined>;
+  createMediationSession(session: InsertMediationSession): Promise<MediationSession>;
+  updateMediationSession(id: number, updates: Partial<MediationSession>): Promise<MediationSession | undefined>;
+  
+  // Mediation message operations
+  getMediationMessagesBySessionId(sessionId: number): Promise<MediationMessage[]>;
+  createMediationMessage(message: InsertMediationMessage): Promise<MediationMessage>;
   
   // Initialize default templates
   initializeDefaultDocumentTemplates(): Promise<void>;
@@ -237,6 +258,107 @@ export class DatabaseStorage implements IStorage {
       .where(eq(complianceChecks.id, id))
       .returning();
     return updatedCheck;
+  }
+  
+  // Dispute resolution operations
+  async getDisputesByUserId(userId: number): Promise<Dispute[]> {
+    return await db
+      .select()
+      .from(disputes)
+      .where(eq(disputes.userId, userId))
+      .orderBy(desc(disputes.createdAt));
+  }
+  
+  async getDispute(id: number): Promise<Dispute | undefined> {
+    const [dispute] = await db
+      .select()
+      .from(disputes)
+      .where(eq(disputes.id, id));
+    return dispute;
+  }
+  
+  async createDispute(dispute: InsertDispute): Promise<Dispute> {
+    const [newDispute] = await db
+      .insert(disputes)
+      .values(dispute)
+      .returning();
+    return newDispute;
+  }
+  
+  async updateDispute(id: number, updates: Partial<Dispute>): Promise<Dispute | undefined> {
+    const [updatedDispute] = await db
+      .update(disputes)
+      .set(updates)
+      .where(eq(disputes.id, id))
+      .returning();
+    return updatedDispute;
+  }
+  
+  async getDisputesByStatus(statuses: string[]): Promise<Dispute[]> {
+    return await db
+      .select()
+      .from(disputes)
+      .where(inArray(disputes.status, statuses))
+      .orderBy(desc(disputes.updatedAt));
+  }
+  
+  // Mediation session operations
+  async getMediationSessionsByDisputeId(disputeId: number): Promise<MediationSession[]> {
+    return await db
+      .select()
+      .from(mediationSessions)
+      .where(eq(mediationSessions.disputeId, disputeId))
+      .orderBy(desc(mediationSessions.createdAt));
+  }
+  
+  async getMediationSession(id: number): Promise<MediationSession | undefined> {
+    const [session] = await db
+      .select()
+      .from(mediationSessions)
+      .where(eq(mediationSessions.id, id));
+    return session;
+  }
+  
+  async getMediationSessionByCode(sessionCode: string): Promise<MediationSession | undefined> {
+    const [session] = await db
+      .select()
+      .from(mediationSessions)
+      .where(eq(mediationSessions.sessionCode, sessionCode));
+    return session;
+  }
+  
+  async createMediationSession(session: InsertMediationSession): Promise<MediationSession> {
+    const [newSession] = await db
+      .insert(mediationSessions)
+      .values(session)
+      .returning();
+    return newSession;
+  }
+  
+  async updateMediationSession(id: number, updates: Partial<MediationSession>): Promise<MediationSession | undefined> {
+    const [updatedSession] = await db
+      .update(mediationSessions)
+      .set(updates)
+      .where(eq(mediationSessions.id, id))
+      .returning();
+    return updatedSession;
+  }
+  
+  // Mediation message operations
+  async getMediationMessagesBySessionId(sessionId: number): Promise<MediationMessage[]> {
+    return await db
+      .select()
+      .from(mediationMessages)
+      .where(eq(mediationMessages.sessionId, sessionId))
+      .orderBy(mediationMessages.createdAt);
+  }
+  
+  async createMediationMessage(message: InsertMediationMessage): Promise<MediationMessage> {
+    const [newMessage] = await db
+      .insert(mediationMessages)
+      .values(message)
+      .returning();
+    return newMessage;
   }
 
   // Method to initialize default document templates if not already present

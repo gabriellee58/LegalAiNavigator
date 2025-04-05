@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -153,6 +153,80 @@ export const insertComplianceCheckSchema = createInsertSchema(complianceChecks).
 export type InsertComplianceCheck = z.infer<typeof insertComplianceCheckSchema>;
 export type ComplianceCheck = typeof complianceChecks.$inferSelect;
 
+// Dispute resolution schema
+export const disputes = pgTable("disputes", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  parties: text("parties").notNull(),
+  status: text("status").notNull().default("pending"), // 'pending', 'active', 'mediation', 'resolved', 'closed'
+  disputeType: text("dispute_type").notNull(), // 'landlord_tenant', 'employment', 'contract', 'family', 'business', 'other'
+  supportingDocuments: jsonb("supporting_documents"),
+  aiAnalysis: jsonb("ai_analysis"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  resolvedAt: timestamp("resolved_at"),
+  mediationId: integer("mediation_id"),
+});
+
+export const insertDisputeSchema = createInsertSchema(disputes).pick({
+  userId: true,
+  title: true,
+  description: true,
+  parties: true,
+  disputeType: true,
+  supportingDocuments: true,
+});
+
+export type InsertDispute = z.infer<typeof insertDisputeSchema>;
+export type Dispute = typeof disputes.$inferSelect;
+
+// Mediation sessions schema
+export const mediationSessions = pgTable("mediation_sessions", {
+  id: serial("id").primaryKey(),
+  disputeId: integer("dispute_id").references(() => disputes.id, { onDelete: 'cascade' }),
+  mediatorId: integer("mediator_id").references(() => users.id),
+  sessionCode: text("session_code").notNull().unique(),
+  status: text("status").notNull().default("scheduled"), // 'scheduled', 'in_progress', 'completed', 'cancelled'
+  scheduledAt: timestamp("scheduled_at"),
+  completedAt: timestamp("completed_at"),
+  summary: text("summary"),
+  recommendations: jsonb("recommendations"),
+  aiAssistance: boolean("ai_assistance").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertMediationSessionSchema = createInsertSchema(mediationSessions)
+  .omit({ id: true, createdAt: true, completedAt: true, summary: true, recommendations: true })
+  .extend({
+    mediatorId: z.number().optional(),
+  });
+
+export type InsertMediationSession = z.infer<typeof insertMediationSessionSchema>;
+export type MediationSession = typeof mediationSessions.$inferSelect;
+
+// Mediation messages schema for real-time mediation
+export const mediationMessages = pgTable("mediation_messages", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").references(() => mediationSessions.id, { onDelete: 'cascade' }),
+  userId: integer("user_id").references(() => users.id),
+  role: text("role").notNull(), // 'user', 'mediator', 'ai'
+  content: text("content").notNull(),
+  sentiment: text("sentiment"), // Optional AI analysis of message sentiment
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertMediationMessageSchema = createInsertSchema(mediationMessages)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    userId: z.number().optional(),
+    sentiment: z.string().optional(),
+  });
+
+export type InsertMediationMessage = z.infer<typeof insertMediationMessageSchema>;
+export type MediationMessage = typeof mediationMessages.$inferSelect;
+
 // Define relations after all tables are defined
 export const usersRelations = relations(users, ({ many }) => ({
   chatMessages: many(chatMessages),
@@ -160,6 +234,9 @@ export const usersRelations = relations(users, ({ many }) => ({
   researchQueries: many(researchQueries),
   contractAnalyses: many(contractAnalyses),
   complianceChecks: many(complianceChecks),
+  disputes: many(disputes),
+  mediatedSessions: many(mediationSessions, { relationName: "mediator" }),
+  mediationMessages: many(mediationMessages),
 }));
 
 export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
@@ -201,6 +278,38 @@ export const contractAnalysesRelations = relations(contractAnalyses, ({ one }) =
 export const complianceChecksRelations = relations(complianceChecks, ({ one }) => ({
   user: one(users, {
     fields: [complianceChecks.userId],
+    references: [users.id],
+  }),
+}));
+
+export const disputesRelations = relations(disputes, ({ one, many }) => ({
+  user: one(users, {
+    fields: [disputes.userId],
+    references: [users.id],
+  }),
+  mediationSessions: many(mediationSessions),
+}));
+
+export const mediationSessionsRelations = relations(mediationSessions, ({ one, many }) => ({
+  dispute: one(disputes, {
+    fields: [mediationSessions.disputeId],
+    references: [disputes.id],
+  }),
+  mediator: one(users, {
+    fields: [mediationSessions.mediatorId],
+    references: [users.id],
+    relationName: "mediator",
+  }),
+  messages: many(mediationMessages),
+}));
+
+export const mediationMessagesRelations = relations(mediationMessages, ({ one }) => ({
+  session: one(mediationSessions, {
+    fields: [mediationMessages.sessionId],
+    references: [mediationSessions.id],
+  }),
+  user: one(users, {
+    fields: [mediationMessages.userId],
     references: [users.id],
   }),
 }));

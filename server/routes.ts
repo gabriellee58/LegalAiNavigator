@@ -4,7 +4,10 @@ import { storage } from "./storage";
 import { 
   insertChatMessageSchema, 
   insertResearchQuerySchema,
-  insertGeneratedDocumentSchema
+  insertGeneratedDocumentSchema,
+  insertDisputeSchema,
+  insertMediationSessionSchema,
+  insertMediationMessageSchema
 } from "@shared/schema";
 import { z } from "zod";
 import { generateAIResponse, performLegalResearch } from "./lib/openai";
@@ -284,6 +287,338 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(queries);
     } catch (error) {
       res.status(500).json({ message: "Error retrieving research queries" });
+    }
+  });
+
+  // Dispute resolution routes
+  app.get("/api/disputes", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const disputes = await storage.getDisputesByUserId(userId);
+      res.json(disputes);
+    } catch (error) {
+      console.error("Dispute retrieval error:", error);
+      res.status(500).json({ message: "Error retrieving disputes" });
+    }
+  });
+
+  app.get("/api/disputes/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      const dispute = await storage.getDispute(id);
+      if (!dispute) {
+        return res.status(404).json({ message: "Dispute not found" });
+      }
+      
+      // Ensure the dispute belongs to the requesting user
+      if (dispute.userId !== req.user!.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      res.json(dispute);
+    } catch (error) {
+      console.error("Dispute retrieval error:", error);
+      res.status(500).json({ message: "Error retrieving dispute" });
+    }
+  });
+
+  app.post("/api/disputes", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Validate dispute data without userId
+      const disputeSchema = insertDisputeSchema.omit({ userId: true });
+      const parsed = disputeSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ 
+          message: "Invalid dispute data",
+          errors: parsed.error.format()
+        });
+      }
+      
+      // Add authenticated user ID to the dispute data
+      const dispute = await storage.createDispute({
+        ...parsed.data,
+        userId: req.user!.id
+      });
+      
+      res.status(201).json(dispute);
+    } catch (error) {
+      console.error("Dispute creation error:", error);
+      res.status(500).json({ message: "Error creating dispute" });
+    }
+  });
+
+  app.patch("/api/disputes/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      const dispute = await storage.getDispute(id);
+      if (!dispute) {
+        return res.status(404).json({ message: "Dispute not found" });
+      }
+      
+      // Ensure the dispute belongs to the requesting user
+      if (dispute.userId !== req.user!.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      // Validate update data
+      const updateSchema = z.object({
+        title: z.string().optional(),
+        description: z.string().optional(),
+        parties: z.string().optional(),
+        status: z.string().optional(),
+        disputeType: z.string().optional(),
+        supportingDocuments: z.any().optional(), // Using any for jsonb
+        aiAnalysis: z.any().optional(), // Using any for jsonb
+        resolvedAt: z.date().optional().nullable()
+      });
+      
+      const parsed = updateSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ 
+          message: "Invalid update data",
+          errors: parsed.error.format()
+        });
+      }
+      
+      // Update dispute with automatic setting of updatedAt
+      const updatedDispute = await storage.updateDispute(id, {
+        ...parsed.data,
+        updatedAt: new Date()
+      });
+      
+      res.json(updatedDispute);
+    } catch (error) {
+      console.error("Dispute update error:", error);
+      res.status(500).json({ message: "Error updating dispute" });
+    }
+  });
+
+  // Mediation session routes
+  app.get("/api/disputes/:disputeId/mediation-sessions", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const disputeId = parseInt(req.params.disputeId);
+      if (isNaN(disputeId)) {
+        return res.status(400).json({ message: "Invalid dispute ID format" });
+      }
+      
+      // First verify that the dispute belongs to the user
+      const dispute = await storage.getDispute(disputeId);
+      if (!dispute) {
+        return res.status(404).json({ message: "Dispute not found" });
+      }
+      
+      if (dispute.userId !== req.user!.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const sessions = await storage.getMediationSessionsByDisputeId(disputeId);
+      res.json(sessions);
+    } catch (error) {
+      console.error("Mediation sessions retrieval error:", error);
+      res.status(500).json({ message: "Error retrieving mediation sessions" });
+    }
+  });
+
+  app.post("/api/disputes/:disputeId/mediation-sessions", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const disputeId = parseInt(req.params.disputeId);
+      if (isNaN(disputeId)) {
+        return res.status(400).json({ message: "Invalid dispute ID format" });
+      }
+      
+      // First verify that the dispute belongs to the user
+      const dispute = await storage.getDispute(disputeId);
+      if (!dispute) {
+        return res.status(404).json({ message: "Dispute not found" });
+      }
+      
+      if (dispute.userId !== req.user!.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      // Validate session data
+      const sessionSchema = insertMediationSessionSchema
+        .omit({ disputeId: true })
+        .extend({
+          scheduledAt: z.string().transform(val => new Date(val)).optional()
+        });
+      
+      const parsed = sessionSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ 
+          message: "Invalid mediation session data",
+          errors: parsed.error.format()
+        });
+      }
+      
+      // Generate a unique session code
+      const sessionCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+      
+      // Create the session
+      const session = await storage.createMediationSession({
+        ...parsed.data,
+        disputeId,
+        sessionCode
+      });
+      
+      // Update the dispute to reflect the mediation status
+      await storage.updateDispute(disputeId, {
+        status: "mediation",
+        mediationId: session.id,
+        updatedAt: new Date()
+      });
+      
+      res.status(201).json(session);
+    } catch (error) {
+      console.error("Mediation session creation error:", error);
+      res.status(500).json({ message: "Error creating mediation session" });
+    }
+  });
+
+  app.get("/api/mediation-sessions/:sessionId/messages", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const sessionId = parseInt(req.params.sessionId);
+      if (isNaN(sessionId)) {
+        return res.status(400).json({ message: "Invalid session ID format" });
+      }
+      
+      const session = await storage.getMediationSession(sessionId);
+      if (!session) {
+        return res.status(404).json({ message: "Mediation session not found" });
+      }
+      
+      // Security check - user must be a party to the dispute or the mediator
+      if (!session.disputeId) {
+        return res.status(400).json({ message: "Invalid session disputeId" });
+      }
+      
+      const dispute = await storage.getDispute(session.disputeId);
+      if (!dispute) {
+        return res.status(404).json({ message: "Associated dispute not found" });
+      }
+      
+      // Check if the user is either the dispute owner or the mediator (if assigned)
+      const isMediatorAssigned = !!session.mediatorId;
+      if (dispute.userId !== req.user!.id && (!isMediatorAssigned || session.mediatorId !== req.user!.id)) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const messages = await storage.getMediationMessagesBySessionId(sessionId);
+      res.json(messages);
+    } catch (error) {
+      console.error("Mediation messages retrieval error:", error);
+      res.status(500).json({ message: "Error retrieving mediation messages" });
+    }
+  });
+
+  app.post("/api/mediation-sessions/:sessionId/messages", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const sessionId = parseInt(req.params.sessionId);
+      if (isNaN(sessionId)) {
+        return res.status(400).json({ message: "Invalid session ID format" });
+      }
+      
+      const session = await storage.getMediationSession(sessionId);
+      if (!session) {
+        return res.status(404).json({ message: "Mediation session not found" });
+      }
+      
+      // Security check - user must be a party to the dispute or the mediator
+      if (!session.disputeId) {
+        return res.status(400).json({ message: "Invalid session disputeId" });
+      }
+      
+      const dispute = await storage.getDispute(session.disputeId);
+      if (!dispute) {
+        return res.status(404).json({ message: "Associated dispute not found" });
+      }
+      
+      // Check if the user is either the dispute owner or the mediator (if assigned)
+      const isMediatorAssigned = !!session.mediatorId;
+      if (dispute.userId !== req.user!.id && (!isMediatorAssigned || session.mediatorId !== req.user!.id)) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      // Determine the role based on who's sending the message
+      let role = "user";
+      if (session.mediatorId === req.user!.id) {
+        role = "mediator";
+      }
+      
+      // Validate message data
+      const messageSchema = z.object({
+        content: z.string().min(1)
+      });
+      
+      const parsed = messageSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ 
+          message: "Invalid message data",
+          errors: parsed.error.format()
+        });
+      }
+      
+      // Create the message
+      const message = await storage.createMediationMessage({
+        sessionId,
+        userId: req.user!.id,
+        role,
+        content: parsed.data.content,
+        sentiment: undefined // Sentiment analysis could be added later
+      });
+      
+      // If AI assistance is enabled, generate an AI mediator response
+      if (session.aiAssistance && role !== "mediator") {
+        // TODO: Implement AI mediator response generation
+        // This would call OpenAI or a similar service to generate a response
+        // based on the dispute context and the current message
+        
+        // For now, just add a placeholder response from the AI
+        await storage.createMediationMessage({
+          sessionId,
+          userId: undefined, // AI doesn't have a user ID
+          role: "ai",
+          content: "I'm analyzing the message. The AI mediator feature will be fully implemented soon.",
+          sentiment: undefined
+        });
+      }
+      
+      // Update session status if it was scheduled
+      if (session.status === "scheduled") {
+        await storage.updateMediationSession(sessionId, {
+          status: "in_progress"
+        });
+      }
+      
+      res.status(201).json(message);
+    } catch (error) {
+      console.error("Mediation message creation error:", error);
+      res.status(500).json({ message: "Error creating mediation message" });
+    }
+  });
+
+  // Get mediation session by code (for joining)
+  app.get("/api/mediation-sessions/code/:code", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const code = req.params.code;
+      const session = await storage.getMediationSessionByCode(code);
+      
+      if (!session) {
+        return res.status(404).json({ message: "Mediation session not found" });
+      }
+      
+      res.json(session);
+    } catch (error) {
+      console.error("Mediation session retrieval error:", error);
+      res.status(500).json({ message: "Error retrieving mediation session" });
     }
   });
 
