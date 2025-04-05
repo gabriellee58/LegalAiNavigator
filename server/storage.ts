@@ -3,7 +3,9 @@ import {
   chatMessages, type ChatMessage, type InsertChatMessage,
   documentTemplates, type DocumentTemplate, type InsertDocumentTemplate,
   generatedDocuments, type GeneratedDocument, type InsertGeneratedDocument,
-  researchQueries, type ResearchQuery, type InsertResearchQuery
+  researchQueries, type ResearchQuery, type InsertResearchQuery,
+  contractAnalyses, type ContractAnalysis, type InsertContractAnalysis,
+  complianceChecks, type ComplianceCheck, type InsertComplianceCheck
 } from "@shared/schema";
 import { db } from './db';
 import { eq, and, desc } from 'drizzle-orm';
@@ -39,6 +41,17 @@ export interface IStorage {
   // Research query operations
   getResearchQueriesByUserId(userId: number): Promise<ResearchQuery[]>;
   createResearchQuery(query: InsertResearchQuery): Promise<ResearchQuery>;
+  
+  // Contract analysis operations
+  getContractAnalysesByUserId(userId: number): Promise<ContractAnalysis[]>;
+  getContractAnalysis(id: number): Promise<ContractAnalysis | undefined>;
+  createContractAnalysis(analysis: InsertContractAnalysis): Promise<ContractAnalysis>;
+  
+  // Compliance check operations
+  getComplianceChecksByUserId(userId: number): Promise<ComplianceCheck[]>;
+  getComplianceCheck(id: number): Promise<ComplianceCheck | undefined>;
+  createComplianceCheck(check: InsertComplianceCheck): Promise<ComplianceCheck>;
+  updateComplianceCheck(id: number, check: Partial<InsertComplianceCheck>): Promise<ComplianceCheck | undefined>;
   
   // Initialize default templates
   initializeDefaultDocumentTemplates(): Promise<void>;
@@ -165,6 +178,65 @@ export class DatabaseStorage implements IStorage {
       .values(query)
       .returning();
     return newQuery;
+  }
+  
+  // Contract analysis operations
+  async getContractAnalysesByUserId(userId: number): Promise<ContractAnalysis[]> {
+    return await db
+      .select()
+      .from(contractAnalyses)
+      .where(eq(contractAnalyses.userId, userId))
+      .orderBy(desc(contractAnalyses.createdAt));
+  }
+  
+  async getContractAnalysis(id: number): Promise<ContractAnalysis | undefined> {
+    const [analysis] = await db
+      .select()
+      .from(contractAnalyses)
+      .where(eq(contractAnalyses.id, id));
+    return analysis;
+  }
+  
+  async createContractAnalysis(analysis: InsertContractAnalysis): Promise<ContractAnalysis> {
+    const [newAnalysis] = await db
+      .insert(contractAnalyses)
+      .values(analysis)
+      .returning();
+    return newAnalysis;
+  }
+  
+  // Compliance check operations
+  async getComplianceChecksByUserId(userId: number): Promise<ComplianceCheck[]> {
+    return await db
+      .select()
+      .from(complianceChecks)
+      .where(eq(complianceChecks.userId, userId))
+      .orderBy(desc(complianceChecks.createdAt));
+  }
+  
+  async getComplianceCheck(id: number): Promise<ComplianceCheck | undefined> {
+    const [check] = await db
+      .select()
+      .from(complianceChecks)
+      .where(eq(complianceChecks.id, id));
+    return check;
+  }
+  
+  async createComplianceCheck(check: InsertComplianceCheck): Promise<ComplianceCheck> {
+    const [newCheck] = await db
+      .insert(complianceChecks)
+      .values(check)
+      .returning();
+    return newCheck;
+  }
+  
+  async updateComplianceCheck(id: number, check: Partial<InsertComplianceCheck>): Promise<ComplianceCheck | undefined> {
+    const [updatedCheck] = await db
+      .update(complianceChecks)
+      .set(check)
+      .where(eq(complianceChecks.id, id))
+      .returning();
+    return updatedCheck;
   }
 
   // Method to initialize default document templates if not already present

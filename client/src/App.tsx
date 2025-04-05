@@ -12,6 +12,7 @@ import HomePage from "@/pages/home";
 import LegalAssistantPage from "@/pages/legal-assistant";
 import DocumentGeneratorPage from "@/pages/document-generator";
 import LegalResearchPage from "@/pages/legal-research";
+import ContractAnalysisPage from "@/pages/contract-analysis";
 import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
 
@@ -50,6 +51,7 @@ function Router() {
       <ProtectedRoute path="/document-generator" component={DocumentGeneratorPage} />
       <ProtectedRoute path="/document-generator/:id" component={DocumentGeneratorPage} />
       <ProtectedRoute path="/legal-research" component={LegalResearchPage} />
+      <ProtectedRoute path="/contract-analysis" component={ContractAnalysisPage} />
       <Route path="/auth" component={AuthPage} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />

@@ -7,7 +7,8 @@ import {
   insertGeneratedDocumentSchema
 } from "@shared/schema";
 import { z } from "zod";
-import { generateAIResponse, analyzeContract, performLegalResearch } from "./lib/openai";
+import { generateAIResponse, performLegalResearch } from "./lib/openai";
+import { analyzeContract, compareContracts } from "./lib/contractAnalysis";
 import { setupAuth } from "./auth";
 
 // Middleware to check if user is authenticated
@@ -156,7 +157,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/analyze-contract", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const contractSchema = z.object({
-        content: z.string().min(1)
+        content: z.string().min(1),
+        save: z.boolean().optional(),
+        title: z.string().optional()
       });
       
       const parsed = contractSchema.safeParse(req.body);
@@ -164,10 +167,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid contract data" });
       }
       
-      const analysis = await analyzeContract(parsed.data.content);
+      // Analyze the contract
+      const analysisResult = await analyzeContract(parsed.data.content);
+      
+      // Save the analysis result if requested
+      if (parsed.data.save && parsed.data.title) {
+        await storage.createContractAnalysis({
+          userId: req.user!.id,
+          contractContent: parsed.data.content,
+          contractTitle: parsed.data.title,
+          score: analysisResult.score,
+          riskLevel: analysisResult.riskLevel,
+          analysisResults: analysisResult as any, // Converting to jsonb
+        });
+      }
+      
+      res.json(analysisResult);
+    } catch (error) {
+      console.error("Contract analysis error:", error);
+      res.status(500).json({ message: "Error analyzing contract" });
+    }
+  });
+  
+  // Get saved contract analyses
+  app.get("/api/contract-analyses", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const analyses = await storage.getContractAnalysesByUserId(req.user!.id);
+      res.json(analyses);
+    } catch (error) {
+      console.error("Contract analyses retrieval error:", error);
+      res.status(500).json({ message: "Error retrieving contract analyses" });
+    }
+  });
+  
+  // Get a specific saved contract analysis
+  app.get("/api/contract-analyses/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      const analysis = await storage.getContractAnalysis(id);
+      if (!analysis) {
+        return res.status(404).json({ message: "Contract analysis not found" });
+      }
+      
+      // Ensure the analysis belongs to the requesting user
+      if (analysis.userId !== req.user!.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
       res.json(analysis);
     } catch (error) {
-      res.status(500).json({ message: "Error analyzing contract" });
+      console.error("Contract analysis retrieval error:", error);
+      res.status(500).json({ message: "Error retrieving contract analysis" });
+    }
+  });
+  
+  // Contract comparison
+  app.post("/api/compare-contracts", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const comparisonSchema = z.object({
+        firstContract: z.string().min(1),
+        secondContract: z.string().min(1)
+      });
+      
+      const parsed = comparisonSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid contract comparison data" });
+      }
+      
+      const comparison = await compareContracts(
+        parsed.data.firstContract,
+        parsed.data.secondContract
+      );
+      
+      res.json(comparison);
+    } catch (error) {
+      console.error("Contract comparison error:", error);
+      res.status(500).json({ message: "Error comparing contracts" });
     }
   });
 

@@ -20,10 +20,10 @@ function MobileNavbar() {
           <span className="text-xs mt-1">{t("document_generator")}</span>
         </a>
       </Link>
-      <Link href="/legal-research">
-        <a className={`flex flex-col items-center justify-center ${isActive('/legal-research') ? 'text-primary' : 'text-neutral-500'}`}>
-          <span className="material-icons text-md">search</span>
-          <span className="text-xs mt-1">{t("legal_research")}</span>
+      <Link href="/contract-analysis">
+        <a className={`flex flex-col items-center justify-center ${isActive('/contract-analysis') ? 'text-primary' : 'text-neutral-500'}`}>
+          <span className="material-icons text-md">content_paste_search</span>
+          <span className="text-xs mt-1">{t("contract_analysis")}</span>
         </a>
       </Link>
       <Link href="/more">

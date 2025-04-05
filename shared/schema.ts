@@ -105,11 +105,61 @@ export const insertResearchQuerySchema = createInsertSchema(researchQueries).pic
 export type InsertResearchQuery = z.infer<typeof insertResearchQuerySchema>;
 export type ResearchQuery = typeof researchQueries.$inferSelect;
 
+// Contract analysis results schema
+export const contractAnalyses = pgTable("contract_analyses", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }),
+  contractContent: text("contract_content").notNull(),
+  contractTitle: text("contract_title").notNull(),
+  score: integer("score").notNull(),
+  riskLevel: text("risk_level").notNull(), // 'low', 'medium', 'high'
+  analysisResults: jsonb("analysis_results").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertContractAnalysisSchema = createInsertSchema(contractAnalyses).pick({
+  userId: true,
+  contractContent: true,
+  contractTitle: true,
+  score: true,
+  riskLevel: true,
+  analysisResults: true,
+});
+
+export type InsertContractAnalysis = z.infer<typeof insertContractAnalysisSchema>;
+export type ContractAnalysis = typeof contractAnalyses.$inferSelect;
+
+// Business compliance checks schema
+export const complianceChecks = pgTable("compliance_checks", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }),
+  businessType: text("business_type").notNull(),
+  jurisdiction: text("jurisdiction").notNull(), // Province/territory code
+  complianceArea: text("compliance_area").notNull(), // 'tax', 'employment', 'licensing', etc.
+  checkResults: jsonb("check_results").notNull(),
+  completed: boolean("completed").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertComplianceCheckSchema = createInsertSchema(complianceChecks).pick({
+  userId: true,
+  businessType: true,
+  jurisdiction: true,
+  complianceArea: true,
+  checkResults: true,
+  completed: true,
+});
+
+export type InsertComplianceCheck = z.infer<typeof insertComplianceCheckSchema>;
+export type ComplianceCheck = typeof complianceChecks.$inferSelect;
+
 // Define relations after all tables are defined
 export const usersRelations = relations(users, ({ many }) => ({
   chatMessages: many(chatMessages),
   generatedDocuments: many(generatedDocuments),
   researchQueries: many(researchQueries),
+  contractAnalyses: many(contractAnalyses),
+  complianceChecks: many(complianceChecks),
 }));
 
 export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
@@ -137,6 +187,20 @@ export const generatedDocumentsRelations = relations(generatedDocuments, ({ one 
 export const researchQueriesRelations = relations(researchQueries, ({ one }) => ({
   user: one(users, {
     fields: [researchQueries.userId],
+    references: [users.id],
+  }),
+}));
+
+export const contractAnalysesRelations = relations(contractAnalyses, ({ one }) => ({
+  user: one(users, {
+    fields: [contractAnalyses.userId],
+    references: [users.id],
+  }),
+}));
+
+export const complianceChecksRelations = relations(complianceChecks, ({ one }) => ({
+  user: one(users, {
+    fields: [complianceChecks.userId],
     references: [users.id],
   }),
 }));
