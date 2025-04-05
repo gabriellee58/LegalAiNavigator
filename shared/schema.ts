@@ -1,6 +1,7 @@
 import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 // User schema
 export const users = pgTable("users", {
@@ -12,7 +13,8 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
+const userSchema = createInsertSchema(users);
+export const insertUserSchema = userSchema.pick({
   username: true,
   password: true,
   fullName: true,
@@ -25,7 +27,7 @@ export type User = typeof users.$inferSelect;
 // Chat history schema
 export const chatMessages = pgTable("chat_messages", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id),
+  userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }),
   role: text("role").notNull(), // 'user' or 'assistant'
   content: text("content").notNull(),
   timestamp: timestamp("timestamp").defaultNow(),
@@ -66,7 +68,7 @@ export type DocumentTemplate = typeof documentTemplates.$inferSelect;
 // User generated documents schema
 export const generatedDocuments = pgTable("generated_documents", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id),
+  userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }),
   templateId: integer("template_id").references(() => documentTemplates.id),
   documentContent: text("document_content").notNull(),
   documentTitle: text("document_title").notNull(),
@@ -88,7 +90,7 @@ export type GeneratedDocument = typeof generatedDocuments.$inferSelect;
 // Legal research queries schema
 export const researchQueries = pgTable("research_queries", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id),
+  userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }),
   query: text("query").notNull(),
   results: jsonb("results"),
   timestamp: timestamp("timestamp").defaultNow(),
@@ -102,3 +104,39 @@ export const insertResearchQuerySchema = createInsertSchema(researchQueries).pic
 
 export type InsertResearchQuery = z.infer<typeof insertResearchQuerySchema>;
 export type ResearchQuery = typeof researchQueries.$inferSelect;
+
+// Define relations after all tables are defined
+export const usersRelations = relations(users, ({ many }) => ({
+  chatMessages: many(chatMessages),
+  generatedDocuments: many(generatedDocuments),
+  researchQueries: many(researchQueries),
+}));
+
+export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
+  user: one(users, {
+    fields: [chatMessages.userId],
+    references: [users.id],
+  }),
+}));
+
+export const documentTemplatesRelations = relations(documentTemplates, ({ many }) => ({
+  generatedDocuments: many(generatedDocuments),
+}));
+
+export const generatedDocumentsRelations = relations(generatedDocuments, ({ one }) => ({
+  user: one(users, {
+    fields: [generatedDocuments.userId],
+    references: [users.id],
+  }),
+  template: one(documentTemplates, {
+    fields: [generatedDocuments.templateId],
+    references: [documentTemplates.id],
+  }),
+}));
+
+export const researchQueriesRelations = relations(researchQueries, ({ one }) => ({
+  user: one(users, {
+    fields: [researchQueries.userId],
+    references: [users.id],
+  }),
+}));

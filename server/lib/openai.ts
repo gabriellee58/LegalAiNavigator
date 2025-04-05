@@ -30,7 +30,8 @@ export async function generateAIResponse(userMessage: string): Promise<string> {
       max_tokens: 800
     });
 
-    return response.choices[0].message.content || "I apologize, but I couldn't generate a response. Please try asking your question differently.";
+    const content = response.choices[0].message.content;
+    return content ? content : "I apologize, but I couldn't generate a response. Please try asking your question differently.";
   } catch (error) {
     console.error("Error generating AI response:", error);
     return "I'm sorry, but I encountered an error processing your request. Please try again later.";
@@ -74,7 +75,17 @@ export async function analyzeContract(contractText: string): Promise<{
       response_format: { type: "json_object" }
     });
 
-    const result = JSON.parse(response.choices[0].message.content);
+    const content = response.choices[0].message.content;
+    
+    if (!content) {
+      return {
+        risks: [],
+        suggestions: [],
+        summary: "No content returned from AI analysis"
+      };
+    }
+    
+    const result = JSON.parse(content);
     
     return {
       risks: result.risks || [],
@@ -128,7 +139,17 @@ export async function performLegalResearch(query: string): Promise<{
       response_format: { type: "json_object" }
     });
 
-    const result = JSON.parse(response.choices[0].message.content);
+    const content = response.choices[0].message.content;
+    
+    if (!content) {
+      return {
+        relevantLaws: [],
+        relevantCases: [],
+        summary: "No content returned from AI research"
+      };
+    }
+    
+    const result = JSON.parse(content);
     
     return {
       relevantLaws: result.relevantLaws || [],

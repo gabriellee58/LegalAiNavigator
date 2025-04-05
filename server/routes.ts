@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { 
@@ -8,35 +8,25 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import { generateAIResponse, analyzeContract, performLegalResearch } from "./lib/openai";
+import { setupAuth } from "./auth";
+
+// Middleware to check if user is authenticated
+const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+  if (req.isAuthenticated() && req.user) {
+    return next();
+  }
+  res.status(401).json({ message: "Not authenticated" });
+};
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // User routes
-  app.post("/api/auth/register", async (req: Request, res: Response) => {
-    try {
-      const parsed = insertUserSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ message: "Invalid user data" });
-      }
-      
-      const existingUser = await storage.getUserByUsername(parsed.data.username);
-      if (existingUser) {
-        return res.status(409).json({ message: "Username already exists" });
-      }
-      
-      const user = await storage.createUser(parsed.data);
-      // Don't return the password
-      const { password, ...userWithoutPassword } = user;
-      res.status(201).json(userWithoutPassword);
-    } catch (error) {
-      res.status(500).json({ message: "Error creating user" });
-    }
-  });
+  // Setup authentication
+  setupAuth(app);
 
   // Chat message routes
-  app.get("/api/chat/messages", async (req: Request, res: Response) => {
+  app.get("/api/chat/messages", isAuthenticated, async (req: Request, res: Response) => {
     try {
-      // In a real app, get userId from session
-      const userId = parseInt(req.query.userId as string) || 1;
+      // Get userId from authenticated user session
+      const userId = req.user!.id; // Using non-null assertion as we already checked in middleware
       const messages = await storage.getChatMessagesByUserId(userId);
       res.json(messages);
     } catch (error) {
@@ -44,22 +34,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/chat/messages", async (req: Request, res: Response) => {
+  app.post("/api/chat/messages", isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const parsed = insertChatMessageSchema.safeParse(req.body);
+      // Validate message data
+      const messageSchema = insertChatMessageSchema.omit({ userId: true });
+      const parsed = messageSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ message: "Invalid message data" });
       }
       
-      // Save the user message
-      const userMessage = await storage.createChatMessage(parsed.data);
+      // Save the user message with authenticated user ID
+      const userMessage = await storage.createChatMessage({
+        ...parsed.data,
+        userId: req.user!.id
+      });
       
       // Generate AI response
       const aiResponse = await generateAIResponse(parsed.data.content);
       
       // Save the AI message
       const aiMessage = await storage.createChatMessage({
-        userId: parsed.data.userId,
+        userId: req.user!.id,
         role: "assistant",
         content: aiResponse
       });
@@ -105,24 +100,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Generated document routes
-  app.post("/api/documents", async (req: Request, res: Response) => {
+  app.post("/api/documents", isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const parsed = insertGeneratedDocumentSchema.safeParse(req.body);
+      // Validate document data without userId
+      const documentSchema = insertGeneratedDocumentSchema.omit({ userId: true });
+      const parsed = documentSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ message: "Invalid document data" });
       }
       
-      const document = await storage.createGeneratedDocument(parsed.data);
+      // Add authenticated user ID to the document data
+      const document = await storage.createGeneratedDocument({
+        ...parsed.data,
+        userId: req.user!.id
+      });
+      
       res.status(201).json(document);
     } catch (error) {
       res.status(500).json({ message: "Error creating document" });
     }
   });
 
-  app.get("/api/documents", async (req: Request, res: Response) => {
+  app.get("/api/documents", isAuthenticated, async (req: Request, res: Response) => {
     try {
-      // In a real app, get userId from session
-      const userId = parseInt(req.query.userId as string) || 1;
+      // Get userId from authenticated user session
+      const userId = req.user!.id;
       const documents = await storage.getGeneratedDocumentsByUserId(userId);
       res.json(documents);
     } catch (error) {
@@ -130,13 +132,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/documents/:id", async (req: Request, res: Response) => {
+  app.get("/api/documents/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const document = await storage.getGeneratedDocument(id);
       
       if (!document) {
         return res.status(404).json({ message: "Document not found" });
+      }
+      
+      // Ensure the document belongs to the requesting user
+      if (document.userId !== req.user!.id) {
+        return res.status(403).json({ message: "Access denied" });
       }
       
       res.json(document);
@@ -146,7 +153,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Contract analysis
-  app.post("/api/analyze-contract", async (req: Request, res: Response) => {
+  app.post("/api/analyze-contract", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const contractSchema = z.object({
         content: z.string().min(1)
@@ -165,9 +172,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Legal research
-  app.post("/api/research", async (req: Request, res: Response) => {
+  app.post("/api/research", isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const parsed = insertResearchQuerySchema.safeParse(req.body);
+      // Validate research query without userId
+      const researchSchema = insertResearchQuerySchema.omit({ userId: true });
+      const parsed = researchSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ message: "Invalid research query" });
       }
@@ -175,11 +184,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Perform research with OpenAI
       const results = await performLegalResearch(parsed.data.query);
       
-      // Update the query with results
-      parsed.data.results = results;
-      
-      // Save the research query
-      const savedQuery = await storage.createResearchQuery(parsed.data);
+      // Save the research query with user ID and results
+      const savedQuery = await storage.createResearchQuery({
+        ...parsed.data,
+        userId: req.user!.id,
+        results
+      });
       
       res.status(201).json(savedQuery);
     } catch (error) {
@@ -187,10 +197,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/research", async (req: Request, res: Response) => {
+  app.get("/api/research", isAuthenticated, async (req: Request, res: Response) => {
     try {
-      // In a real app, get userId from session
-      const userId = parseInt(req.query.userId as string) || 1;
+      // Get userId from authenticated user session
+      const userId = req.user!.id;
       const queries = await storage.getResearchQueriesByUserId(userId);
       res.json(queries);
     } catch (error) {

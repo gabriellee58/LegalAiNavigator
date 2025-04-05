@@ -37,6 +37,17 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Initialize database and create tables
+  try {
+    // Import here to avoid circular dependencies
+    const { storage } = await import("./storage");
+    log("Initializing database and creating default templates...");
+    await storage.initializeDefaultDocumentTemplates();
+    log("Database initialization completed");
+  } catch (error) {
+    log(`Database initialization error: ${error}`);
+  }
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

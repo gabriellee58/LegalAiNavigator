@@ -4,12 +4,15 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { useEffect, useState } from "react";
 import { getLanguage } from "./lib/i18n";
+import { AuthProvider } from "@/hooks/use-auth";
+import { ProtectedRoute } from "@/lib/protected-route";
 
 // Import pages
 import HomePage from "@/pages/home";
 import LegalAssistantPage from "@/pages/legal-assistant";
 import DocumentGeneratorPage from "@/pages/document-generator";
 import LegalResearchPage from "@/pages/legal-research";
+import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
 
 // Import style for Material Icons
@@ -42,11 +45,12 @@ function Head() {
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={HomePage} />
-      <Route path="/legal-assistant" component={LegalAssistantPage} />
-      <Route path="/document-generator" component={DocumentGeneratorPage} />
-      <Route path="/document-generator/:id" component={DocumentGeneratorPage} />
-      <Route path="/legal-research" component={LegalResearchPage} />
+      <ProtectedRoute path="/" component={HomePage} />
+      <ProtectedRoute path="/legal-assistant" component={LegalAssistantPage} />
+      <ProtectedRoute path="/document-generator" component={DocumentGeneratorPage} />
+      <ProtectedRoute path="/document-generator/:id" component={DocumentGeneratorPage} />
+      <ProtectedRoute path="/legal-research" component={LegalResearchPage} />
+      <Route path="/auth" component={AuthPage} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>
@@ -71,11 +75,13 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Head />
-      <div className="app-container" key={language}>
-        <Router />
-      </div>
-      <Toaster />
+      <AuthProvider>
+        <Head />
+        <div className="app-container" key={language}>
+          <Router />
+        </div>
+        <Toaster />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
