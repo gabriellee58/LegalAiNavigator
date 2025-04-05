@@ -16,6 +16,13 @@ import ContractAnalysisPage from "@/pages/contract-analysis";
 import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
 
+// Import newly created pages
+import DisputeResolutionPage from "./pages/dispute-resolution";
+import ComplianceCheckerPage from "./pages/compliance-checker";
+import DocumentTemplatesPage from "./pages/document-templates";
+import HelpResourcesPage from "./pages/help-resources";
+import SettingsPage from "./pages/settings";
+
 // Import style for Material Icons
 function Head() {
   useEffect(() => {
@@ -52,6 +59,20 @@ function Router() {
       <ProtectedRoute path="/document-generator/:id" component={DocumentGeneratorPage} />
       <ProtectedRoute path="/legal-research" component={LegalResearchPage} />
       <ProtectedRoute path="/contract-analysis" component={ContractAnalysisPage} />
+      <ProtectedRoute path="/dispute-resolution" component={DisputeResolutionPage} />
+      <ProtectedRoute path="/compliance-checker" component={ComplianceCheckerPage} />
+      
+      {/* Document Templates */}
+      <ProtectedRoute path="/documents/contracts" component={DocumentTemplatesPage} />
+      <ProtectedRoute path="/documents/leases" component={DocumentTemplatesPage} />
+      <ProtectedRoute path="/documents/wills-estates" component={DocumentTemplatesPage} />
+      <ProtectedRoute path="/documents/business-formation" component={DocumentTemplatesPage} />
+      <ProtectedRoute path="/documents/ip-management" component={DocumentTemplatesPage} />
+      
+      {/* Help and Settings */}
+      <ProtectedRoute path="/help" component={HelpResourcesPage} />
+      <ProtectedRoute path="/settings" component={SettingsPage} />
+      
       <Route path="/auth" component={AuthPage} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />
