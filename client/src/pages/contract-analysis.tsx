@@ -19,7 +19,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { 
   Loader2, Upload, AlertTriangle, CheckCircle, FileText, Scale, FileDiff,
-  File, Type, FileSearch, Search
+  File, Type, FileSearch, Search, FileQuestion, ChevronRight, Calendar as CalendarIcon,
+  Circle, Tag
 } from "lucide-react";
 import { t } from "@/lib/i18n";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -83,7 +84,12 @@ export default function ContractAnalysisPage() {
   const [contractType, setContractType] = useState<string>("general");
   const [title, setTitle] = useState<string>("");
   const [saveAnalysis, setSaveAnalysis] = useState<boolean>(false);
-  const [selectedAnalysis, setSelectedAnalysis] = useState<number | null>(null);
+  const [selectedAnalysisId, setSelectedAnalysisId] = useState<number | null>(null);
+  
+  // State for search/filter functionality
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("newest");
   
   // Fetch saved analyses
   const { data: savedAnalyses = [], isLoading: isLoadingAnalyses } = useQuery<ContractAnalysisData[]>({
@@ -93,8 +99,8 @@ export default function ContractAnalysisPage() {
   
   // Fetch a specific analysis when selected
   const { data: selectedAnalysisData, isLoading: isLoadingSelectedAnalysis } = useQuery<ContractAnalysisData>({
-    queryKey: ["/api/contract-analyses", selectedAnalysis],
-    enabled: !!selectedAnalysis,
+    queryKey: ["/api/contract-analyses", selectedAnalysisId],
+    enabled: !!selectedAnalysisId,
   });
 
   // Handle selected analysis data when it changes
@@ -288,6 +294,60 @@ export default function ContractAnalysisPage() {
       default:
         return "text-slate-500";
     }
+  };
+  
+  // Function to filter analyses based on search term and type filter
+  const getFilteredAnalyses = () => {
+    if (!savedAnalyses) return [];
+    
+    return savedAnalyses
+      .filter(analysis => {
+        // Filter by search term (title, contract type or jurisdiction)
+        const searchMatch = searchTerm === "" || 
+          analysis.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          analysis.contractType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          analysis.jurisdiction.toLowerCase().includes(searchTerm.toLowerCase());
+          
+        // Filter by contract type
+        const typeMatch = typeFilter === "all" || analysis.contractType === typeFilter;
+        
+        return searchMatch && typeMatch;
+      })
+      .sort((a, b) => {
+        // Sort by date
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
+        
+        if (sortBy === "newest") {
+          return dateB - dateA;
+        } else if (sortBy === "oldest") {
+          return dateA - dateB;
+        } else if (sortBy === "title") {
+          // Sort alphabetically by title
+          return a.title.localeCompare(b.title);
+        } else if (sortBy === "risk") {
+          // Sort by risk level (high to low)
+          const riskLevels = { high: 3, medium: 2, low: 1 };
+          return (riskLevels[b.analysisResults.riskLevel as keyof typeof riskLevels] || 0) - 
+                 (riskLevels[a.analysisResults.riskLevel as keyof typeof riskLevels] || 0);
+        }
+        
+        return 0;
+      });
+  };
+  
+  // Get unique contract types for filter dropdown
+  const getUniqueContractTypes = () => {
+    if (!savedAnalyses) return [];
+    
+    const types = new Set<string>();
+    savedAnalyses.forEach(analysis => {
+      if (analysis.contractType) {
+        types.add(analysis.contractType);
+      }
+    });
+    
+    return Array.from(types);
   };
 
   return (
@@ -678,40 +738,131 @@ export default function ContractAnalysisPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <Input
-                      placeholder={t("search_analyses")}
-                      className="mb-4"
-                      onChange={(e) => {
-                        // You can implement search filtering here if needed
-                      }}
-                    />
-                    <div className="grid gap-2">
-                      {savedAnalyses.map((analysis) => (
+                    {/* Search and filter controls */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="col-span-1 md:col-span-2">
+                        <div className="relative">
+                          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            placeholder={t("Search by title, contract type, or jurisdiction...")}
+                            className="w-full pl-9"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Select value={typeFilter} onValueChange={setTypeFilter}>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t("Filter by type")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">{t("All Types")}</SelectItem>
+                            {getUniqueContractTypes().map(type => (
+                              <SelectItem key={type} value={type}>
+                                {type.charAt(0).toUpperCase() + type.slice(1)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        
+                        <Select value={sortBy} onValueChange={setSortBy}>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t("Sort by")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="newest">{t("Newest First")}</SelectItem>
+                            <SelectItem value="oldest">{t("Oldest First")}</SelectItem>
+                            <SelectItem value="title">{t("Title A-Z")}</SelectItem>
+                            <SelectItem value="risk">{t("Risk Level")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
+                    {/* Analysis list with improved styling */}
+                    <div className="mt-4 space-y-2">
+                      {getFilteredAnalyses().map((analysis) => (
                         <div
                           key={analysis.id}
-                          className="flex items-center justify-between p-3 border rounded-md hover:bg-accent cursor-pointer"
+                          className="border rounded-lg overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer"
                           onClick={() => {
-                            // Handle loading the selected analysis
                             setSelectedAnalysisId(analysis.id);
                             setActiveTab("results");
                           }}
                         >
-                          <div className="flex items-center space-x-3">
-                            <FileText className="h-5 w-5 text-primary" />
-                            <div>
-                              <h4 className="font-medium">{analysis.title}</h4>
-                              <div className="flex items-center text-sm text-muted-foreground">
-                                <CalendarIcon className="h-3 w-3 mr-1" />
-                                <span>{new Date(analysis.createdAt).toLocaleDateString()}</span>
-                                <Circle className="h-1 w-1 mx-2" />
-                                <Tag className="h-3 w-3 mr-1" />
-                                <span>{analysis.contractType}</span>
+                          <div className="flex flex-col md:flex-row">
+                            {/* Risk score indicator */}
+                            <div 
+                              className={`p-4 md:p-6 flex flex-row md:flex-col items-center justify-center md:w-[120px] ${
+                                analysis.analysisResults.riskLevel === "high" 
+                                  ? "bg-red-50 text-red-600" 
+                                  : analysis.analysisResults.riskLevel === "medium"
+                                    ? "bg-amber-50 text-amber-600"
+                                    : "bg-emerald-50 text-emerald-600"
+                              }`}
+                            >
+                              <div className="text-3xl font-bold">{analysis.analysisResults.score}</div>
+                              <div className="text-sm ml-2 md:ml-0 md:mt-1 font-medium">
+                                {analysis.analysisResults.riskLevel.toUpperCase()}
                               </div>
                             </div>
+                            
+                            {/* Contract details */}
+                            <div className="flex-1 p-4">
+                              <div className="flex justify-between items-start">
+                                <h4 className="text-lg font-semibold">{analysis.title}</h4>
+                                <Badge>{analysis.contractType}</Badge>
+                              </div>
+                              
+                              <div className="mt-2 text-sm text-muted-foreground">
+                                <div className="flex items-center">
+                                  <CalendarIcon className="h-3.5 w-3.5 mr-1" />
+                                  <span>{new Date(analysis.createdAt).toLocaleDateString()}</span>
+                                </div>
+                                <div className="flex items-center mt-1">
+                                  <Tag className="h-3.5 w-3.5 mr-1" />
+                                  <span>{analysis.jurisdiction}</span>
+                                </div>
+                              </div>
+                              
+                              {/* Summary preview */}
+                              <div className="mt-3">
+                                <p className="text-sm line-clamp-2">
+                                  {analysis.analysisResults.summary}
+                                </p>
+                              </div>
+                              
+                              {/* Risk indicators */}
+                              <div className="mt-3 flex flex-wrap gap-1">
+                                {analysis.analysisResults.risks.slice(0, 3).map((risk, idx) => (
+                                  <Badge key={idx} variant="outline" className={`${getSeverityColor(risk.severity)}`}>
+                                    {risk.category || "General"}
+                                  </Badge>
+                                ))}
+                                {analysis.analysisResults.risks.length > 3 && (
+                                  <Badge variant="outline">+{analysis.analysisResults.risks.length - 3} more</Badge>
+                                )}
+                              </div>
+                            </div>
+                            
+                            {/* View button */}
+                            <div className="flex items-center p-4 text-primary">
+                              <ChevronRight className="h-6 w-6" />
+                            </div>
                           </div>
-                          <ChevronRight className="h-5 w-5 text-muted-foreground" />
                         </div>
                       ))}
+                      
+                      {getFilteredAnalyses().length === 0 && (
+                        <div className="text-center py-8">
+                          <Search className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+                          <h3 className="text-lg font-medium mb-1">{t("no_matching_analyses")}</h3>
+                          <p className="text-muted-foreground">
+                            {t("try_adjusting_filters")}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

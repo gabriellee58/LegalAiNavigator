@@ -1,8 +1,6 @@
 import OpenAI from "openai";
+// Use standard import for Node.js compatibility
 import * as pdfjsLib from "pdfjs-dist";
-
-// Set up PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 // Create an OpenAI client instance
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
