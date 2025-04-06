@@ -9,6 +9,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { t } from "@/lib/i18n";
 import { DocumentTemplate } from "@shared/schema";
 import { generateDocument } from "@/lib/openai";
@@ -17,17 +18,15 @@ interface DocumentGenFormProps {
   template: DocumentTemplate;
 }
 
-// Default user ID for demo purposes
-const DEMO_USER_ID = 1;
-
 function DocumentGenForm({ template }: DocumentGenFormProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("form");
   const [generatedDocument, setGeneratedDocument] = useState<string | null>(null);
   
   // Initialize form with default values
   const form = useForm({
-    defaultValues: template.fields.reduce((acc, field) => {
+    defaultValues: (template.fields as any[]).reduce((acc: Record<string, string>, field: any) => {
       acc[field.name] = "";
       return acc;
     }, {} as Record<string, string>),
@@ -37,12 +36,12 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
   const { mutate: generateDocumentMutation, isPending } = useMutation({
     mutationFn: (data: Record<string, any>) => 
       generateDocument(
-        DEMO_USER_ID, 
+        user?.id || 0, 
         template.id, 
         `${template.title} - ${new Date().toLocaleDateString()}`,
         data
       ),
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       setGeneratedDocument(data.documentContent);
       setActiveTab("preview");
       toast({
@@ -89,7 +88,7 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {template.fields.map((field) => (
+                  {(template.fields as any[]).map((field: any) => (
                     <FormField
                       key={field.name}
                       control={form.control}

@@ -19,24 +19,24 @@ function DocumentGeneratorPage() {
     : null;
   
   // Fetch templates
-  const { data: templates, isLoading: isLoadingTemplates } = useQuery({
+  const { data: templates = [], isLoading: isLoadingTemplates } = useQuery<DocumentTemplate[]>({
     queryKey: ["/api/document-templates", language],
   });
   
   // Fetch selected template if ID is present
-  const { data: selectedTemplate, isLoading: isLoadingTemplate } = useQuery({
-    queryKey: ["/api/document-templates", templateId],
+  const { data: selectedTemplate, isLoading: isLoadingTemplate } = useQuery<DocumentTemplate>({
+    queryKey: [`/api/document-templates/${templateId}`],
     enabled: !!templateId,
   });
   
   // Group templates by type
-  const templatesByType = templates?.reduce((acc: Record<string, DocumentTemplate[]>, template: DocumentTemplate) => {
+  const templatesByType = templates.reduce((acc: Record<string, DocumentTemplate[]>, template: DocumentTemplate) => {
     if (!acc[template.templateType]) {
       acc[template.templateType] = [];
     }
     acc[template.templateType].push(template);
     return acc;
-  }, {}) || {};
+  }, {});
   
   return (
     <MainLayout>
@@ -61,7 +61,7 @@ function DocumentGeneratorPage() {
               </button>
             </div>
             
-            <DocumentGenForm template={selectedTemplate} />
+            <DocumentGenForm template={selectedTemplate as DocumentTemplate} />
           </div>
         ) : (
           <div className="space-y-6">
