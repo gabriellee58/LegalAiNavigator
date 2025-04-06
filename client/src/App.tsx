@@ -18,6 +18,7 @@ import NotFound from "@/pages/not-found";
 
 // Import newly created pages
 import DisputeResolutionPage from "./pages/dispute-resolution";
+import DisputeDetailPage from "./pages/dispute-detail";
 import ComplianceCheckerPage from "./pages/compliance-checker";
 import DocumentTemplatesPage from "./pages/document-templates";
 import HelpResourcesPage from "./pages/help-resources";
@@ -60,6 +61,7 @@ function Router() {
       <ProtectedRoute path="/legal-research" component={LegalResearchPage} />
       <ProtectedRoute path="/contract-analysis" component={ContractAnalysisPage} />
       <ProtectedRoute path="/dispute-resolution" component={DisputeResolutionPage} />
+      <ProtectedRoute path="/dispute/:id" component={DisputeDetailPage} />
       <ProtectedRoute path="/compliance-checker" component={ComplianceCheckerPage} />
       
       {/* Document Templates */}

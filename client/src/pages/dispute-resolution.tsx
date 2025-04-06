@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
 
 // Define the dispute type interface
 interface Dispute {
@@ -289,12 +290,16 @@ export default function DisputeResolutionPage() {
                           </span>
                         </div>
                         <div className="flex gap-2 mt-2">
-                          <Button size="sm" variant="outline">
-                            {t("view_details") || "View Details"}
+                          <Button size="sm" variant="outline" asChild>
+                            <Link href={`/dispute/${dispute.id}`}>
+                              {t("view_details") || "View Details"}
+                            </Link>
                           </Button>
                           {dispute.status === "pending" && (
-                            <Button size="sm">
-                              {t("start_mediation") || "Start Mediation"}
+                            <Button size="sm" asChild>
+                              <Link href={`/dispute/${dispute.id}`}>
+                                {t("start_mediation") || "Start Mediation"}
+                              </Link>
                             </Button>
                           )}
                         </div>
@@ -365,8 +370,10 @@ export default function DisputeResolutionPage() {
                             {new Date(dispute.resolvedAt || dispute.updatedAt).toLocaleDateString()}
                           </span>
                         </div>
-                        <Button size="sm" variant="outline" className="mt-2">
-                          {t("view_resolution") || "View Resolution"}
+                        <Button size="sm" variant="outline" className="mt-2" asChild>
+                          <Link href={`/dispute/${dispute.id}`}>
+                            {t("view_resolution") || "View Resolution"}
+                          </Link>
                         </Button>
                       </div>
                     ))}
