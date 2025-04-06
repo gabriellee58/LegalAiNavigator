@@ -11,8 +11,33 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import { generateAIResponse, performLegalResearch } from "./lib/openai";
-import { analyzeContract, compareContracts } from "./lib/contractAnalysis";
+import { analyzeContract, compareContracts, extractTextFromPdf } from "./lib/contractAnalysis";
 import { setupAuth } from "./auth";
+import multer from "multer";
+import path from "path";
+
+// Set up multer for file uploads
+const storage_config = multer.memoryStorage();
+const upload = multer({
+  storage: storage_config,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+  fileFilter: (_req, file, callback) => {
+    const allowedTypes = [
+      'application/pdf',
+      'text/plain',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    
+    if (allowedTypes.includes(file.mimetype)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Unsupported file type. Only PDF, TXT, DOC and DOCX files are allowed.'));
+    }
+  }
+});
 
 // Middleware to check if user is authenticated
 const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
@@ -156,13 +181,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Contract analysis
+  // Contract analysis with text input
   app.post("/api/analyze-contract", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const contractSchema = z.object({
         content: z.string().min(1),
         save: z.boolean().optional(),
-        title: z.string().optional()
+        title: z.string().optional(),
+        jurisdiction: z.string().optional(),
+        contractType: z.string().optional()
       });
       
       const parsed = contractSchema.safeParse(req.body);
@@ -170,11 +197,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid contract data" });
       }
       
-      // Analyze the contract
-      const analysisResult = await analyzeContract(parsed.data.content);
+      // Analyze the contract with optional jurisdiction and contract type
+      const analysisResult = await analyzeContract(
+        parsed.data.content,
+        parsed.data.jurisdiction || 'Canada',
+        parsed.data.contractType || 'general'
+      );
       
       // Save the analysis result if requested
       if (parsed.data.save && parsed.data.title) {
+        const now = new Date();
+        
         await storage.createContractAnalysis({
           userId: req.user!.id,
           contractContent: parsed.data.content,
@@ -182,6 +215,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           score: analysisResult.score,
           riskLevel: analysisResult.riskLevel,
           analysisResults: analysisResult as any, // Converting to jsonb
+          jurisdiction: parsed.data.jurisdiction || 'Canada',
+          contractType: parsed.data.contractType || 'general',
+          updatedAt: now,
+          categories: analysisResult.clause_categories as any
         });
       }
       
@@ -189,6 +226,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Contract analysis error:", error);
       res.status(500).json({ message: "Error analyzing contract" });
+    }
+  });
+  
+  // Contract analysis with file upload
+  app.post("/api/analyze-contract/upload", isAuthenticated, upload.single('contractFile'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+      
+      // Extract parameters from the form data
+      const title = req.body.title;
+      const save = req.body.save === 'true';
+      const jurisdiction = req.body.jurisdiction || 'Canada';
+      const contractType = req.body.contractType || 'general';
+      
+      // Process the file based on its type
+      let contractText = '';
+      
+      if (req.file.mimetype === 'application/pdf') {
+        // Extract text from PDF
+        contractText = await extractTextFromPdf(req.file.buffer);
+      } else if (
+        req.file.mimetype === 'text/plain' ||
+        req.file.mimetype === 'application/msword' ||
+        req.file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      ) {
+        // For text and Word files, convert buffer to string
+        contractText = req.file.buffer.toString('utf-8');
+      }
+      
+      if (!contractText.trim()) {
+        return res.status(400).json({ message: "Could not extract text from the uploaded file" });
+      }
+      
+      // Analyze the contract
+      const analysisResult = await analyzeContract(contractText, jurisdiction, contractType);
+      
+      // Save the analysis result if requested
+      if (save && title) {
+        const now = new Date();
+        
+        await storage.createContractAnalysis({
+          userId: req.user!.id,
+          contractContent: contractText,
+          contractTitle: title,
+          score: analysisResult.score,
+          riskLevel: analysisResult.riskLevel,
+          analysisResults: analysisResult as any,
+          jurisdiction,
+          contractType,
+          fileName: req.file.originalname,
+          updatedAt: now,
+          categories: analysisResult.clause_categories as any
+        });
+      }
+      
+      res.json(analysisResult);
+    } catch (error) {
+      console.error("Contract file analysis error:", error);
+      res.status(500).json({ 
+        message: "Error analyzing contract file",
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   });
   

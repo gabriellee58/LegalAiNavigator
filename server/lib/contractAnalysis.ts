@@ -1,10 +1,47 @@
 import OpenAI from "openai";
+import * as pdfjsLib from "pdfjs-dist";
+
+// Set up PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 // Create an OpenAI client instance
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const MODEL = "gpt-4o";
+
+/**
+ * Extracts text from a PDF file using PDF.js
+ * @param pdfBuffer The buffer containing the PDF data
+ * @returns Extracted text from the PDF
+ */
+export async function extractTextFromPdf(pdfBuffer: Buffer): Promise<string> {
+  try {
+    // Load the PDF document
+    const loadingTask = pdfjsLib.getDocument({ data: pdfBuffer });
+    const pdf = await loadingTask.promise;
+    
+    let extractedText = '';
+    
+    // Iterate through each page to extract text
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      
+      // Extract text from the text items
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(' ');
+      
+      extractedText += pageText + '\n\n';
+    }
+    
+    return extractedText;
+  } catch (error) {
+    console.error('Error extracting text from PDF:', error);
+    throw new Error('Failed to extract text from PDF document');
+  }
+}
 
 // Type for contract analysis response
 export type ContractAnalysisResult = {
@@ -15,13 +52,28 @@ export type ContractAnalysisResult = {
     issue: string;
     suggestion: string;
     severity: "low" | "medium" | "high";
+    category?: string;
   }[];
   suggestions: {
     clause: string;
     suggestion: string;
     reason: string;
+    category?: string;
   }[];
   summary: string;
+  jurisdiction_issues?: {
+    clause: string;
+    issue: string;
+    relevant_law?: string;
+    recommendation: string;
+  }[];
+  clause_categories?: {
+    payment?: string[];
+    liability?: string[];
+    termination?: string[];
+    confidentiality?: string[];
+    [key: string]: string[] | undefined;
+  };
 };
 
 // Type for contract comparison response
@@ -41,10 +93,14 @@ export type ContractComparisonResult = {
  * @param contractText The full text of the contract to analyze
  * @returns Analysis results including risks and suggestions
  */
-export async function analyzeContract(contractText: string): Promise<ContractAnalysisResult> {
+export async function analyzeContract(
+  contractText: string, 
+  jurisdiction: string = 'Canada',
+  contractType: string = 'general'
+): Promise<ContractAnalysisResult> {
   try {
     const prompt = `
-      I need you to analyze the following contract for potential legal risks and provide improvement suggestions.
+      I need you to analyze the following contract for potential legal risks and provide improvement suggestions within the legal context of ${jurisdiction}, focusing specifically on laws and regulations applicable to ${contractType} contracts.
       
       As an AI legal assistant, please provide:
       1. A risk score from 0-100 (higher = safer contract)
@@ -52,6 +108,8 @@ export async function analyzeContract(contractText: string): Promise<ContractAna
       3. Identification of specific risky clauses, the issues they present, and suggestions to improve them
       4. General suggestions for improving the contract
       5. A summary of the contract and your analysis
+      6. Identification of any clauses that may not align with ${jurisdiction} laws and regulations
+      7. Analysis of key clauses by category (payment terms, termination, liability, etc.)
       
       Format your response as a JSON object with the following structure:
       {
@@ -62,17 +120,34 @@ export async function analyzeContract(contractText: string): Promise<ContractAna
             "clause": "text of the problematic clause",
             "issue": "description of the issue",
             "suggestion": "suggested improvement",
-            "severity": "low" | "medium" | "high"
+            "severity": "low" | "medium" | "high",
+            "category": "category of the clause (e.g., liability, payment, termination)"
           }
         ],
         "suggestions": [
           {
             "clause": "text of the clause",
             "suggestion": "improvement suggestion",
-            "reason": "reason for suggestion"
+            "reason": "reason for suggestion",
+            "category": "category of the clause"
           }
         ],
-        "summary": "overall summary"
+        "summary": "overall summary",
+        "jurisdiction_issues": [
+          {
+            "clause": "text of the clause",
+            "issue": "description of jurisdictional issue",
+            "relevant_law": "applicable law or regulation",
+            "recommendation": "how to address the issue"
+          }
+        ],
+        "clause_categories": {
+          "payment": ["extracted payment terms"],
+          "liability": ["extracted liability clauses"],
+          "termination": ["extracted termination clauses"],
+          "confidentiality": ["extracted confidentiality clauses"],
+          "other_categories": ["as identified in the contract"]
+        }
       }
       
       CONTRACT:

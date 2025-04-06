@@ -1,16 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Upload, AlertTriangle, CheckCircle, FileText, Scale, FileDiff } from "lucide-react";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Loader2, Upload, AlertTriangle, CheckCircle, FileText, Scale, FileDiff,
+  File, Type, FileSearch, Search
+} from "lucide-react";
 import { t } from "@/lib/i18n";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 type AnalysisResult = {
   score: number;
@@ -20,13 +33,40 @@ type AnalysisResult = {
     issue: string;
     suggestion: string;
     severity: "low" | "medium" | "high";
+    category?: string;
   }[];
   suggestions: {
     clause: string;
     suggestion: string;
     reason: string;
+    category?: string;
   }[];
   summary: string;
+  jurisdiction_issues?: {
+    clause: string;
+    issue: string;
+    relevant_law?: string;
+    recommendation: string;
+  }[];
+  clause_categories?: {
+    payment?: string[];
+    liability?: string[];
+    termination?: string[];
+    confidentiality?: string[];
+    [key: string]: string[] | undefined;
+  };
+};
+
+// Type for the specific analysis data returned from the API
+type ContractAnalysisData = {
+  id: number;
+  userId: number;
+  title: string;
+  fileName?: string; 
+  analysisResults: AnalysisResult;
+  createdAt: string;
+  contractType: string;
+  jurisdiction: string;
 };
 
 export default function ContractAnalysisPage() {
@@ -38,10 +78,43 @@ export default function ContractAnalysisPage() {
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [secondContractText, setSecondContractText] = useState("");
   const [comparisonResult, setComparisonResult] = useState<any | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [jurisdiction, setJurisdiction] = useState<string>("Canada");
+  const [contractType, setContractType] = useState<string>("general");
+  const [title, setTitle] = useState<string>("");
+  const [saveAnalysis, setSaveAnalysis] = useState<boolean>(false);
+  const [selectedAnalysis, setSelectedAnalysis] = useState<number | null>(null);
+  
+  // Fetch saved analyses
+  const { data: savedAnalyses = [], isLoading: isLoadingAnalyses } = useQuery<ContractAnalysisData[]>({
+    queryKey: ["/api/contract-analyses"],
+    enabled: !!user,
+  });
+  
+  // Fetch a specific analysis when selected
+  const { data: selectedAnalysisData, isLoading: isLoadingSelectedAnalysis } = useQuery<ContractAnalysisData>({
+    queryKey: ["/api/contract-analyses", selectedAnalysis],
+    enabled: !!selectedAnalysis,
+  });
 
+  // Handle selected analysis data when it changes
+  useEffect(() => {
+    if (selectedAnalysisData) {
+      setAnalysis(selectedAnalysisData.analysisResults);
+      setActiveTab("results");
+    }
+  }, [selectedAnalysisData]);
+
+  // Analyze contract using text input
   const analyzeContractMutation = useMutation({
-    mutationFn: async (contractText: string) => {
-      const res = await apiRequest("POST", "/api/analyze-contract", { content: contractText });
+    mutationFn: async (params: {
+      content: string;
+      jurisdiction: string;
+      contractType: string;
+      save?: boolean;
+      title?: string;
+    }) => {
+      const res = await apiRequest("POST", "/api/analyze-contract", params);
       return res.json();
     },
     onSuccess: (data: AnalysisResult) => {
@@ -56,6 +129,39 @@ export default function ContractAnalysisPage() {
       toast({
         title: "Analysis failed",
         description: error.message || "Failed to analyze contract. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Analyze contract using file upload
+  const analyzeFileContractMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const res = await fetch('/api/analyze-contract/upload', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+      
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.message || "Failed to analyze contract file");
+      }
+      
+      return res.json();
+    },
+    onSuccess: (data: AnalysisResult) => {
+      setAnalysis(data);
+      toast({
+        title: "File analysis complete",
+        description: "Contract file analysis has been completed successfully.",
+      });
+      setActiveTab("results");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "File analysis failed",
+        description: error.message || "Failed to analyze contract file. Please try again.",
         variant: "destructive",
       });
     },
@@ -90,16 +196,34 @@ export default function ContractAnalysisPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
+    if (!isSecondContract) {
+      setSelectedFile(file);
+      setTitle(file.name.replace(/\.[^/.]+$/, ""));
+    }
+
+    // For .txt files, read the content directly
+    if (file.type === 'text/plain') {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = event.target?.result as string;
+        if (isSecondContract) {
+          setSecondContractText(text);
+        } else {
+          setContractText(text);
+        }
+      };
+      reader.readAsText(file);
+    } else {
+      // For other file types like PDF, we'll just set the file for upload
+      // The server will handle the text extraction
       if (isSecondContract) {
-        setSecondContractText(text);
-      } else {
-        setContractText(text);
+        // If it's a second contract and not a text file, show a message
+        toast({
+          title: "File type notice",
+          description: "File content preview is only available for .txt files. Other file types will be processed on the server.",
+        });
       }
-    };
-    reader.readAsText(file);
+    }
   };
 
   const handleAnalyze = () => {
@@ -111,7 +235,34 @@ export default function ContractAnalysisPage() {
       });
       return;
     }
-    analyzeContractMutation.mutate(contractText);
+    
+    analyzeContractMutation.mutate({
+      content: contractText,
+      jurisdiction: jurisdiction,
+      contractType: contractType,
+      save: saveAnalysis,
+      title: title || `Contract Analysis ${new Date().toLocaleDateString()}`
+    });
+  };
+
+  const handleFileAnalyze = () => {
+    if (!selectedFile) {
+      toast({
+        title: "No file selected",
+        description: "Please select a file to analyze.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('contractFile', selectedFile);
+    formData.append('jurisdiction', jurisdiction);
+    formData.append('contractType', contractType);
+    formData.append('save', saveAnalysis.toString());
+    formData.append('title', title || selectedFile.name || `Contract Analysis ${new Date().toLocaleDateString()}`);
+
+    analyzeFileContractMutation.mutate(formData);
   };
 
   const handleCompare = () => {
@@ -156,7 +307,7 @@ export default function ContractAnalysisPage() {
           onValueChange={setActiveTab} 
           className="w-full"
         >
-          <TabsList className="grid grid-cols-4">
+          <TabsList className="grid grid-cols-5">
             <TabsTrigger value="upload">
               <Upload className="h-4 w-4 mr-2" />
               {t("upload")}
@@ -164,6 +315,10 @@ export default function ContractAnalysisPage() {
             <TabsTrigger value="compare">
               <FileDiff className="h-4 w-4 mr-2" />
               {t("compare")}
+            </TabsTrigger>
+            <TabsTrigger value="history">
+              <Search className="h-4 w-4 mr-2" />
+              {t("history")}
             </TabsTrigger>
             <TabsTrigger value="results" disabled={!analysis}>
               <FileText className="h-4 w-4 mr-2" />
@@ -185,49 +340,230 @@ export default function ContractAnalysisPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid w-full gap-1.5">
-                  <Label htmlFor="contract-upload">{t("Upload contract document")}</Label>
-                  <input
-                    id="contract-upload"
-                    type="file"
-                    accept=".txt,.pdf,.doc,.docx"
-                    onChange={handleFileUpload}
-                    className="py-2"
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    {t("Supports .txt, .pdf, .doc, and .docx files")}
-                  </p>
-                </div>
+                <Tabs defaultValue="file" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="file">
+                      <File className="h-4 w-4 mr-2" />
+                      {t("File Upload")}
+                    </TabsTrigger>
+                    <TabsTrigger value="text">
+                      <Type className="h-4 w-4 mr-2" />
+                      {t("Text Input")}
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  {/* File Upload Tab */}
+                  <TabsContent value="file" className="space-y-4 mt-4">
+                    <div className="grid w-full gap-1.5">
+                      <Label htmlFor="contract-upload">{t("Upload contract document")}</Label>
+                      <input
+                        id="contract-upload"
+                        type="file"
+                        accept=".txt,.pdf,.doc,.docx"
+                        onChange={handleFileUpload}
+                        className="py-2"
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        {t("Supports .txt, .pdf, .doc, and .docx files")}
+                      </p>
+                    </div>
+                    
+                    {selectedFile && (
+                      <div className="flex items-center gap-2 p-2 bg-muted rounded">
+                        <FileText className="h-5 w-5 text-primary" />
+                        <span className="text-sm font-medium">{selectedFile.name}</span>
+                        <Badge variant="outline" className="ml-auto">
+                          {(selectedFile.size / 1024).toFixed(0)} KB
+                        </Badge>
+                      </div>
+                    )}
+                    
+                    <div className="border-t pt-4 mt-4">
+                      <h4 className="text-sm font-medium mb-2">{t("Analysis Options")}</h4>
+                      <div className="grid gap-4">
+                        <div className="grid w-full gap-1.5">
+                          <Label htmlFor="contract-title">{t("Contract Title")}</Label>
+                          <Input
+                            id="contract-title"
+                            placeholder={t("Enter a title for this analysis...")}
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                          />
+                        </div>
+                        <div className="grid w-full gap-1.5">
+                          <Label htmlFor="jurisdiction">{t("Jurisdiction")}</Label>
+                          <Select value={jurisdiction} onValueChange={setJurisdiction}>
+                            <SelectTrigger>
+                              <SelectValue placeholder={t("Select jurisdiction")} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Canada">Canada (Federal)</SelectItem>
+                              <SelectItem value="Alberta">Alberta</SelectItem>
+                              <SelectItem value="British Columbia">British Columbia</SelectItem>
+                              <SelectItem value="Manitoba">Manitoba</SelectItem>
+                              <SelectItem value="New Brunswick">New Brunswick</SelectItem>
+                              <SelectItem value="Newfoundland">Newfoundland and Labrador</SelectItem>
+                              <SelectItem value="Nova Scotia">Nova Scotia</SelectItem>
+                              <SelectItem value="Ontario">Ontario</SelectItem>
+                              <SelectItem value="Prince Edward Island">Prince Edward Island</SelectItem>
+                              <SelectItem value="Quebec">Quebec</SelectItem>
+                              <SelectItem value="Saskatchewan">Saskatchewan</SelectItem>
+                              <SelectItem value="Northwest Territories">Northwest Territories</SelectItem>
+                              <SelectItem value="Nunavut">Nunavut</SelectItem>
+                              <SelectItem value="Yukon">Yukon</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="grid w-full gap-1.5">
+                          <Label htmlFor="contract-type">{t("Contract Type")}</Label>
+                          <Select value={contractType} onValueChange={setContractType}>
+                            <SelectTrigger>
+                              <SelectValue placeholder={t("Select contract type")} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="general">General Contract</SelectItem>
+                              <SelectItem value="employment">Employment Contract</SelectItem>
+                              <SelectItem value="service">Service Agreement</SelectItem>
+                              <SelectItem value="nda">Non-Disclosure Agreement</SelectItem>
+                              <SelectItem value="lease">Lease Agreement</SelectItem>
+                              <SelectItem value="sale">Sales Contract</SelectItem>
+                              <SelectItem value="partnership">Partnership Agreement</SelectItem>
+                              <SelectItem value="licensing">Licensing Agreement</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id="save-analysis" 
+                            checked={saveAnalysis}
+                            onCheckedChange={(checked) => setSaveAnalysis(checked === true)}
+                          />
+                          <Label htmlFor="save-analysis">
+                            {t("Save analysis for future reference")}
+                          </Label>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      onClick={handleFileAnalyze} 
+                      disabled={analyzeFileContractMutation.isPending || !selectedFile}
+                      className="w-full mt-2"
+                    >
+                      {analyzeFileContractMutation.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          {t("analyzing")}
+                        </>
+                      ) : (
+                        <>
+                          <FileSearch className="mr-2 h-4 w-4" />
+                          {t("analyze_file")}
+                        </>
+                      )}
+                    </Button>
+                  </TabsContent>
 
-                <div className="grid w-full gap-1.5">
-                  <Label htmlFor="contract-text">{t("Or paste contract text")}</Label>
-                  <Textarea
-                    id="contract-text"
-                    placeholder={t("Paste your contract text here...")}
-                    value={contractText}
-                    onChange={(e) => setContractText(e.target.value)}
-                    className="min-h-[300px]"
-                  />
-                </div>
+                  {/* Text Input Tab */}
+                  <TabsContent value="text" className="space-y-4 mt-4">
+                    <div className="grid w-full gap-1.5">
+                      <Label htmlFor="contract-text">{t("Paste contract text")}</Label>
+                      <Textarea
+                        id="contract-text"
+                        placeholder={t("Paste your contract text here...")}
+                        value={contractText}
+                        onChange={(e) => setContractText(e.target.value)}
+                        className="min-h-[200px]"
+                      />
+                    </div>
+                    
+                    <div className="border-t pt-4 mt-4">
+                      <h4 className="text-sm font-medium mb-2">{t("Analysis Options")}</h4>
+                      <div className="grid gap-4">
+                        <div className="grid w-full gap-1.5">
+                          <Label htmlFor="contract-title-text">{t("Contract Title")}</Label>
+                          <Input
+                            id="contract-title-text"
+                            placeholder={t("Enter a title for this analysis...")}
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                          />
+                        </div>
+                        <div className="grid w-full gap-1.5">
+                          <Label htmlFor="jurisdiction-text">{t("Jurisdiction")}</Label>
+                          <Select value={jurisdiction} onValueChange={setJurisdiction}>
+                            <SelectTrigger>
+                              <SelectValue placeholder={t("Select jurisdiction")} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Canada">Canada (Federal)</SelectItem>
+                              <SelectItem value="Alberta">Alberta</SelectItem>
+                              <SelectItem value="British Columbia">British Columbia</SelectItem>
+                              <SelectItem value="Manitoba">Manitoba</SelectItem>
+                              <SelectItem value="New Brunswick">New Brunswick</SelectItem>
+                              <SelectItem value="Newfoundland">Newfoundland and Labrador</SelectItem>
+                              <SelectItem value="Nova Scotia">Nova Scotia</SelectItem>
+                              <SelectItem value="Ontario">Ontario</SelectItem>
+                              <SelectItem value="Prince Edward Island">Prince Edward Island</SelectItem>
+                              <SelectItem value="Quebec">Quebec</SelectItem>
+                              <SelectItem value="Saskatchewan">Saskatchewan</SelectItem>
+                              <SelectItem value="Northwest Territories">Northwest Territories</SelectItem>
+                              <SelectItem value="Nunavut">Nunavut</SelectItem>
+                              <SelectItem value="Yukon">Yukon</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="grid w-full gap-1.5">
+                          <Label htmlFor="contract-type-text">{t("Contract Type")}</Label>
+                          <Select value={contractType} onValueChange={setContractType}>
+                            <SelectTrigger>
+                              <SelectValue placeholder={t("Select contract type")} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="general">General Contract</SelectItem>
+                              <SelectItem value="employment">Employment Contract</SelectItem>
+                              <SelectItem value="service">Service Agreement</SelectItem>
+                              <SelectItem value="nda">Non-Disclosure Agreement</SelectItem>
+                              <SelectItem value="lease">Lease Agreement</SelectItem>
+                              <SelectItem value="sale">Sales Contract</SelectItem>
+                              <SelectItem value="partnership">Partnership Agreement</SelectItem>
+                              <SelectItem value="licensing">Licensing Agreement</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id="save-analysis-text" 
+                            checked={saveAnalysis}
+                            onCheckedChange={(checked) => setSaveAnalysis(checked === true)}
+                          />
+                          <Label htmlFor="save-analysis-text">
+                            {t("Save analysis for future reference")}
+                          </Label>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      onClick={handleAnalyze} 
+                      disabled={analyzeContractMutation.isPending || !contractText.trim()}
+                      className="w-full mt-2"
+                    >
+                      {analyzeContractMutation.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          {t("analyzing")}
+                        </>
+                      ) : (
+                        <>
+                          <Search className="mr-2 h-4 w-4" />
+                          {t("analyze_text")}
+                        </>
+                      )}
+                    </Button>
+                  </TabsContent>
+                </Tabs>
               </CardContent>
-              <CardFooter>
-                <Button 
-                  onClick={handleAnalyze} 
-                  disabled={analyzeContractMutation.isPending || !contractText.trim()}
-                  className="ml-auto"
-                >
-                  {analyzeContractMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {t("analyzing")}
-                    </>
-                  ) : (
-                    <>
-                      {t("analyze_contract")}
-                    </>
-                  )}
-                </Button>
-              </CardFooter>
             </Card>
           </TabsContent>
 
@@ -311,6 +647,75 @@ export default function ContractAnalysisPage() {
                   )}
                 </Button>
               </CardFooter>
+            </Card>
+          </TabsContent>
+
+          {/* Analysis History Tab */}
+          <TabsContent value="history" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("analysis_history")}</CardTitle>
+                <CardDescription>
+                  {t("previously_saved_analyses")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingAnalyses ? (
+                  <div className="flex justify-center p-4">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : savedAnalyses.length === 0 ? (
+                  <div className="text-center py-8">
+                    <FileQuestion className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-medium mb-1">{t("no_saved_analyses")}</h3>
+                    <p className="text-muted-foreground">
+                      {t("save_analyses_message")}
+                    </p>
+                    <Button variant="outline" className="mt-4" onClick={() => setActiveTab("upload")}>
+                      <Upload className="mr-2 h-4 w-4" />
+                      {t("analyze_contract")}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <Input
+                      placeholder={t("search_analyses")}
+                      className="mb-4"
+                      onChange={(e) => {
+                        // You can implement search filtering here if needed
+                      }}
+                    />
+                    <div className="grid gap-2">
+                      {savedAnalyses.map((analysis) => (
+                        <div
+                          key={analysis.id}
+                          className="flex items-center justify-between p-3 border rounded-md hover:bg-accent cursor-pointer"
+                          onClick={() => {
+                            // Handle loading the selected analysis
+                            setSelectedAnalysisId(analysis.id);
+                            setActiveTab("results");
+                          }}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <FileText className="h-5 w-5 text-primary" />
+                            <div>
+                              <h4 className="font-medium">{analysis.title}</h4>
+                              <div className="flex items-center text-sm text-muted-foreground">
+                                <CalendarIcon className="h-3 w-3 mr-1" />
+                                <span>{new Date(analysis.createdAt).toLocaleDateString()}</span>
+                                <Circle className="h-1 w-1 mx-2" />
+                                <Tag className="h-3 w-3 mr-1" />
+                                <span>{analysis.contractType}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
             </Card>
           </TabsContent>
 

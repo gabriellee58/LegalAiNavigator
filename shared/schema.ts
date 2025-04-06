@@ -115,6 +115,11 @@ export const contractAnalyses = pgTable("contract_analyses", {
   riskLevel: text("risk_level").notNull(), // 'low', 'medium', 'high'
   analysisResults: jsonb("analysis_results").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
+  jurisdiction: text("jurisdiction").default('Canada'),
+  contractType: text("contract_type").default('general'),
+  fileName: text("file_name"),
+  updatedAt: timestamp("updated_at"),
+  categories: jsonb("categories"),
 });
 
 export const insertContractAnalysisSchema = createInsertSchema(contractAnalyses).pick({
@@ -124,6 +129,11 @@ export const insertContractAnalysisSchema = createInsertSchema(contractAnalyses)
   score: true,
   riskLevel: true,
   analysisResults: true,
+  jurisdiction: true,
+  contractType: true,
+  fileName: true,
+  updatedAt: true,
+  categories: true,
 });
 
 export type InsertContractAnalysis = z.infer<typeof insertContractAnalysisSchema>;
