@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { Search, Filter, ChevronRight, Clock, FileText } from "lucide-react";
-import { useParams, Link } from "wouter";
+import { useLocation, Link } from "wouter";
 import { SelectTrigger, SelectValue, SelectContent, SelectItem, Select } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -28,8 +28,12 @@ interface Template {
 export default function DocumentTemplatesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [templateType, setTemplateType] = useState("");
-  const params = useParams();
-  const category = params.category || "all";
+  const [location] = useLocation();
+  
+  // Extract category from URL path: /documents/contracts -> "contracts"
+  const category = location.startsWith("/documents/") 
+    ? location.replace("/documents/", "") 
+    : "all";
   
   // Mock data for now
   const [templates, setTemplates] = useState<Template[]>([
@@ -102,7 +106,7 @@ export default function DocumentTemplatesPage() {
     }
     
     // Filter by template type
-    if (templateType && template.templateType !== templateType) {
+    if (templateType && templateType !== "all_types" && template.templateType !== templateType) {
       return false;
     }
     
@@ -214,14 +218,14 @@ export default function DocumentTemplatesPage() {
                   <div className="space-y-2">
                     <label className="text-sm font-medium">{t("document_type")}</label>
                     <Select 
-                      value={templateType} 
+                      value={templateType || "all_types"} 
                       onValueChange={setTemplateType}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder={t("all_types")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">{t("all_types")}</SelectItem>
+                        <SelectItem value="all_types">{t("all_types")}</SelectItem>
                         <SelectItem value="contracts">{t("contracts")}</SelectItem>
                         <SelectItem value="leases">{t("leases")}</SelectItem>
                         <SelectItem value="wills-estates">{t("wills_estates")}</SelectItem>
