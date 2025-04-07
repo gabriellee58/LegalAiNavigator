@@ -48,6 +48,8 @@ app.use((req, res, next) => {
     const { storage } = await import("./storage");
     log("Initializing database and creating default templates...");
     await storage.initializeDefaultDocumentTemplates();
+    log("Initializing legal domains and knowledge base...");
+    await storage.initializeLegalDomains();
     log("Database initialization completed");
   } catch (error) {
     log(`Database initialization error: ${error}`);

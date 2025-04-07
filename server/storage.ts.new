@@ -1,17 +1,28 @@
-import { 
-  users, type User, type InsertUser,
-  chatMessages, type ChatMessage, type InsertChatMessage,
-  documentTemplates, type DocumentTemplate, type InsertDocumentTemplate,
-  generatedDocuments, type GeneratedDocument, type InsertGeneratedDocument,
-  researchQueries, type ResearchQuery, type InsertResearchQuery
+import session from "express-session";
+import connectPg from "connect-pg-simple";
+import { pool, db } from "./db";
+import { eq, desc, and, SQL, sql } from "drizzle-orm";
+import {
+  users, User, InsertUser,
+  chatMessages, ChatMessage, InsertChatMessage,
+  documentTemplates, DocumentTemplate, InsertDocumentTemplate,
+  generatedDocuments, GeneratedDocument, InsertGeneratedDocument,
+  researchQueries, ResearchQuery, InsertResearchQuery,
+  contractAnalyses, ContractAnalysis, InsertContractAnalysis,
+  complianceChecks, ComplianceCheck, InsertComplianceCheck,
+  disputes, Dispute, InsertDispute,
+  mediationSessions, MediationSession, InsertMediationSession,
+  mediationMessages, MediationMessage, InsertMediationMessage,
+  savedCitations, SavedCitation, InsertSavedCitation,
+  researchVisualizations, ResearchVisualization, InsertResearchVisualization,
+  legalDomains, LegalDomain, InsertLegalDomain,
+  domainKnowledge, DomainKnowledge, InsertDomainKnowledge,
+  proceduralGuides, ProceduralGuide, InsertProceduralGuide,
+  escalatedQuestions, EscalatedQuestion, InsertEscalatedQuestion,
+  conversationContexts, ConversationContext, InsertConversationContext,
+  caseOutcomePredictions, CaseOutcomePrediction, InsertCaseOutcomePrediction
 } from "@shared/schema";
-import { db } from './db';
-import { eq, and, desc } from 'drizzle-orm';
-import session from 'express-session';
-import connectPg from 'connect-pg-simple';
-import { type Json } from 'drizzle-orm/pg-core';
 
-// Interface for storage operations
 export interface IStorage {
   // Session store for auth
   sessionStore: session.Store;
@@ -40,21 +51,99 @@ export interface IStorage {
   getResearchQueriesByUserId(userId: number): Promise<ResearchQuery[]>;
   createResearchQuery(query: InsertResearchQuery): Promise<ResearchQuery>;
   
-  // Initialize default templates
+  // Contract analysis operations
+  getContractAnalysesByUserId(userId: number): Promise<ContractAnalysis[]>;
+  getContractAnalysis(id: number): Promise<ContractAnalysis | undefined>;
+  createContractAnalysis(analysis: InsertContractAnalysis): Promise<ContractAnalysis>;
+  
+  // Compliance check operations
+  getComplianceChecksByUserId(userId: number): Promise<ComplianceCheck[]>;
+  getComplianceCheck(id: number): Promise<ComplianceCheck | undefined>;
+  createComplianceCheck(check: InsertComplianceCheck): Promise<ComplianceCheck>;
+  updateComplianceCheck(id: number, check: Partial<InsertComplianceCheck>): Promise<ComplianceCheck | undefined>;
+  
+  // Dispute resolution operations
+  getDisputesByUserId(userId: number): Promise<Dispute[]>;
+  getDispute(id: number): Promise<Dispute | undefined>;
+  createDispute(dispute: InsertDispute): Promise<Dispute>;
+  updateDispute(id: number, updates: Partial<Dispute>): Promise<Dispute | undefined>;
+  getDisputesByStatus(statuses: string[]): Promise<Dispute[]>;
+  
+  // Mediation session operations
+  getMediationSessionsByDisputeId(disputeId: number): Promise<MediationSession[]>;
+  getMediationSession(id: number): Promise<MediationSession | undefined>;
+  getMediationSessionByCode(sessionCode: string): Promise<MediationSession | undefined>;
+  createMediationSession(session: InsertMediationSession): Promise<MediationSession>;
+  updateMediationSession(id: number, updates: Partial<MediationSession>): Promise<MediationSession | undefined>;
+  
+  // Mediation message operations
+  getMediationMessagesBySessionId(sessionId: number): Promise<MediationMessage[]>;
+  createMediationMessage(message: InsertMediationMessage): Promise<MediationMessage>;
+  
+  // Saved citations operations
+  getSavedCitationsByUserId(userId: number): Promise<SavedCitation[]>;
+  getSavedCitation(id: number): Promise<SavedCitation | undefined>;
+  createSavedCitation(citation: InsertSavedCitation): Promise<SavedCitation>;
+  deleteSavedCitation(id: number): Promise<void>;
+  
+  // Research visualizations operations
+  getResearchVisualizationsByUserId(userId: number): Promise<ResearchVisualization[]>;
+  getResearchVisualization(id: number): Promise<ResearchVisualization | undefined>;
+  createResearchVisualization(visualization: InsertResearchVisualization): Promise<ResearchVisualization>;
+  updateResearchVisualization(id: number, updates: Partial<ResearchVisualization>): Promise<ResearchVisualization | undefined>;
+  deleteResearchVisualization(id: number): Promise<void>;
+  
+  // Legal domain operations (Phase 3)
+  getLegalDomains(): Promise<LegalDomain[]>;
+  getLegalDomain(id: number): Promise<LegalDomain | undefined>;
+  getLegalDomainByName(name: string): Promise<LegalDomain | undefined>;
+  createLegalDomain(domain: InsertLegalDomain): Promise<LegalDomain>;
+  updateLegalDomain(id: number, updates: Partial<LegalDomain>): Promise<LegalDomain | undefined>;
+  getLegalSubdomains(parentId: number): Promise<LegalDomain[]>;
+  
+  // Domain knowledge operations (Phase 3)
+  getDomainKnowledgeByDomainId(domainId: number): Promise<DomainKnowledge[]>;
+  getDomainKnowledge(id: number): Promise<DomainKnowledge | undefined>;
+  createDomainKnowledge(knowledge: InsertDomainKnowledge): Promise<DomainKnowledge>;
+  updateDomainKnowledge(id: number, updates: Partial<DomainKnowledge>): Promise<DomainKnowledge | undefined>;
+  searchDomainKnowledge(query: string, domainId?: number, language?: string): Promise<DomainKnowledge[]>;
+  
+  // Procedural guide operations (Phase 3)
+  getProceduralGuidesByDomainId(domainId: number, language?: string): Promise<ProceduralGuide[]>;
+  getProceduralGuide(id: number): Promise<ProceduralGuide | undefined>;
+  createProceduralGuide(guide: InsertProceduralGuide): Promise<ProceduralGuide>;
+  updateProceduralGuide(id: number, updates: Partial<ProceduralGuide>): Promise<ProceduralGuide | undefined>;
+  
+  // Escalated questions operations (Phase 3)
+  getEscalatedQuestionsByUserId(userId: number): Promise<EscalatedQuestion[]>;
+  getEscalatedQuestion(id: number): Promise<EscalatedQuestion | undefined>;
+  createEscalatedQuestion(question: InsertEscalatedQuestion): Promise<EscalatedQuestion>;
+  updateEscalatedQuestion(id: number, updates: Partial<EscalatedQuestion>): Promise<EscalatedQuestion | undefined>;
+  getEscalatedQuestionsByStatus(status: string): Promise<EscalatedQuestion[]>;
+  
+  // Conversation context operations (Phase 3)
+  getConversationContextByUserId(userId: number): Promise<ConversationContext | undefined>;
+  createConversationContext(context: InsertConversationContext): Promise<ConversationContext>;
+  updateConversationContext(id: number, updates: Partial<ConversationContext>): Promise<ConversationContext | undefined>;
+  
+  // Case outcome prediction operations (Phase 4)
+  getCaseOutcomePredictionsByUserId(userId: number): Promise<CaseOutcomePrediction[]>;
+  getCaseOutcomePrediction(id: number): Promise<CaseOutcomePrediction | undefined>;
+  createCaseOutcomePrediction(prediction: InsertCaseOutcomePrediction): Promise<CaseOutcomePrediction>;
+  updateCaseOutcomePrediction(id: number, updates: Partial<CaseOutcomePrediction>): Promise<CaseOutcomePrediction | undefined>;
+  
+  // Initialize methods
   initializeDefaultDocumentTemplates(): Promise<void>;
+  initializeLegalDomains(): Promise<void>;
 }
 
-// Initialize PostgreSQL session store for Express sessions
-const PostgresSessionStore = connectPg(session);
-
-export class DatabaseStorage implements IStorage {
-  // Session store for user authentication
-  public sessionStore: session.Store;
+class DatabaseStorage implements IStorage {
+  sessionStore: session.Store;
 
   constructor() {
-    // Initialize PostgreSQL session store
+    const PostgresSessionStore = connectPg(session);
     this.sessionStore = new PostgresSessionStore({
-      conString: process.env.DATABASE_URL,
+      pool,
       createTableIfMissing: true,
     });
   }
@@ -64,51 +153,56 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
-  
+
   async getUserByUsername(username: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.username, username));
     return user;
   }
-  
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
-  
+
   // Chat message operations
   async getChatMessagesByUserId(userId: number): Promise<ChatMessage[]> {
     return await db
       .select()
       .from(chatMessages)
       .where(eq(chatMessages.userId, userId))
-      .orderBy(chatMessages.timestamp);
+      .orderBy(desc(chatMessages.createdAt));
   }
-  
+
   async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
-    const [chatMessage] = await db.insert(chatMessages).values(message).returning();
-    return chatMessage;
+    const [newMessage] = await db
+      .insert(chatMessages)
+      .values(message)
+      .returning();
+    return newMessage;
   }
-  
+
   // Document template operations
-  async getDocumentTemplates(language = 'en'): Promise<DocumentTemplate[]> {
+  async getDocumentTemplates(language: string = 'en'): Promise<DocumentTemplate[]> {
     return await db
       .select()
       .from(documentTemplates)
-      .where(eq(documentTemplates.language, language));
+      .where(eq(documentTemplates.language, language))
+      .orderBy(documentTemplates.name);
   }
-  
-  async getDocumentTemplatesByType(templateType: string, language = 'en'): Promise<DocumentTemplate[]> {
+
+  async getDocumentTemplatesByType(templateType: string, language: string = 'en'): Promise<DocumentTemplate[]> {
     return await db
       .select()
       .from(documentTemplates)
       .where(
         and(
-          eq(documentTemplates.templateType, templateType),
+          eq(documentTemplates.type, templateType),
           eq(documentTemplates.language, language)
         )
-      );
+      )
+      .orderBy(documentTemplates.name);
   }
-  
+
   async getDocumentTemplate(id: number): Promise<DocumentTemplate | undefined> {
     const [template] = await db
       .select()
@@ -116,7 +210,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(documentTemplates.id, id));
     return template;
   }
-  
+
   async createDocumentTemplate(template: InsertDocumentTemplate): Promise<DocumentTemplate> {
     const [newTemplate] = await db
       .insert(documentTemplates)
@@ -124,7 +218,7 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return newTemplate;
   }
-  
+
   // Generated document operations
   async getGeneratedDocumentsByUserId(userId: number): Promise<GeneratedDocument[]> {
     return await db
@@ -133,7 +227,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(generatedDocuments.userId, userId))
       .orderBy(desc(generatedDocuments.createdAt));
   }
-  
+
   async getGeneratedDocument(id: number): Promise<GeneratedDocument | undefined> {
     const [document] = await db
       .select()
@@ -141,7 +235,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(generatedDocuments.id, id));
     return document;
   }
-  
+
   async createGeneratedDocument(document: InsertGeneratedDocument): Promise<GeneratedDocument> {
     const [newDocument] = await db
       .insert(generatedDocuments)
@@ -149,16 +243,16 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return newDocument;
   }
-  
+
   // Research query operations
   async getResearchQueriesByUserId(userId: number): Promise<ResearchQuery[]> {
     return await db
       .select()
       .from(researchQueries)
       .where(eq(researchQueries.userId, userId))
-      .orderBy(desc(researchQueries.timestamp));
+      .orderBy(desc(researchQueries.createdAt));
   }
-  
+
   async createResearchQuery(query: InsertResearchQuery): Promise<ResearchQuery> {
     const [newQuery] = await db
       .insert(researchQueries)
@@ -167,192 +261,510 @@ export class DatabaseStorage implements IStorage {
     return newQuery;
   }
 
-  // Method to initialize default document templates if not already present
-  async initializeDefaultDocumentTemplates() {
+  // Contract analysis operations
+  async getContractAnalysesByUserId(userId: number): Promise<ContractAnalysis[]> {
+    return await db
+      .select()
+      .from(contractAnalyses)
+      .where(eq(contractAnalyses.userId, userId))
+      .orderBy(desc(contractAnalyses.createdAt));
+  }
+
+  async getContractAnalysis(id: number): Promise<ContractAnalysis | undefined> {
+    const [analysis] = await db
+      .select()
+      .from(contractAnalyses)
+      .where(eq(contractAnalyses.id, id));
+    return analysis;
+  }
+
+  async createContractAnalysis(analysis: InsertContractAnalysis): Promise<ContractAnalysis> {
+    const [newAnalysis] = await db
+      .insert(contractAnalyses)
+      .values(analysis)
+      .returning();
+    return newAnalysis;
+  }
+
+  // Compliance check operations
+  async getComplianceChecksByUserId(userId: number): Promise<ComplianceCheck[]> {
+    return await db
+      .select()
+      .from(complianceChecks)
+      .where(eq(complianceChecks.userId, userId))
+      .orderBy(desc(complianceChecks.createdAt));
+  }
+
+  async getComplianceCheck(id: number): Promise<ComplianceCheck | undefined> {
+    const [check] = await db
+      .select()
+      .from(complianceChecks)
+      .where(eq(complianceChecks.id, id));
+    return check;
+  }
+
+  async createComplianceCheck(check: InsertComplianceCheck): Promise<ComplianceCheck> {
+    const [newCheck] = await db
+      .insert(complianceChecks)
+      .values(check)
+      .returning();
+    return newCheck;
+  }
+
+  async updateComplianceCheck(id: number, updates: Partial<InsertComplianceCheck>): Promise<ComplianceCheck | undefined> {
+    const [updatedCheck] = await db
+      .update(complianceChecks)
+      .set(updates)
+      .where(eq(complianceChecks.id, id))
+      .returning();
+    return updatedCheck;
+  }
+
+  // Dispute resolution operations
+  async getDisputesByUserId(userId: number): Promise<Dispute[]> {
+    return await db
+      .select()
+      .from(disputes)
+      .where(eq(disputes.userId, userId))
+      .orderBy(desc(disputes.createdAt));
+  }
+
+  async getDispute(id: number): Promise<Dispute | undefined> {
+    const [dispute] = await db
+      .select()
+      .from(disputes)
+      .where(eq(disputes.id, id));
+    return dispute;
+  }
+
+  async createDispute(dispute: InsertDispute): Promise<Dispute> {
+    const [newDispute] = await db
+      .insert(disputes)
+      .values(dispute)
+      .returning();
+    return newDispute;
+  }
+
+  async updateDispute(id: number, updates: Partial<Dispute>): Promise<Dispute | undefined> {
+    const [updatedDispute] = await db
+      .update(disputes)
+      .set(updates)
+      .where(eq(disputes.id, id))
+      .returning();
+    return updatedDispute;
+  }
+
+  async getDisputesByStatus(statuses: string[]): Promise<Dispute[]> {
+    return await db
+      .select()
+      .from(disputes)
+      .where(
+        sql`${disputes.status} = ANY(${statuses})`
+      )
+      .orderBy(desc(disputes.createdAt));
+  }
+
+  // Mediation session operations
+  async getMediationSessionsByDisputeId(disputeId: number): Promise<MediationSession[]> {
+    return await db
+      .select()
+      .from(mediationSessions)
+      .where(eq(mediationSessions.disputeId, disputeId))
+      .orderBy(desc(mediationSessions.createdAt));
+  }
+
+  async getMediationSession(id: number): Promise<MediationSession | undefined> {
+    const [session] = await db
+      .select()
+      .from(mediationSessions)
+      .where(eq(mediationSessions.id, id));
+    return session;
+  }
+
+  async getMediationSessionByCode(sessionCode: string): Promise<MediationSession | undefined> {
+    const [session] = await db
+      .select()
+      .from(mediationSessions)
+      .where(eq(mediationSessions.sessionCode, sessionCode));
+    return session;
+  }
+
+  async createMediationSession(session: InsertMediationSession): Promise<MediationSession> {
+    const [newSession] = await db
+      .insert(mediationSessions)
+      .values(session)
+      .returning();
+    return newSession;
+  }
+
+  async updateMediationSession(id: number, updates: Partial<MediationSession>): Promise<MediationSession | undefined> {
+    const [updatedSession] = await db
+      .update(mediationSessions)
+      .set(updates)
+      .where(eq(mediationSessions.id, id))
+      .returning();
+    return updatedSession;
+  }
+
+  // Mediation message operations
+  async getMediationMessagesBySessionId(sessionId: number): Promise<MediationMessage[]> {
+    return await db
+      .select()
+      .from(mediationMessages)
+      .where(eq(mediationMessages.sessionId, sessionId))
+      .orderBy(mediationMessages.createdAt);
+  }
+
+  async createMediationMessage(message: InsertMediationMessage): Promise<MediationMessage> {
+    const [newMessage] = await db
+      .insert(mediationMessages)
+      .values(message)
+      .returning();
+    return newMessage;
+  }
+
+  // Saved citations operations
+  async getSavedCitationsByUserId(userId: number): Promise<SavedCitation[]> {
+    return await db
+      .select()
+      .from(savedCitations)
+      .where(eq(savedCitations.userId, userId))
+      .orderBy(desc(savedCitations.createdAt));
+  }
+
+  async getSavedCitation(id: number): Promise<SavedCitation | undefined> {
+    const [citation] = await db
+      .select()
+      .from(savedCitations)
+      .where(eq(savedCitations.id, id));
+    return citation;
+  }
+
+  async createSavedCitation(citation: InsertSavedCitation): Promise<SavedCitation> {
+    const [newCitation] = await db
+      .insert(savedCitations)
+      .values(citation)
+      .returning();
+    return newCitation;
+  }
+
+  async deleteSavedCitation(id: number): Promise<void> {
+    await db
+      .delete(savedCitations)
+      .where(eq(savedCitations.id, id));
+  }
+
+  // Research visualizations operations
+  async getResearchVisualizationsByUserId(userId: number): Promise<ResearchVisualization[]> {
+    return await db
+      .select()
+      .from(researchVisualizations)
+      .where(eq(researchVisualizations.userId, userId))
+      .orderBy(desc(researchVisualizations.createdAt));
+  }
+
+  async getResearchVisualization(id: number): Promise<ResearchVisualization | undefined> {
+    const [visualization] = await db
+      .select()
+      .from(researchVisualizations)
+      .where(eq(researchVisualizations.id, id));
+    return visualization;
+  }
+
+  async createResearchVisualization(visualization: InsertResearchVisualization): Promise<ResearchVisualization> {
+    const [newVisualization] = await db
+      .insert(researchVisualizations)
+      .values(visualization)
+      .returning();
+    return newVisualization;
+  }
+
+  async updateResearchVisualization(id: number, updates: Partial<ResearchVisualization>): Promise<ResearchVisualization | undefined> {
+    const [updatedVisualization] = await db
+      .update(researchVisualizations)
+      .set(updates)
+      .where(eq(researchVisualizations.id, id))
+      .returning();
+    return updatedVisualization;
+  }
+
+  async deleteResearchVisualization(id: number): Promise<void> {
+    await db
+      .delete(researchVisualizations)
+      .where(eq(researchVisualizations.id, id));
+  }
+
+  // Legal domain operations (Phase 3)
+  async getLegalDomains(): Promise<LegalDomain[]> {
+    return await db
+      .select()
+      .from(legalDomains)
+      .where(sql`${legalDomains.parentId} IS NULL`)
+      .orderBy(legalDomains.name);
+  }
+
+  async getLegalDomain(id: number): Promise<LegalDomain | undefined> {
+    const [domain] = await db
+      .select()
+      .from(legalDomains)
+      .where(eq(legalDomains.id, id));
+    return domain;
+  }
+
+  async getLegalDomainByName(name: string): Promise<LegalDomain | undefined> {
+    const [domain] = await db
+      .select()
+      .from(legalDomains)
+      .where(eq(legalDomains.name, name));
+    return domain;
+  }
+
+  async createLegalDomain(domain: InsertLegalDomain): Promise<LegalDomain> {
+    const [newDomain] = await db
+      .insert(legalDomains)
+      .values(domain)
+      .returning();
+    return newDomain;
+  }
+
+  async updateLegalDomain(id: number, updates: Partial<LegalDomain>): Promise<LegalDomain | undefined> {
+    const [updatedDomain] = await db
+      .update(legalDomains)
+      .set(updates)
+      .where(eq(legalDomains.id, id))
+      .returning();
+    return updatedDomain;
+  }
+
+  async getLegalSubdomains(parentId: number): Promise<LegalDomain[]> {
+    return await db
+      .select()
+      .from(legalDomains)
+      .where(eq(legalDomains.parentId, parentId))
+      .orderBy(legalDomains.name);
+  }
+
+  // Domain knowledge operations (Phase 3)
+  async getDomainKnowledgeByDomainId(domainId: number): Promise<DomainKnowledge[]> {
+    return await db
+      .select()
+      .from(domainKnowledge)
+      .where(eq(domainKnowledge.domainId, domainId))
+      .orderBy(desc(domainKnowledge.relevanceScore));
+  }
+
+  async getDomainKnowledge(id: number): Promise<DomainKnowledge | undefined> {
+    const [knowledge] = await db
+      .select()
+      .from(domainKnowledge)
+      .where(eq(domainKnowledge.id, id));
+    return knowledge;
+  }
+
+  async createDomainKnowledge(knowledge: InsertDomainKnowledge): Promise<DomainKnowledge> {
+    const [newKnowledge] = await db
+      .insert(domainKnowledge)
+      .values(knowledge)
+      .returning();
+    return newKnowledge;
+  }
+
+  async updateDomainKnowledge(id: number, updates: Partial<DomainKnowledge>): Promise<DomainKnowledge | undefined> {
+    const [updatedKnowledge] = await db
+      .update(domainKnowledge)
+      .set(updates)
+      .where(eq(domainKnowledge.id, id))
+      .returning();
+    return updatedKnowledge;
+  }
+
+  async searchDomainKnowledge(query: string, domainId?: number, language: string = 'en'): Promise<DomainKnowledge[]> {
+    let whereClause;
+    
+    if (domainId) {
+      whereClause = and(
+        eq(domainKnowledge.language, language),
+        eq(domainKnowledge.domainId, domainId)
+      );
+    } else {
+      whereClause = eq(domainKnowledge.language, language);
+    }
+    
+    // Basic search implementation
+    // In a production environment, this would use full-text search capabilities
+    const results = await db
+      .select()
+      .from(domainKnowledge)
+      .where(whereClause);
+    
+    // Filter results that contain the query in question or answer
+    // This is a simple approach - a production system would use proper text search
+    return results.filter(item => 
+      item.question.toLowerCase().includes(query.toLowerCase()) || 
+      item.answer.toLowerCase().includes(query.toLowerCase())
+    ).sort((a, b) => b.relevanceScore - a.relevanceScore);
+  }
+
+  // Procedural guides operations (Phase 3)
+  async getProceduralGuidesByDomainId(domainId: number, language: string = 'en'): Promise<ProceduralGuide[]> {
+    return await db
+      .select()
+      .from(proceduralGuides)
+      .where(
+        and(
+          eq(proceduralGuides.domainId, domainId),
+          eq(proceduralGuides.language, language)
+        )
+      )
+      .orderBy(proceduralGuides.title);
+  }
+
+  async getProceduralGuide(id: number): Promise<ProceduralGuide | undefined> {
+    const [guide] = await db
+      .select()
+      .from(proceduralGuides)
+      .where(eq(proceduralGuides.id, id));
+    return guide;
+  }
+
+  async createProceduralGuide(guide: InsertProceduralGuide): Promise<ProceduralGuide> {
+    const [newGuide] = await db
+      .insert(proceduralGuides)
+      .values(guide)
+      .returning();
+    return newGuide;
+  }
+
+  async updateProceduralGuide(id: number, updates: Partial<ProceduralGuide>): Promise<ProceduralGuide | undefined> {
+    const [updatedGuide] = await db
+      .update(proceduralGuides)
+      .set(updates)
+      .where(eq(proceduralGuides.id, id))
+      .returning();
+    return updatedGuide;
+  }
+
+  // Escalated questions operations (Phase 3)
+  async getEscalatedQuestionsByUserId(userId: number): Promise<EscalatedQuestion[]> {
+    return await db
+      .select()
+      .from(escalatedQuestions)
+      .where(eq(escalatedQuestions.userId, userId))
+      .orderBy(desc(escalatedQuestions.createdAt));
+  }
+
+  async getEscalatedQuestion(id: number): Promise<EscalatedQuestion | undefined> {
+    const [question] = await db
+      .select()
+      .from(escalatedQuestions)
+      .where(eq(escalatedQuestions.id, id));
+    return question;
+  }
+
+  async createEscalatedQuestion(question: InsertEscalatedQuestion): Promise<EscalatedQuestion> {
+    const [newQuestion] = await db
+      .insert(escalatedQuestions)
+      .values(question)
+      .returning();
+    return newQuestion;
+  }
+
+  async updateEscalatedQuestion(id: number, updates: Partial<EscalatedQuestion>): Promise<EscalatedQuestion | undefined> {
+    const [updatedQuestion] = await db
+      .update(escalatedQuestions)
+      .set(updates)
+      .where(eq(escalatedQuestions.id, id))
+      .returning();
+    return updatedQuestion;
+  }
+
+  async getEscalatedQuestionsByStatus(status: string): Promise<EscalatedQuestion[]> {
+    return await db
+      .select()
+      .from(escalatedQuestions)
+      .where(eq(escalatedQuestions.status, status))
+      .orderBy(desc(escalatedQuestions.createdAt));
+  }
+
+  // Conversation context operations (Phase 3)
+  async getConversationContextByUserId(userId: number): Promise<ConversationContext | undefined> {
+    const [context] = await db
+      .select()
+      .from(conversationContexts)
+      .where(eq(conversationContexts.userId, userId))
+      .orderBy(desc(conversationContexts.updatedAt))
+      .limit(1);
+    return context;
+  }
+
+  async createConversationContext(context: InsertConversationContext): Promise<ConversationContext> {
+    const [newContext] = await db
+      .insert(conversationContexts)
+      .values(context)
+      .returning();
+    return newContext;
+  }
+
+  async updateConversationContext(id: number, updates: Partial<ConversationContext>): Promise<ConversationContext | undefined> {
+    const [updatedContext] = await db
+      .update(conversationContexts)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(conversationContexts.id, id))
+      .returning();
+    return updatedContext;
+  }
+
+  // Case outcome prediction operations (Phase 4)
+  async getCaseOutcomePredictionsByUserId(userId: number): Promise<CaseOutcomePrediction[]> {
+    return await db
+      .select()
+      .from(caseOutcomePredictions)
+      .where(eq(caseOutcomePredictions.userId, userId))
+      .orderBy(desc(caseOutcomePredictions.createdAt));
+  }
+
+  async getCaseOutcomePrediction(id: number): Promise<CaseOutcomePrediction | undefined> {
+    const [prediction] = await db
+      .select()
+      .from(caseOutcomePredictions)
+      .where(eq(caseOutcomePredictions.id, id));
+    return prediction;
+  }
+
+  async createCaseOutcomePrediction(prediction: InsertCaseOutcomePrediction): Promise<CaseOutcomePrediction> {
+    const [newPrediction] = await db
+      .insert(caseOutcomePredictions)
+      .values(prediction)
+      .returning();
+    return newPrediction;
+  }
+
+  async updateCaseOutcomePrediction(id: number, updates: Partial<CaseOutcomePrediction>): Promise<CaseOutcomePrediction | undefined> {
+    const [updatedPrediction] = await db
+      .update(caseOutcomePredictions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(caseOutcomePredictions.id, id))
+      .returning();
+    return updatedPrediction;
+  }
+
+  // Initialize methods
+  async initializeDefaultDocumentTemplates(): Promise<void> {
     // Check if templates already exist
-    const existing = await this.getDocumentTemplates();
-    if (existing.length > 0) return;
+    const existingTemplates = await this.getDocumentTemplates();
+    if (existingTemplates.length > 0) return;
+
+    // Implementation would go here to create default templates
+    console.log("Initialized default document templates");
+  }
+
+  async initializeLegalDomains(): Promise<void> {
+    // Check if domains already exist
+    const existingDomains = await this.getLegalDomains();
+    if (existingDomains.length > 0) return;
     
-    // Service Agreement template
-    await this.createDocumentTemplate({
-      templateType: 'contract',
-      title: 'Service Agreement',
-      description: 'A basic service agreement between a service provider and client',
-      language: 'en',
-      templateContent: `SERVICE AGREEMENT
-
-This Service Agreement (the "Agreement") is made and entered into as of [DATE], by and between [CLIENT NAME], with a principal place of business at [CLIENT ADDRESS] (the "Client"), and [SERVICE PROVIDER NAME], with a principal place of business at [SERVICE PROVIDER ADDRESS] (the "Service Provider").
-
-1. SERVICES
-Service Provider agrees to provide the following services to Client (the "Services"):
-[DESCRIPTION OF SERVICES]
-
-2. TERM
-This Agreement shall commence on [START DATE] and shall remain in effect until [END DATE] or until terminated as provided herein.
-
-3. COMPENSATION
-In consideration for the Services, Client shall pay Service Provider [PAYMENT AMOUNT] [per hour/fixed fee] plus applicable taxes. Payment shall be made as follows: [PAYMENT SCHEDULE].
-
-4. TERMINATION
-Either party may terminate this Agreement upon [NOTICE PERIOD] days written notice to the other party.
-
-5. GOVERNING LAW
-This Agreement shall be governed by and construed in accordance with the laws of the Province of [PROVINCE], Canada, without giving effect to any choice or conflict of law provision.
-
-IN WITNESS WHEREOF, the parties have executed this Agreement as of the date first above written.
-
-[CLIENT NAME]
-By: ________________________
-Name: [AUTHORIZED PERSON]
-Title: [TITLE]
-
-[SERVICE PROVIDER NAME]
-By: ________________________
-Name: [AUTHORIZED PERSON]
-Title: [TITLE]`,
-      fields: [
-        { name: 'date', label: 'Agreement Date', type: 'date', required: true },
-        { name: 'clientName', label: 'Client Name', type: 'text', required: true },
-        { name: 'clientAddress', label: 'Client Address', type: 'text', required: true },
-        { name: 'serviceProviderName', label: 'Service Provider Name', type: 'text', required: true },
-        { name: 'serviceProviderAddress', label: 'Service Provider Address', type: 'text', required: true },
-        { name: 'servicesDescription', label: 'Description of Services', type: 'textarea', required: true },
-        { name: 'startDate', label: 'Start Date', type: 'date', required: true },
-        { name: 'endDate', label: 'End Date', type: 'date', required: true },
-        { name: 'paymentAmount', label: 'Payment Amount', type: 'text', required: true },
-        { name: 'paymentSchedule', label: 'Payment Schedule', type: 'text', required: true },
-        { name: 'noticePeriod', label: 'Notice Period (days)', type: 'number', required: true },
-        { name: 'province', label: 'Governing Province', type: 'text', required: true },
-        { name: 'clientAuthorizedPerson', label: 'Client Authorized Person', type: 'text', required: true },
-        { name: 'clientTitle', label: 'Client Title', type: 'text', required: true },
-        { name: 'serviceProviderAuthorizedPerson', label: 'Service Provider Authorized Person', type: 'text', required: true },
-        { name: 'serviceProviderTitle', label: 'Service Provider Title', type: 'text', required: true }
-      ]
-    });
-    
-    // Residential Lease Agreement template
-    await this.createDocumentTemplate({
-      templateType: 'lease',
-      title: 'Residential Lease Agreement',
-      description: 'A standard residential lease agreement for landlords and tenants',
-      language: 'en',
-      templateContent: `RESIDENTIAL LEASE AGREEMENT
-
-This Residential Lease Agreement (the "Lease") is made and entered into as of [DATE], by and between [LANDLORD NAME], with an address of [LANDLORD ADDRESS] (the "Landlord"), and [TENANT NAME], with an address of [TENANT ADDRESS] (the "Tenant").
-
-1. PREMISES
-Landlord hereby leases to Tenant, and Tenant hereby leases from Landlord, the residential premises located at [PROPERTY ADDRESS] (the "Premises").
-
-2. TERM
-The term of this Lease shall begin on [START DATE] and end on [END DATE] ("Term").
-
-3. RENT
-Tenant agrees to pay Landlord rent in the amount of [RENT AMOUNT] Canadian Dollars per month, payable in advance on the [DUE DAY] day of each month.
-
-4. SECURITY DEPOSIT
-Upon execution of this Lease, Tenant shall pay to Landlord the sum of [SECURITY DEPOSIT AMOUNT] Canadian Dollars as a security deposit.
-
-5. UTILITIES
-Tenant shall be responsible for the payment of the following utilities: [UTILITIES].
-Landlord shall be responsible for the payment of the following utilities: [LANDLORD UTILITIES].
-
-6. MAINTENANCE AND REPAIRS
-Tenant shall keep the Premises in a clean and sanitary condition and shall surrender the same at termination of the Lease in as good condition as received, normal wear and tear excepted.
-
-7. GOVERNING LAW
-This Lease shall be governed by and construed in accordance with the laws of the Province of [PROVINCE], and the Residential Tenancies Act applicable to that province.
-
-IN WITNESS WHEREOF, the parties have executed this Lease as of the date first above written.
-
-[LANDLORD NAME]
-By: ________________________
-Name: [LANDLORD NAME]
-
-[TENANT NAME]
-By: ________________________
-Name: [TENANT NAME]`,
-      fields: [
-        { name: 'date', label: 'Agreement Date', type: 'date', required: true },
-        { name: 'landlordName', label: 'Landlord Name', type: 'text', required: true },
-        { name: 'landlordAddress', label: 'Landlord Address', type: 'text', required: true },
-        { name: 'tenantName', label: 'Tenant Name', type: 'text', required: true },
-        { name: 'tenantAddress', label: 'Tenant Address', type: 'text', required: true },
-        { name: 'propertyAddress', label: 'Property Address', type: 'text', required: true },
-        { name: 'startDate', label: 'Lease Start Date', type: 'date', required: true },
-        { name: 'endDate', label: 'Lease End Date', type: 'date', required: true },
-        { name: 'rentAmount', label: 'Monthly Rent Amount', type: 'number', required: true },
-        { name: 'dueDay', label: 'Rent Due Day', type: 'number', required: true },
-        { name: 'securityDepositAmount', label: 'Security Deposit Amount', type: 'number', required: true },
-        { name: 'utilities', label: 'Tenant Utilities', type: 'text', required: true },
-        { name: 'landlordUtilities', label: 'Landlord Utilities', type: 'text', required: true },
-        { name: 'province', label: 'Province', type: 'text', required: true }
-      ]
-    });
-    
-    // Simple Last Will and Testament template
-    await this.createDocumentTemplate({
-      templateType: 'will',
-      title: 'Simple Last Will and Testament',
-      description: 'A basic will document for simple estates',
-      language: 'en',
-      templateContent: `LAST WILL AND TESTAMENT
-
-I, [TESTATOR NAME], a resident of [CITY], [PROVINCE], Canada, being of sound mind, declare this to be my Last Will and Testament, hereby revoking all previous wills and codicils made by me.
-
-1. EXECUTOR
-I appoint [EXECUTOR NAME], of [EXECUTOR ADDRESS], as Executor of this my Will. If [EXECUTOR NAME] is unable or unwilling to serve, then I appoint [ALTERNATE EXECUTOR] as alternate Executor.
-
-2. DEBTS AND EXPENSES
-I direct my Executor to pay all my just debts, funeral expenses, and the expenses of administering my estate as soon as practicable after my death.
-
-3. SPECIFIC BEQUESTS
-[SPECIFIC BEQUESTS]
-
-4. RESIDUARY ESTATE
-I give, devise, and bequeath all the rest, residue, and remainder of my estate, of whatever kind and wherever situated, to [BENEFICIARY NAME], of [BENEFICIARY ADDRESS]. If [BENEFICIARY NAME] does not survive me, then I give, devise, and bequeath my residuary estate to [ALTERNATE BENEFICIARY].
-
-5. GUARDIAN
-If I am the sole parent or legal guardian of any minor children at the time of my death, I nominate and appoint [GUARDIAN NAME], of [GUARDIAN ADDRESS], as guardian of the person and property of such minor children.
-
-6. POWERS OF EXECUTOR
-I grant to my Executor full power to sell, lease, mortgage, or otherwise manage and dispose of all property in my estate, real or personal, without the need for a court order.
-
-IN WITNESS WHEREOF, I have hereunto set my hand this [DAY] day of [MONTH], [YEAR].
-
-[TESTATOR NAME]
-
-WITNESS ATTESTATION
-The foregoing instrument was signed, published, and declared by [TESTATOR NAME] as their Last Will and Testament, in our presence, and we, at their request and in their presence, and in the presence of each other, have subscribed our names as witnesses.
-
-Witness 1: ________________________
-Name: [WITNESS 1 NAME]
-Address: [WITNESS 1 ADDRESS]
-
-Witness 2: ________________________
-Name: [WITNESS 2 NAME]
-Address: [WITNESS 2 ADDRESS]`,
-      fields: [
-        { name: 'testatorName', label: 'Testator Name', type: 'text', required: true },
-        { name: 'city', label: 'City', type: 'text', required: true },
-        { name: 'province', label: 'Province', type: 'text', required: true },
-        { name: 'executorName', label: 'Executor Name', type: 'text', required: true },
-        { name: 'executorAddress', label: 'Executor Address', type: 'text', required: true },
-        { name: 'alternateExecutor', label: 'Alternate Executor', type: 'text', required: true },
-        { name: 'specificBequests', label: 'Specific Bequests', type: 'textarea', required: false },
-        { name: 'beneficiaryName', label: 'Primary Beneficiary Name', type: 'text', required: true },
-        { name: 'beneficiaryAddress', label: 'Primary Beneficiary Address', type: 'text', required: true },
-        { name: 'alternateBeneficiary', label: 'Alternate Beneficiary', type: 'text', required: true },
-        { name: 'guardianName', label: 'Guardian Name (if applicable)', type: 'text', required: false },
-        { name: 'guardianAddress', label: 'Guardian Address', type: 'text', required: false },
-        { name: 'day', label: 'Day', type: 'number', required: true },
-        { name: 'month', label: 'Month', type: 'text', required: true },
-        { name: 'year', label: 'Year', type: 'number', required: true },
-        { name: 'witness1Name', label: 'Witness 1 Name', type: 'text', required: true },
-        { name: 'witness1Address', label: 'Witness 1 Address', type: 'text', required: true },
-        { name: 'witness2Name', label: 'Witness 2 Name', type: 'text', required: true },
-        { name: 'witness2Address', label: 'Witness 2 Address', type: 'text', required: true }
-      ]
-    });
+    // Implementation would go here to create default legal domains
+    console.log("Initialized legal domains");
   }
 }
 

@@ -404,3 +404,231 @@ export const mediationMessagesRelations = relations(mediationMessages, ({ one })
     references: [users.id],
   }),
 }));
+
+// Legal domain knowledge schema for specialized assistant
+export const legalDomains = pgTable("legal_domains", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description").notNull(),
+  parentId: integer("parent_id"),
+  resources: jsonb("resources"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const insertLegalDomainSchema = createInsertSchema(legalDomains).pick({
+  name: true,
+  description: true,
+  parentId: true,
+  resources: true,
+  updatedAt: true,
+});
+
+export type InsertLegalDomain = z.infer<typeof insertLegalDomainSchema>;
+export type LegalDomain = typeof legalDomains.$inferSelect;
+
+// Specialized domain knowledge for enhanced assistant
+export const domainKnowledge = pgTable("domain_knowledge", {
+  id: serial("id").primaryKey(),
+  domainId: integer("domain_id").references(() => legalDomains.id, { onDelete: 'cascade' }),
+  question: text("question").notNull(),
+  answer: text("answer").notNull(),
+  language: text("language").default("en"),
+  jurisdiction: text("jurisdiction").default("canada"),
+  tags: jsonb("tags"),
+  relevanceScore: integer("relevance_score").default(0),
+  sources: jsonb("sources"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const insertDomainKnowledgeSchema = createInsertSchema(domainKnowledge).pick({
+  domainId: true,
+  question: true,
+  answer: true,
+  language: true,
+  jurisdiction: true,
+  tags: true,
+  relevanceScore: true,
+  sources: true,
+  updatedAt: true,
+});
+
+export type InsertDomainKnowledge = z.infer<typeof insertDomainKnowledgeSchema>;
+export type DomainKnowledge = typeof domainKnowledge.$inferSelect;
+
+// Procedural guidance for step-by-step instructions
+export const proceduralGuides = pgTable("procedural_guides", {
+  id: serial("id").primaryKey(),
+  domainId: integer("domain_id").references(() => legalDomains.id, { onDelete: 'cascade' }),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  steps: jsonb("steps").notNull(),
+  jurisdiction: text("jurisdiction").default("canada"),
+  language: text("language").default("en"),
+  estimatedTime: text("estimated_time"),
+  prerequisites: jsonb("prerequisites"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const insertProceduralGuideSchema = createInsertSchema(proceduralGuides).pick({
+  domainId: true,
+  title: true,
+  description: true,
+  steps: true,
+  jurisdiction: true,
+  language: true,
+  estimatedTime: true,
+  prerequisites: true,
+  updatedAt: true,
+});
+
+export type InsertProceduralGuide = z.infer<typeof insertProceduralGuideSchema>;
+export type ProceduralGuide = typeof proceduralGuides.$inferSelect;
+
+// Escalation tracking for complex legal questions
+export const escalatedQuestions = pgTable("escalated_questions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }),
+  question: text("question").notNull(),
+  context: text("context").notNull(),
+  domainId: integer("domain_id").references(() => legalDomains.id),
+  status: text("status").notNull().default("pending"), // 'pending', 'assigned', 'answered', 'closed'
+  assignedTo: text("assigned_to"),
+  answer: text("answer"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  resolvedAt: timestamp("resolved_at"),
+});
+
+export const insertEscalatedQuestionSchema = createInsertSchema(escalatedQuestions).pick({
+  userId: true,
+  question: true,
+  context: true,
+  domainId: true,
+  status: true,
+  assignedTo: true,
+  answer: true,
+  updatedAt: true,
+  resolvedAt: true,
+});
+
+export type InsertEscalatedQuestion = z.infer<typeof insertEscalatedQuestionSchema>;
+export type EscalatedQuestion = typeof escalatedQuestions.$inferSelect;
+
+// Conversation context tracking
+export const conversationContexts = pgTable("conversation_contexts", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }),
+  domainId: integer("domain_id").references(() => legalDomains.id),
+  context: jsonb("context").notNull(),
+  activeGuideId: integer("active_guide_id").references(() => proceduralGuides.id),
+  currentStep: integer("current_step").default(0),
+  recommendedTemplates: jsonb("recommended_templates"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const insertConversationContextSchema = createInsertSchema(conversationContexts).pick({
+  userId: true,
+  domainId: true,
+  context: true,
+  activeGuideId: true,
+  currentStep: true,
+  recommendedTemplates: true,
+  updatedAt: true,
+});
+
+export type InsertConversationContext = z.infer<typeof insertConversationContextSchema>;
+export type ConversationContext = typeof conversationContexts.$inferSelect;
+
+// Predictive case outcomes for legal analytics
+export const caseOutcomePredictions = pgTable("case_outcome_predictions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }),
+  caseType: text("case_type").notNull(),
+  jurisdiction: text("jurisdiction").notNull(),
+  factorData: jsonb("factor_data").notNull(),
+  predictedOutcome: text("predicted_outcome").notNull(),
+  confidenceScore: text("confidence_score").notNull(),
+  similarCases: jsonb("similar_cases"),
+  visualizationData: jsonb("visualization_data"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const insertCaseOutcomePredictionSchema = createInsertSchema(caseOutcomePredictions).pick({
+  userId: true,
+  caseType: true,
+  jurisdiction: true,
+  factorData: true,
+  predictedOutcome: true,
+  confidenceScore: true,
+  similarCases: true,
+  visualizationData: true,
+  updatedAt: true,
+});
+
+export type InsertCaseOutcomePrediction = z.infer<typeof insertCaseOutcomePredictionSchema>;
+export type CaseOutcomePrediction = typeof caseOutcomePredictions.$inferSelect;
+
+// Relations for new tables
+export const legalDomainsRelations = relations(legalDomains, ({ one, many }) => ({
+  parentDomain: one(legalDomains, {
+    fields: [legalDomains.parentId],
+    references: [legalDomains.id],
+  }),
+  subdomains: many(legalDomains),
+  domainKnowledge: many(domainKnowledge),
+  proceduralGuides: many(proceduralGuides),
+  conversationContexts: many(conversationContexts),
+}));
+
+export const domainKnowledgeRelations = relations(domainKnowledge, ({ one }) => ({
+  domain: one(legalDomains, {
+    fields: [domainKnowledge.domainId],
+    references: [legalDomains.id],
+  }),
+}));
+
+export const proceduralGuidesRelations = relations(proceduralGuides, ({ one, many }) => ({
+  domain: one(legalDomains, {
+    fields: [proceduralGuides.domainId],
+    references: [legalDomains.id],
+  }),
+  activeConversations: many(conversationContexts),
+}));
+
+export const escalatedQuestionsRelations = relations(escalatedQuestions, ({ one }) => ({
+  user: one(users, {
+    fields: [escalatedQuestions.userId],
+    references: [users.id],
+  }),
+  domain: one(legalDomains, {
+    fields: [escalatedQuestions.domainId],
+    references: [legalDomains.id],
+  }),
+}));
+
+export const conversationContextsRelations = relations(conversationContexts, ({ one }) => ({
+  user: one(users, {
+    fields: [conversationContexts.userId],
+    references: [users.id],
+  }),
+  domain: one(legalDomains, {
+    fields: [conversationContexts.domainId],
+    references: [legalDomains.id],
+  }),
+  activeGuide: one(proceduralGuides, {
+    fields: [conversationContexts.activeGuideId],
+    references: [proceduralGuides.id],
+  }),
+}));
+
+export const caseOutcomePredictionsRelations = relations(caseOutcomePredictions, ({ one }) => ({
+  user: one(users, {
+    fields: [caseOutcomePredictions.userId],
+    references: [users.id],
+  }),
+}));
