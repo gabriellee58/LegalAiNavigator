@@ -40,34 +40,13 @@ function RealEstateLawPage() {
           </TabsContent>
           
           <TabsContent value="templates">
-            <LegalDomainPage
-              title="Real Estate Law"
-              description="Real estate law covers property rights, transactions, landlord-tenant relations, and land use regulations. Our templates help with property purchases, leases, and other real estate documents common in Canadian property transactions."
-              templateTypes={["real-estate"]}
-              relatedDomains={[
-                { name: "Business", path: "/legal-domains/business" },
-                { name: "Family Law", path: "/legal-domains/family-law" },
-                { name: "Environmental", path: "/legal-domains/environmental" },
-                { name: "Municipal", path: "/legal-domains/municipal" }
-              ]}
-              resources={[
-                {
-                  title: "Canada Mortgage and Housing Corporation",
-                  description: "Information on housing market data, mortgage loan insurance, and programs to support Canadians in finding affordable housing.",
-                  link: "https://www.cmhc-schl.gc.ca/en"
-                },
-                {
-                  title: "Canadian Real Estate Association",
-                  description: "National organization representing real estate professionals, with resources for buyers and sellers.",
-                  link: "https://www.crea.ca/"
-                },
-                {
-                  title: "Land Registry Information",
-                  description: "Provincial land registry systems for property searches and land title information.",
-                  link: "https://www.canada.ca/en/services/business/permits/federallyregulatedbusinessactivities/landsurvey.html"
-                }
-              ]}
-            />
+            
+      <div className="container py-6">
+        <Skeleton className="h-12 w-1/3 mb-6" />
+        <Skeleton className="h-5 w-2/3 mb-10" />
+        <Skeleton className="h-[400px] w-full" />
+      </div>
+    
           </TabsContent>
         </Tabs>
       </div>
@@ -86,34 +65,13 @@ function RealEstateLawPage() {
         </AlertDescription>
       </Alert>
       
-      <LegalDomainPage
-        title="Real Estate Law"
-        description="Real estate law covers property rights, transactions, landlord-tenant relations, and land use regulations. Our templates help with property purchases, leases, and other real estate documents common in Canadian property transactions."
-        templateTypes={["real-estate"]}
-        relatedDomains={[
-          { name: "Business", path: "/legal-domains/business" },
-          { name: "Family Law", path: "/legal-domains/family-law" },
-          { name: "Environmental", path: "/legal-domains/environmental" },
-          { name: "Municipal", path: "/legal-domains/municipal" }
-        ]}
-        resources={[
-          {
-            title: "Canada Mortgage and Housing Corporation",
-            description: "Information on housing market data, mortgage loan insurance, and programs to support Canadians in finding affordable housing.",
-            link: "https://www.cmhc-schl.gc.ca/en"
-          },
-          {
-            title: "Canadian Real Estate Association",
-            description: "National organization representing real estate professionals, with resources for buyers and sellers.",
-            link: "https://www.crea.ca/"
-          },
-          {
-            title: "Land Registry Information",
-            description: "Provincial land registry systems for property searches and land title information.",
-            link: "https://www.canada.ca/en/services/business/permits/federallyregulatedbusinessactivities/landsurvey.html"
-          }
-        ]}
-      />
+      
+      <div className="container py-6">
+        <Skeleton className="h-12 w-1/3 mb-6" />
+        <Skeleton className="h-5 w-2/3 mb-10" />
+        <Skeleton className="h-[400px] w-full" />
+      </div>
+    
     </div>
   );
 }

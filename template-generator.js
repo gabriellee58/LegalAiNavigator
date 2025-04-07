@@ -119,12 +119,12 @@ export default ${functionName};`;
   // Output the updated content
   console.log(`Generated template for ${file}`);
   
-  // Uncomment to write the files directly
-  // writeFileSync(filePath, updatedContent, 'utf8');
-  // console.log(`Updated ${file}`);
+  // Write the updates directly to the original files
+  writeFileSync(filePath, updatedContent, 'utf8');
+  console.log(`Updated ${file}`);
   
-  // Write to a new file for review
-  writeFileSync(join(__dirname, `updated-${file}`), updatedContent, 'utf8');
+  // Also keep a backup copy for reference
+  writeFileSync(join(__dirname, `backup-${file}`), content, 'utf8');
 });
 
-console.log('Done! Check the updated-*.tsx files for the generated templates.');
+console.log('Done! All domain pages have been updated to use the standardized format.');
