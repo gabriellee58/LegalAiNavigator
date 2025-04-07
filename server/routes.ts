@@ -950,22 +950,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const parsed = importSchema.safeParse(req.body);
       if (!parsed.success) {
-        return res.status(400).json({ message: "Invalid import data" });
+        return res.status(400).json({ message: "Invalid import data", errors: parsed.error.format() });
       }
       
-      const template = await importAndSaveTemplate(
-        parsed.data.templateId,
-        parsed.data.language
-      );
-      
-      if (!template) {
-        return res.status(400).json({ message: "Failed to import template" });
+      // Check API key availability first
+      if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY) {
+        return res.status(400).json({ 
+          message: "Missing AI API keys", 
+          detail: "Both Anthropic and OpenAI API keys are missing. At least one is required for template generation."
+        });
       }
       
-      res.status(201).json(template);
+      try {
+        const template = await importAndSaveTemplate(
+          parsed.data.templateId,
+          parsed.data.language
+        );
+        
+        if (!template) {
+          return res.status(400).json({ 
+            message: "Failed to import template", 
+            detail: "The template could not be generated. Please try again or choose a different template."
+          });
+        }
+        
+        res.status(201).json(template);
+      } catch (importError) {
+        console.error("Template import execution error:", importError);
+        return res.status(400).json({ 
+          message: "Template import failed", 
+          detail: importError instanceof Error ? importError.message : "Unknown error during template generation"
+        });
+      }
     } catch (error) {
       console.error("Template import error:", error);
-      res.status(500).json({ message: "Error importing template" });
+      res.status(500).json({ 
+        message: "Error importing template", 
+        detail: error instanceof Error ? error.message : "An unexpected server error occurred"
+      });
     }
   });
 

@@ -3,9 +3,18 @@
  */
 import { storage } from '../storage';
 import { InsertDocumentTemplate } from '@shared/schema';
+import Anthropic from '@anthropic-ai/sdk';
+
+// Import OpenAI as a fallback
 import OpenAI from "openai";
 
-// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+// Initialize both AI services
+// the newest Anthropic model is "claude-3-7-sonnet-20250219" which was released February 24, 2025
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
+
+// the newest OpenAI model is "gpt-4o" which was released May 13, 2024
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Template source definitions - future expansion would include API integration with actual template repositories
@@ -222,31 +231,57 @@ export async function importExternalTemplate(templateId: string, language: strin
  */
 async function generateTemplateFromId(templateId: string, category: string, language: string): Promise<string | null> {
   try {
-    // In a real implementation, this would fetch from an API
-    // For now, we'll use AI to generate a template
-    
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: `You are a legal document template generator for the Canadian legal system.
+    // First try with Anthropic Claude
+    try {
+      const response = await anthropic.messages.create({
+        model: "claude-3-7-sonnet-20250219",
+        max_tokens: 2500,
+        system: `You are a legal document template generator for the Canadian legal system.
           Generate a detailed, professional ${category} template in ${language === 'en' ? 'English' : 'French'}.
           The document should follow Canadian legal conventions and include all standard sections.
           Use [PLACEHOLDER] format for fields that would need to be filled in (like [CLIENT_NAME], [DATE], etc.).
-          Make sure the document is comprehensive and covers all important legal aspects.`
-        },
-        {
-          role: "user",
-          content: `Generate a complete legal template for: ${templateId.replace(/-/g, ' ')}`
-        }
-      ],
-      max_tokens: 2500
-    });
-    
-    return response.choices[0].message.content;
+          Make sure the document is comprehensive and covers all important legal aspects.`,
+        messages: [
+          {
+            role: "user",
+            content: `Generate a complete legal template for: ${templateId.replace(/-/g, ' ')}`
+          }
+        ]
+      });
+      
+      // Type guard to ensure we're getting text content
+      const content = response.content[0];
+      if (content && 'type' in content && content.type === 'text' && 'text' in content) {
+        return content.text;
+      }
+      return "Template generation failed";
+    } catch (anthropicError) {
+      // If Anthropic fails, try OpenAI as fallback
+      console.log("Anthropic failed, trying OpenAI fallback:", anthropicError);
+      
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are a legal document template generator for the Canadian legal system.
+            Generate a detailed, professional ${category} template in ${language === 'en' ? 'English' : 'French'}.
+            The document should follow Canadian legal conventions and include all standard sections.
+            Use [PLACEHOLDER] format for fields that would need to be filled in (like [CLIENT_NAME], [DATE], etc.).
+            Make sure the document is comprehensive and covers all important legal aspects.`
+          },
+          {
+            role: "user",
+            content: `Generate a complete legal template for: ${templateId.replace(/-/g, ' ')}`
+          }
+        ],
+        max_tokens: 2500
+      });
+      
+      return response.choices[0].message.content;
+    }
   } catch (error) {
-    console.error("Error generating template:", error);
+    console.error("Error generating template with both AI services:", error);
     return null;
   }
 }
