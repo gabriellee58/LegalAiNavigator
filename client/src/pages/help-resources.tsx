@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Search, HelpCircle, FileText, ExternalLink, BookOpen, PlayCircle } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Link } from "wouter";
 
 export default function HelpResourcesPage() {
   const [currentTab, setCurrentTab] = useState("faq");
@@ -241,7 +242,11 @@ export default function HelpResourcesPage() {
                           <div>
                             <h3 className="text-lg font-medium mb-1">{guide.title}</h3>
                             <p className="text-neutral-600 dark:text-neutral-300 text-sm mb-3">{guide.description}</p>
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => window.location.href = guide.link}
+                            >
                               {t("read_guide")}
                             </Button>
                           </div>
@@ -277,7 +282,11 @@ export default function HelpResourcesPage() {
                           </span>
                         </div>
                         <p className="text-neutral-600 dark:text-neutral-300 text-sm mb-3">{video.description}</p>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => window.location.href = video.link}
+                        >
                           {t("watch_video")}
                         </Button>
                       </div>
