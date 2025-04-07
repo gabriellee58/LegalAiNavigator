@@ -187,21 +187,39 @@ export async function importExternalTemplate(templateId: string, language: strin
     // For now, we'll generate the template using AI based on the ID
     
     // Parse template ID to get information
-    const [sourceCode, category, templateName] = templateId.split('-');
+    const parts = templateId.split('-');
+    if (parts.length < 2) {
+      console.error("Invalid template ID format:", templateId);
+      return null;
+    }
+    
+    const sourceCode = parts[0];
+    const category = parts[1];
+    // Handle case where templateName might not exist
+    const templateName = parts.length > 2 ? parts[2] : 'template';
     
     // Find source
     const source = templateSources.find(s => s.id.startsWith(sourceCode));
-    if (!source) return null;
+    if (!source) {
+      console.error("Template source not found for code:", sourceCode);
+      return null;
+    }
     
     // Generate a template based on the ID
+    console.log(`Attempting to generate template with ID: ${templateId}, category: ${category}, language: ${language}`);
     const templateContent = await generateTemplateFromId(templateId, category, language);
-    if (!templateContent) return null;
+    if (!templateContent) {
+      console.error("Failed to generate template content");
+      return null;
+    }
+    console.log("Successfully generated template content");
     
-    // Create a title from the template name
+    // Create a title from the template name, handle special characters
     const title = templateName
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+      .split(/[_-]/)  // Split by underscore or dash
+      .filter(word => word.length > 0)  // Filter out empty strings
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ') || `${category.charAt(0).toUpperCase() + category.slice(1)} Template`;
     
     // Create fields based on the template content
     const fields = extractFieldsFromTemplate(templateContent);
@@ -250,11 +268,22 @@ async function generateTemplateFromId(templateId: string, category: string, lang
       });
       
       // Type guard to ensure we're getting text content
+      console.log("Anthropic response received");
+      if (!response.content || response.content.length === 0) {
+        console.error("Anthropic response has no content");
+        return "Template generation failed: No content in response";
+      }
+      
       const content = response.content[0];
+      console.log("Content type:", content?.type);
+      
       if (content && 'type' in content && content.type === 'text' && 'text' in content) {
+        console.log("Successfully extracted text from Anthropic response");
         return content.text;
       }
-      return "Template generation failed";
+      
+      console.error("Failed to extract text from Anthropic response:", JSON.stringify(content, null, 2));
+      return "Template generation failed: Invalid content format";
     } catch (anthropicError) {
       // If Anthropic fails, try OpenAI as fallback
       console.log("Anthropic failed, trying OpenAI fallback:", anthropicError);
