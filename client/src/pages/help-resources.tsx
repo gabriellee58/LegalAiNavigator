@@ -85,29 +85,65 @@ export default function HelpResourcesPage() {
       title: "Introduction to LegalAI",
       description: "A brief overview of all features and capabilities",
       duration: "5:23",
-      thumbnail: "intro-thumbnail.jpg",
-      link: "/videos/introduction"
+      pdfAvailable: true,
+      pdfLink: "/resources/intro-guide.pdf",
+      transcript: true,
+      status: "Processing video for better accessibility",
+      keyPoints: [
+        "Overview of the virtual legal assistant",
+        "Document generation capabilities",
+        "Research tools and contract analysis features",
+        "Dispute resolution process walkthrough",
+        "Compliance checker demonstration"
+      ]
     },
     {
       title: "Creating Your First Document",
       description: "Learn how to create and customize legal documents",
       duration: "8:45",
-      thumbnail: "document-thumbnail.jpg",
-      link: "/videos/create-document"
+      pdfAvailable: true,
+      pdfLink: "/resources/document-creation-guide.pdf",
+      transcript: true,
+      status: "Processing video for better accessibility",
+      keyPoints: [
+        "Selecting document templates",
+        "Customizing documents with your information",
+        "Using AI to enhance document content",
+        "Exporting documents in multiple formats",
+        "Saving and retrieving documents later"
+      ]
     },
     {
       title: "Contract Analysis Walkthrough",
       description: "See how the AI analyzes contracts in real-time",
       duration: "12:17",
-      thumbnail: "contract-thumbnail.jpg",
-      link: "/videos/contract-analysis"
+      pdfAvailable: true,
+      pdfLink: "/resources/contract-analysis-guide.pdf",
+      transcript: true,
+      status: "Processing video for better accessibility",
+      keyPoints: [
+        "Uploading contracts for analysis",
+        "Understanding risk assessment results",
+        "Reviewing legal term explanations",
+        "Comparing multiple contract versions",
+        "Generating comprehensive reports"
+      ]
     },
     {
       title: "Legal Research Techniques",
       description: "Advanced techniques for legal research",
       duration: "15:33",
-      thumbnail: "research-thumbnail.jpg",
-      link: "/videos/legal-research"
+      pdfAvailable: true,
+      pdfLink: "/resources/legal-research-guide.pdf",
+      transcript: true,
+      status: "Processing video for better accessibility",
+      keyPoints: [
+        "Formulating effective legal research queries",
+        "Finding relevant case law and statutes",
+        "Understanding citation formats",
+        "Organizing research findings",
+        "Creating visualizations of legal research"
+      ]
     }
   ];
   
@@ -268,27 +304,83 @@ export default function HelpResourcesPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6">
                   {videos.map((video, index) => (
                     <div key={index} className="border rounded-lg overflow-hidden hover:border-primary transition-colors">
-                      <div className="relative aspect-video bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-                        <PlayCircle className="h-12 w-12 text-primary opacity-80" />
-                      </div>
-                      <div className="p-4">
-                        <div className="flex items-start justify-between mb-2">
-                          <h3 className="text-lg font-medium">{video.title}</h3>
-                          <span className="text-xs bg-neutral-100 dark:bg-neutral-800 px-2 py-1 rounded">
-                            {video.duration}
-                          </span>
+                      <div className="flex flex-col md:flex-row">
+                        <div className="md:w-1/3">
+                          <div className="relative aspect-video bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
+                            {video.status ? (
+                              <div className="absolute inset-0 bg-black/10 flex flex-col items-center justify-center p-4 text-center">
+                                <PlayCircle className="h-12 w-12 text-primary opacity-80 mb-2" />
+                                <span className="text-sm text-neutral-600 dark:text-neutral-300 bg-white/80 dark:bg-black/60 px-2 py-1 rounded">
+                                  {video.status}
+                                </span>
+                              </div>
+                            ) : (
+                              <PlayCircle className="h-12 w-12 text-primary opacity-80" />
+                            )}
+                          </div>
+                          <div className="p-4">
+                            <div className="flex items-start justify-between mb-2">
+                              <h3 className="text-lg font-medium">{video.title}</h3>
+                              <span className="text-xs bg-neutral-100 dark:bg-neutral-800 px-2 py-1 rounded">
+                                {video.duration}
+                              </span>
+                            </div>
+                            <p className="text-neutral-600 dark:text-neutral-300 text-sm mb-3">{video.description}</p>
+                            <div className="flex flex-wrap gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                className="flex-1 gap-1"
+                                disabled={Boolean(video.status)}
+                                onClick={() => alert(t("video_not_available"))}
+                              >
+                                <PlayCircle className="h-4 w-4" />
+                                {t("watch_video")}
+                              </Button>
+                              {video.pdfAvailable && (
+                                <Button 
+                                  variant="secondary" 
+                                  size="sm"
+                                  className="flex-1 gap-1"
+                                  onClick={() => window.open(video.pdfLink, '_blank')}
+                                >
+                                  <FileText className="h-4 w-4" />
+                                  {t("download_pdf")}
+                                </Button>
+                              )}
+                              {video.transcript && (
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  className="flex-1 gap-1"
+                                  onClick={() => {
+                                    // Show transcript dialog
+                                    const transcriptMessage = `${video.title} - ${t("transcript")}\n\n`;
+                                    const keyPoints = video.keyPoints.map(point => `• ${point}`).join('\n');
+                                    alert(transcriptMessage + keyPoints);
+                                  }}
+                                >
+                                  <FileText className="h-4 w-4" />
+                                  {t("view_transcript")}
+                                </Button>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-neutral-600 dark:text-neutral-300 text-sm mb-3">{video.description}</p>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => window.location.href = video.link}
-                        >
-                          {t("watch_video")}
-                        </Button>
+                        <div className="md:w-2/3 p-4 md:p-6 border-t md:border-t-0 md:border-l border-neutral-200 dark:border-neutral-800">
+                          <h4 className="font-medium mb-3">{t("key_concepts_covered")}</h4>
+                          <ul className="space-y-2">
+                            {video.keyPoints.map((point, idx) => (
+                              <li key={idx} className="flex items-start">
+                                <span className="material-icons text-primary mr-2 text-sm">check_circle</span>
+                                <span className="text-neutral-700 dark:text-neutral-200">{point}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -331,7 +423,13 @@ export default function HelpResourcesPage() {
         
         <div className="mt-8 text-center">
           <p className="text-neutral-600 dark:text-neutral-300 mb-3">{t("still_need_help")}</p>
-          <Button variant="outline" size="lg">
+          <Button 
+            variant="outline" 
+            size="lg"
+            onClick={() => {
+              window.location.href = "mailto:support@legal-ai-navigator.ca?subject=Support Request&body=Please describe your issue here.";
+            }}
+          >
             {t("contact_support")}
           </Button>
         </div>
