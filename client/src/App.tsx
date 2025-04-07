@@ -24,6 +24,9 @@ import DocumentTemplatesPage from "./pages/document-templates";
 import HelpResourcesPage from "./pages/help-resources";
 import SettingsPage from "./pages/settings";
 
+// Import legal domains browser
+import LegalDomainsPage from "./pages/legal-domains";
+
 // Import legal domain pages
 import FamilyLawPage from "./pages/legal-domains/family-law";
 import RealEstateLawPage from "./pages/legal-domains/real-estate";
@@ -97,6 +100,7 @@ function Router() {
       <ProtectedRoute path="/documents/ip-management" component={DocumentTemplatesPage} />
       
       {/* Legal Domains */}
+      <ProtectedRoute path="/legal-domains" component={LegalDomainsPage} exact={true} />
       <ProtectedRoute path="/legal-domains/family-law" component={FamilyLawPage} />
       <ProtectedRoute path="/legal-domains/real-estate" component={RealEstateLawPage} />
       <ProtectedRoute path="/legal-domains/business" component={BusinessLawPage} />

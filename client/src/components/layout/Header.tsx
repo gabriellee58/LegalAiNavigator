@@ -35,44 +35,40 @@ function Header() {
           </SheetContent>
         </Sheet>
         
-        <Link href="/">
-          <a className="ml-2 flex items-center">
-            <div className="bg-white rounded-lg w-7 h-7 flex items-center justify-center mr-2">
-              <span className="material-icons text-primary text-sm">balance</span>
-            </div>
-            <h1 className="font-heading font-bold text-lg text-white">LegalAI</h1>
-          </a>
+        <Link href="/" className="ml-2 flex items-center">
+          <div className="bg-white rounded-lg w-7 h-7 flex items-center justify-center mr-2">
+            <span className="material-icons text-primary text-sm">balance</span>
+          </div>
+          <h1 className="font-heading font-bold text-lg text-white">LegalAI</h1>
         </Link>
       </div>
       
       {/* Logo for desktop */}
       <div className="hidden md:flex items-center">
-        <Link href="/">
-          <a className="flex items-center">
-            <div className="bg-white rounded-lg w-8 h-8 flex items-center justify-center mr-2">
-              <span className="material-icons text-primary text-md">balance</span>
-            </div>
-            <h1 className="font-heading font-bold text-xl text-white">LegalAI</h1>
-          </a>
+        <Link href="/" className="flex items-center">
+          <div className="bg-white rounded-lg w-8 h-8 flex items-center justify-center mr-2">
+            <span className="material-icons text-primary text-md">balance</span>
+          </div>
+          <h1 className="font-heading font-bold text-xl text-white">LegalAI</h1>
         </Link>
       </div>
       
       {/* Navigation Links */}
       <div className="hidden md:flex items-center space-x-6 ml-10">
-        <Link href="/legal-assistant">
-          <a className="text-white/90 hover:text-white font-medium text-sm">Virtual Assistant</a>
+        <Link href="/legal-assistant" className="text-white/90 hover:text-white font-medium text-sm">
+          Virtual Assistant
         </Link>
-        <Link href="/document-generator">
-          <a className="text-white/90 hover:text-white font-medium text-sm">Documents</a>
+        <Link href="/document-generator" className="text-white/90 hover:text-white font-medium text-sm">
+          Documents
         </Link>
-        <Link href="/legal-research">
-          <a className="text-white/90 hover:text-white font-medium text-sm">Research</a>
+        <Link href="/legal-research" className="text-white/90 hover:text-white font-medium text-sm">
+          Research
         </Link>
-        <Link href="/contract-analysis">
-          <a className="text-white/90 hover:text-white font-medium text-sm">Contracts</a>
+        <Link href="/contract-analysis" className="text-white/90 hover:text-white font-medium text-sm">
+          Contracts
         </Link>
-        <Link href="/dispute-resolution">
-          <a className="text-white/90 hover:text-white font-medium text-sm">Disputes</a>
+        <Link href="/dispute-resolution" className="text-white/90 hover:text-white font-medium text-sm">
+          Disputes
         </Link>
       </div>
       
@@ -112,28 +108,22 @@ function Header() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>
-              <Link href="/profile">
-                <a className="flex items-center w-full">
-                  <span className="material-icons mr-2 text-sm">person</span>
-                  Profile
-                </a>
+            <DropdownMenuItem asChild>
+              <Link href="/profile" className="flex items-center w-full">
+                <span className="material-icons mr-2 text-sm">person</span>
+                Profile
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Link href="/settings">
-                <a className="flex items-center w-full">
-                  <span className="material-icons mr-2 text-sm">settings</span>
-                  Settings
-                </a>
+            <DropdownMenuItem asChild>
+              <Link href="/settings" className="flex items-center w-full">
+                <span className="material-icons mr-2 text-sm">settings</span>
+                Settings
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Link href="/logout">
-                <a className="flex items-center w-full">
-                  <span className="material-icons mr-2 text-sm">logout</span>
-                  Logout
-                </a>
+            <DropdownMenuItem asChild>
+              <Link href="/logout" className="flex items-center w-full">
+                <span className="material-icons mr-2 text-sm">logout</span>
+                Logout
               </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -160,51 +150,39 @@ function MobileSidebar() {
           <p className="text-primary text-xs uppercase font-bold mb-3">{t("services")}</p>
           <ul className="space-y-2">
             <li>
-              <Link href="/legal-assistant">
-                <a className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
-                  <span className="material-icons mr-3 text-primary">smart_toy</span>
-                  <span className="font-medium">{t("legal_assistant")}</span>
-                </a>
+              <Link href="/legal-assistant" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
+                <span className="material-icons mr-3 text-primary">smart_toy</span>
+                <span className="font-medium">{t("legal_assistant")}</span>
               </Link>
             </li>
             <li>
-              <Link href="/document-generator">
-                <a className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
-                  <span className="material-icons mr-3 text-primary">description</span>
-                  <span className="font-medium">{t("document_generator")}</span>
-                </a>
+              <Link href="/document-generator" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
+                <span className="material-icons mr-3 text-primary">description</span>
+                <span className="font-medium">{t("document_generator")}</span>
               </Link>
             </li>
             <li>
-              <Link href="/legal-research">
-                <a className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
-                  <span className="material-icons mr-3 text-primary">search</span>
-                  <span className="font-medium">{t("legal_research")}</span>
-                </a>
+              <Link href="/legal-research" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
+                <span className="material-icons mr-3 text-primary">search</span>
+                <span className="font-medium">{t("legal_research")}</span>
               </Link>
             </li>
             <li>
-              <Link href="/contract-analysis">
-                <a className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
-                  <span className="material-icons mr-3 text-primary">insert_drive_file</span>
-                  <span className="font-medium">Contract Analysis</span>
-                </a>
+              <Link href="/contract-analysis" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
+                <span className="material-icons mr-3 text-primary">insert_drive_file</span>
+                <span className="font-medium">Contract Analysis</span>
               </Link>
             </li>
             <li>
-              <Link href="/dispute-resolution">
-                <a className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
-                  <span className="material-icons mr-3 text-primary">gavel</span>
-                  <span className="font-medium">{t("dispute_resolution")}</span>
-                </a>
+              <Link href="/dispute-resolution" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
+                <span className="material-icons mr-3 text-primary">gavel</span>
+                <span className="font-medium">{t("dispute_resolution")}</span>
               </Link>
             </li>
             <li>
-              <Link href="/compliance-checker">
-                <a className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
-                  <span className="material-icons mr-3 text-primary">verified</span>
-                  <span className="font-medium">{t("compliance_checker")}</span>
-                </a>
+              <Link href="/compliance-checker" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
+                <span className="material-icons mr-3 text-primary">verified</span>
+                <span className="font-medium">{t("compliance_checker")}</span>
               </Link>
             </li>
           </ul>
@@ -214,43 +192,33 @@ function MobileSidebar() {
           <p className="text-primary text-xs uppercase font-bold mb-3">{t("document_templates")}</p>
           <ul className="space-y-2">
             <li>
-              <Link href="/documents/contracts">
-                <a className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
-                  <span className="material-icons mr-3 text-primary">assignment</span>
-                  <span className="font-medium">{t("contracts")}</span>
-                </a>
+              <Link href="/documents/contracts" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
+                <span className="material-icons mr-3 text-primary">assignment</span>
+                <span className="font-medium">{t("contracts")}</span>
               </Link>
             </li>
             <li>
-              <Link href="/documents/family">
-                <a className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
-                  <span className="material-icons mr-3 text-primary">family_restroom</span>
-                  <span className="font-medium">Family Law</span>
-                </a>
+              <Link href="/documents/family" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
+                <span className="material-icons mr-3 text-primary">family_restroom</span>
+                <span className="font-medium">Family Law</span>
               </Link>
             </li>
             <li>
-              <Link href="/documents/real-estate">
-                <a className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
-                  <span className="material-icons mr-3 text-primary">home</span>
-                  <span className="font-medium">Real Estate</span>
-                </a>
+              <Link href="/documents/real-estate" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
+                <span className="material-icons mr-3 text-primary">home</span>
+                <span className="font-medium">Real Estate</span>
               </Link>
             </li>
             <li>
-              <Link href="/documents/wills-estates">
-                <a className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
-                  <span className="material-icons mr-3 text-primary">account_balance</span>
-                  <span className="font-medium">Wills & Estates</span>
-                </a>
+              <Link href="/documents/wills-estates" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
+                <span className="material-icons mr-3 text-primary">account_balance</span>
+                <span className="font-medium">Wills & Estates</span>
               </Link>
             </li>
             <li>
-              <Link href="/documents/business">
-                <a className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
-                  <span className="material-icons mr-3 text-primary">business</span>
-                  <span className="font-medium">Business</span>
-                </a>
+              <Link href="/documents/business" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
+                <span className="material-icons mr-3 text-primary">business</span>
+                <span className="font-medium">Business</span>
               </Link>
             </li>
           </ul>
@@ -258,17 +226,13 @@ function MobileSidebar() {
       </nav>
       
       <div className="border-t border-neutral-100 p-4">
-        <Link href="/help">
-          <a className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
-            <span className="material-icons mr-3 text-primary">help_outline</span>
-            <span className="font-medium">{t("help_resources")}</span>
-          </a>
+        <Link href="/help" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
+          <span className="material-icons mr-3 text-primary">help_outline</span>
+          <span className="font-medium">{t("help_resources")}</span>
         </Link>
-        <Link href="/settings">
-          <a className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
-            <span className="material-icons mr-3 text-primary">settings</span>
-            <span className="font-medium">{t("settings")}</span>
-          </a>
+        <Link href="/settings" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
+          <span className="material-icons mr-3 text-primary">settings</span>
+          <span className="font-medium">{t("settings")}</span>
         </Link>
       </div>
     </div>

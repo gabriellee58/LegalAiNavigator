@@ -5,17 +5,19 @@ import { Redirect, Route } from "wouter";
 interface ProtectedRouteProps {
   path: string;
   component: () => React.JSX.Element;
+  exact?: boolean;
 }
 
 export function ProtectedRoute({
   path,
   component: Component,
+  exact,
 }: ProtectedRouteProps) {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
     return (
-      <Route path={path}>
+      <Route path={path} {...(exact ? { exact } : {})}>
         <div className="flex items-center justify-center min-h-screen">
           <Loader2 className="h-8 w-8 animate-spin text-border" />
         </div>
@@ -25,14 +27,14 @@ export function ProtectedRoute({
 
   if (!user) {
     return (
-      <Route path={path}>
+      <Route path={path} {...(exact ? { exact } : {})}>
         <Redirect to="/auth" />
       </Route>
     );
   }
 
   return (
-    <Route path={path}>
+    <Route path={path} {...(exact ? { exact } : {})}>
       <Component />
     </Route>
   );
