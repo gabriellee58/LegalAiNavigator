@@ -52,6 +52,15 @@ import YouthJusticePage from "./pages/legal-domains/youth-justice";
 import MediationPage from "./pages/legal-domains/mediation";
 import LandClaimsPage from "./pages/legal-domains/land-claims";
 
+// Import guide pages
+import {
+  GettingStartedGuide,
+  DocumentGenerationTutorial,
+  ContractAnalysisGuide,
+  LegalResearchGuide,
+  ComplianceCheckerTutorial
+} from "./pages/guides";
+
 // Import style for Material Icons
 function Head() {
   useEffect(() => {
@@ -126,8 +135,15 @@ function Router() {
       <ProtectedRoute path="/legal-domains/land-claims" component={LandClaimsPage} />
       
       {/* Help and Settings */}
-      <ProtectedRoute path="/help" component={HelpResourcesPage} />
+      <ProtectedRoute path="/help-resources" component={HelpResourcesPage} />
       <ProtectedRoute path="/settings" component={SettingsPage} />
+      
+      {/* Guide Pages */}
+      <ProtectedRoute path="/guides/getting-started" component={GettingStartedGuide} />
+      <ProtectedRoute path="/guides/document-generation" component={DocumentGenerationTutorial} />
+      <ProtectedRoute path="/guides/contract-analysis" component={ContractAnalysisGuide} />
+      <ProtectedRoute path="/guides/legal-research" component={LegalResearchGuide} />
+      <ProtectedRoute path="/guides/compliance-checker" component={ComplianceCheckerTutorial} />
       
       <Route path="/auth" component={AuthPage} />
       {/* Fallback to 404 */}
