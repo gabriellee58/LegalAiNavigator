@@ -4,8 +4,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DocumentTemplate } from "@shared/schema";
 
+// Define a more flexible interface for template fields
 interface DocumentTemplateCardProps {
-  template: DocumentTemplate;
+  template: DocumentTemplate & {
+    fields: any;
+  };
 }
 
 function DocumentTemplateCard({ template }: DocumentTemplateCardProps) {
@@ -14,14 +17,34 @@ function DocumentTemplateCard({ template }: DocumentTemplateCardProps) {
     switch (type) {
       case 'contract':
         return 'assignment';
-      case 'lease':
+      case 'real-estate':
         return 'home';
-      case 'will':
+      case 'estate':
         return 'account_balance';
       case 'business':
         return 'business';
       case 'ip':
         return 'copyright';
+      case 'family':
+        return 'family_restroom';
+      case 'employment':
+        return 'work';
+      case 'immigration':
+        return 'flight_takeoff';
+      case 'criminal':
+        return 'gavel';
+      case 'tax':
+        return 'receipt';
+      case 'environmental':
+        return 'eco';
+      case 'health':
+        return 'health_and_safety';
+      case 'privacy':
+        return 'security';
+      case 'consumer':
+        return 'shopping_cart';
+      case 'municipal':
+        return 'location_city';
       default:
         return 'description';
     }
@@ -43,12 +66,24 @@ function DocumentTemplateCard({ template }: DocumentTemplateCardProps) {
         <div className="text-xs text-neutral-500">
           <div className="flex items-center mb-1">
             <span className="material-icons text-xs mr-1">list</span>
-            <span>{template.fields.length} fields to complete</span>
+            <span>{Array.isArray(template.fields) ? template.fields.length : 0} fields to complete</span>
           </div>
-          <div className="flex items-center">
+          {template.subcategory && (
+            <div className="flex items-center mb-1">
+              <span className="material-icons text-xs mr-1">label</span>
+              <span className="capitalize">{template.subcategory.replace(/-/g, ' ')}</span>
+            </div>
+          )}
+          <div className="flex items-center mb-1">
             <span className="material-icons text-xs mr-1">description</span>
-            <span>Standard {template.templateType} template</span>
+            <span className="capitalize">{template.templateType.replace(/-/g, ' ')} template</span>
           </div>
+          {template.jurisdiction && (
+            <div className="flex items-center">
+              <span className="material-icons text-xs mr-1">public</span>
+              <span>{template.jurisdiction}</span>
+            </div>
+          )}
         </div>
       </CardContent>
       <CardFooter>

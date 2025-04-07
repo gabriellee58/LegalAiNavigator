@@ -14,6 +14,8 @@ import ExternalTemplateLoader from "@/components/document-generator/ExternalTemp
 import { DocumentTemplate } from "@shared/schema";
 import { check_anthropic_api_key } from "@/lib/utils";
 
+// No need for additional interfaces as we've updated the component to accept the fields property with any type
+
 function DocumentGeneratorPage() {
   const [location] = useLocation();
   const [language, setLanguage] = useState<string>("en");
@@ -41,6 +43,19 @@ function DocumentGeneratorPage() {
     }
     acc[template.templateType].push(template);
     return acc;
+  }, {});
+  
+  // Further group templates by subcategory within each type
+  const templatesByTypeAndSubcategory = Object.entries(templatesByType).reduce((result: Record<string, Record<string, DocumentTemplate[]>>, [type, typeTemplates]) => {
+    result[type] = typeTemplates.reduce((subAcc: Record<string, DocumentTemplate[]>, template: DocumentTemplate) => {
+      const subcategory = template.subcategory || 'general';
+      if (!subAcc[subcategory]) {
+        subAcc[subcategory] = [];
+      }
+      subAcc[subcategory].push(template);
+      return subAcc;
+    }, {});
+    return result;
   }, {});
   
   // State for tabs
@@ -172,18 +187,34 @@ function DocumentGeneratorPage() {
                     <TabsContent value="all">
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {templates?.map((template: DocumentTemplate) => (
-                          <DocumentTemplateCard key={template.id} template={template} />
+                          <DocumentTemplateCard 
+                            key={template.id} 
+                            template={template} 
+                          />
                         ))}
                       </div>
                     </TabsContent>
                     
                     {Object.entries(templatesByType).map(([type, typeTemplates]) => (
                       <TabsContent key={type} value={type}>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {typeTemplates.map((template: DocumentTemplate) => (
-                            <DocumentTemplateCard key={template.id} template={template} />
-                          ))}
-                        </div>
+                        {/* Display subcategories */}
+                        {templatesByTypeAndSubcategory[type] && 
+                          Object.entries(templatesByTypeAndSubcategory[type]).map(([subcategory, templates]) => (
+                            <div key={`${type}-${subcategory}`} className="mb-8">
+                              <h3 className="text-lg font-semibold mb-4 capitalize border-b pb-2">
+                                {subcategory === 'general' ? `General ${type}` : subcategory.replace(/-/g, ' ')}
+                              </h3>
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {templates.map((template: DocumentTemplate) => (
+                                  <DocumentTemplateCard 
+                                    key={template.id} 
+                                    template={template} 
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          ))
+                        }
                       </TabsContent>
                     ))}
                   </Tabs>

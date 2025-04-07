@@ -39,6 +39,11 @@ app.use((req, res, next) => {
 (async () => {
   // Initialize database and create tables
   try {
+    // Run database migrations first
+    const { runDatabaseMigrations } = await import("./db-migrate");
+    log("Running database migrations...");
+    await runDatabaseMigrations();
+    
     // Import here to avoid circular dependencies
     const { storage } = await import("./storage");
     log("Initializing database and creating default templates...");

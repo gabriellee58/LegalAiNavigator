@@ -45,8 +45,17 @@ export const templateSources: TemplateSource[] = [
     id: 'canada-legal',
     name: 'Canadian Legal Templates',
     description: 'Standard legal templates for Canadian jurisdictions',
-    categories: ['contract', 'lease', 'will', 'business', 'employment', 'ip', 'family'],
-    jurisdictions: ['Canada', 'Ontario', 'Quebec', 'British Columbia', 'Alberta'],
+    categories: [
+      // Original categories
+      'contract', 'lease', 'will', 'business', 'employment', 'ip', 'family',
+      // New main categories from the requirements
+      'family-law', 'immigration-law', 'employment-law', 'real-estate-law', 
+      'criminal-law', 'tax-law', 'environmental-law', 'health-law',
+      'privacy-data-law', 'indigenous-law', 'consumer-protection', 'estate-planning', 'municipal-law'
+    ],
+    jurisdictions: ['Canada', 'Ontario', 'Quebec', 'British Columbia', 'Alberta', 'Manitoba', 
+                    'Saskatchewan', 'Nova Scotia', 'New Brunswick', 'Newfoundland', 'PEI', 
+                    'Yukon', 'Northwest Territories', 'Nunavut'],
     fetchTemplates: async (category?: string, jurisdiction?: string) => {
       // In a future implementation, this would fetch from an actual API
       // For now, we'll return a set of template previews based on our hardcoded options
@@ -73,6 +82,7 @@ export const templateSources: TemplateSource[] = [
  */
 function getStaticTemplateList(category?: string, jurisdiction?: string): DocumentTemplatePreview[] {
   const templates: DocumentTemplatePreview[] = [
+    // Original templates
     {
       id: 'ca-contract-nda',
       title: 'Non-Disclosure Agreement',
@@ -123,6 +133,159 @@ function getStaticTemplateList(category?: string, jurisdiction?: string): Docume
       title: 'Commercial Lease Agreement',
       description: 'Lease agreement for commercial property',
       category: 'lease',
+      jurisdiction: 'Canada',
+      language: 'en',
+      source: 'canada-legal'
+    },
+    
+    // Family Law templates
+    {
+      id: 'ca-family-law-divorce-separation',
+      title: 'Divorce Separation Agreement',
+      description: 'Legally binding agreement for divorce and separation proceedings',
+      category: 'family-law',
+      jurisdiction: 'Canada',
+      language: 'en',
+      source: 'canada-legal'
+    },
+    {
+      id: 'ca-family-law-child-custody',
+      title: 'Child Custody Agreement',
+      description: 'Legal agreement establishing child custody and visitation rights',
+      category: 'family-law',
+      jurisdiction: 'Canada',
+      language: 'en',
+      source: 'canada-legal'
+    },
+    {
+      id: 'ca-family-law-adoption',
+      title: 'Adoption Application',
+      description: 'Documentation for Canadian adoption proceedings',
+      category: 'family-law',
+      jurisdiction: 'Canada',
+      language: 'en',
+      source: 'canada-legal'
+    },
+    
+    // Immigration Law Templates
+    {
+      id: 'ca-immigration-law-work-permit',
+      title: 'Work Permit Application',
+      description: 'Documentation for Canadian work permit application',
+      category: 'immigration-law',
+      jurisdiction: 'Canada',
+      language: 'en',
+      source: 'canada-legal'
+    },
+    {
+      id: 'ca-immigration-law-refugee-claim',
+      title: 'Refugee Claim Documentation',
+      description: 'Forms for initiating refugee protection claims in Canada',
+      category: 'immigration-law',
+      jurisdiction: 'Canada',
+      language: 'en',
+      source: 'canada-legal'
+    },
+    
+    // Employment Law Templates
+    {
+      id: 'ca-employment-law-termination',
+      title: 'Employment Termination Package',
+      description: 'Complete documentation for proper employee termination',
+      category: 'employment-law',
+      jurisdiction: 'Canada',
+      language: 'en',
+      source: 'canada-legal'
+    },
+    {
+      id: 'ca-employment-law-discrimination',
+      title: 'Workplace Discrimination Complaint',
+      description: 'Human rights tribunal form for discrimination complaints',
+      category: 'employment-law',
+      jurisdiction: 'Canada',
+      language: 'en',
+      source: 'canada-legal'
+    },
+    
+    // Real Estate Law Templates
+    {
+      id: 'ca-real-estate-law-purchase',
+      title: 'Real Estate Purchase Agreement',
+      description: 'Standard contract for residential property purchase',
+      category: 'real-estate-law',
+      jurisdiction: 'Canada',
+      language: 'en',
+      source: 'canada-legal'
+    },
+    {
+      id: 'ca-real-estate-law-tenancy',
+      title: 'Residential Tenancy Agreement',
+      description: 'Standardized lease compliant with provincial regulations',
+      category: 'real-estate-law',
+      jurisdiction: 'Canada',
+      language: 'en',
+      source: 'canada-legal'
+    },
+    
+    // Criminal Law Templates
+    {
+      id: 'ca-criminal-law-rights',
+      title: 'Legal Rights Explainer',
+      description: 'Plain language explanation of legal rights in criminal proceedings',
+      category: 'criminal-law',
+      jurisdiction: 'Canada',
+      language: 'en',
+      source: 'canada-legal'
+    },
+    
+    // Tax Law Templates
+    {
+      id: 'ca-tax-law-cra-objection',
+      title: 'CRA Notice of Objection',
+      description: 'Template for filing a formal objection to tax assessment',
+      category: 'tax-law',
+      jurisdiction: 'Canada',
+      language: 'en',
+      source: 'canada-legal'
+    },
+    
+    // Environmental Law Templates
+    {
+      id: 'ca-environmental-law-permit',
+      title: 'Environmental Compliance Approval',
+      description: 'Application for environmental activity approval',
+      category: 'environmental-law',
+      jurisdiction: 'Canada',
+      language: 'en',
+      source: 'canada-legal'
+    },
+    
+    // Health Law Templates
+    {
+      id: 'ca-health-law-consent',
+      title: 'Medical Consent Form',
+      description: 'Standard consent form for medical procedures',
+      category: 'health-law',
+      jurisdiction: 'Canada',
+      language: 'en',
+      source: 'canada-legal'
+    },
+    
+    // Additional Categories
+    {
+      id: 'ca-privacy-data-law-compliance',
+      title: 'PIPEDA Compliance Checklist',
+      description: 'Assessment tool for privacy law compliance',
+      category: 'privacy-data-law',
+      jurisdiction: 'Canada',
+      language: 'en',
+      source: 'canada-legal'
+    },
+    {
+      id: 'ca-estate-planning-will',
+      title: 'Last Will and Testament',
+      description: 'Comprehensive will template for estate planning',
+      category: 'estate-planning',
       jurisdiction: 'Canada',
       language: 'en',
       source: 'canada-legal'
@@ -201,8 +364,22 @@ export async function importExternalTemplate(templateId: string, language: strin
     
     const sourceCode = parts[0];
     const category = parts[1];
-    // Handle case where templateName might not exist
-    const templateName = parts.length > 2 ? parts[2] : 'template';
+    
+    // Check if we have a subcategory (e.g., family-law-divorce where 'divorce' is the subcategory)
+    let subcategory = null;
+    let templateName;
+    
+    if (parts.length >= 4) {
+      // Format is source-category-subcategory-name
+      subcategory = parts[2];
+      templateName = parts.slice(3).join('-');
+    } else if (parts.length === 3) {
+      // Format is source-category-name (no subcategory)
+      templateName = parts[2];
+    } else {
+      // Just source-category
+      templateName = 'template';
+    }
     
     // Find source
     const source = templateSources.find(s => s.id.startsWith(sourceCode));
@@ -212,8 +389,8 @@ export async function importExternalTemplate(templateId: string, language: strin
     }
     
     // Generate a template based on the ID
-    console.log(`Attempting to generate template with ID: ${templateId}, category: ${category}, language: ${language}`);
-    const templateContent = await generateTemplateFromId(templateId, category, language);
+    console.log(`Attempting to generate template with ID: ${templateId}, category: ${category}, subcategory: ${subcategory}, language: ${language}`);
+    const templateContent = await generateTemplateFromId(templateId, category, language, subcategory);
     if (!templateContent) {
       console.error("Failed to generate template content");
       return null;
@@ -230,13 +407,23 @@ export async function importExternalTemplate(templateId: string, language: strin
     // Create fields based on the template content
     const fields = extractFieldsFromTemplate(templateContent);
     
+    // Create a description with subcategory if available
+    let description = `Imported ${category} template`;
+    if (subcategory) {
+      description = `Imported ${category} template for ${subcategory}`;
+    }
+    description += ` from ${source.name}`;
+    
+    // Create the template with subcategory if available
     const template: InsertDocumentTemplate = {
       templateType: category,
+      subcategory: subcategory || undefined,
       title,
-      description: `Imported ${category} template from ${source.name}`,
+      description,
       language,
       templateContent,
-      fields
+      fields,
+      jurisdiction: 'Canada', // Default jurisdiction
     };
     
     return template;
@@ -251,20 +438,30 @@ export async function importExternalTemplate(templateId: string, language: strin
  * @param templateId The external template ID
  * @param category The document category
  * @param language The language code
+ * @param subcategory Optional subcategory for more specific templates
  * @returns Template content string
  */
-async function generateTemplateFromId(templateId: string, category: string, language: string): Promise<string | null> {
+async function generateTemplateFromId(templateId: string, category: string, language: string, subcategory?: string | null): Promise<string | null> {
   try {
     // First try with Anthropic Claude
     try {
+      // Prepare the system prompt based on category and subcategory
+      let systemPrompt = `You are a legal document template generator for the Canadian legal system.
+        Generate a detailed, professional ${category} template`;
+      
+      if (subcategory) {
+        systemPrompt += ` specifically for ${subcategory}`;
+      }
+      
+      systemPrompt += ` in ${language === 'en' ? 'English' : 'French'}.
+        The document should follow Canadian legal conventions and include all standard sections.
+        Use [PLACEHOLDER] format for fields that would need to be filled in (like [CLIENT_NAME], [DATE], etc.).
+        Make sure the document is comprehensive and covers all important legal aspects.`;
+      
       const response = await anthropic.messages.create({
         model: "claude-3-7-sonnet-20250219",
         max_tokens: 2500,
-        system: `You are a legal document template generator for the Canadian legal system.
-          Generate a detailed, professional ${category} template in ${language === 'en' ? 'English' : 'French'}.
-          The document should follow Canadian legal conventions and include all standard sections.
-          Use [PLACEHOLDER] format for fields that would need to be filled in (like [CLIENT_NAME], [DATE], etc.).
-          Make sure the document is comprehensive and covers all important legal aspects.`,
+        system: systemPrompt,
         messages: [
           {
             role: "user",
@@ -294,16 +491,25 @@ async function generateTemplateFromId(templateId: string, category: string, lang
       // If Anthropic fails, try OpenAI as fallback
       console.log("Anthropic failed, trying OpenAI fallback:", anthropicError);
       
+      // Prepare the system prompt for OpenAI fallback
+      let systemPrompt = `You are a legal document template generator for the Canadian legal system.
+        Generate a detailed, professional ${category} template`;
+      
+      if (subcategory) {
+        systemPrompt += ` specifically for ${subcategory}`;
+      }
+      
+      systemPrompt += ` in ${language === 'en' ? 'English' : 'French'}.
+        The document should follow Canadian legal conventions and include all standard sections.
+        Use [PLACEHOLDER] format for fields that would need to be filled in (like [CLIENT_NAME], [DATE], etc.).
+        Make sure the document is comprehensive and covers all important legal aspects.`;
+      
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
           {
             role: "system",
-            content: `You are a legal document template generator for the Canadian legal system.
-            Generate a detailed, professional ${category} template in ${language === 'en' ? 'English' : 'French'}.
-            The document should follow Canadian legal conventions and include all standard sections.
-            Use [PLACEHOLDER] format for fields that would need to be filled in (like [CLIENT_NAME], [DATE], etc.).
-            Make sure the document is comprehensive and covers all important legal aspects.`
+            content: systemPrompt
           },
           {
             role: "user",

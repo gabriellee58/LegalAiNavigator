@@ -1,0 +1,96 @@
+2. Missing Legal Categories & Subcategories
+A. Family Law
+Divorce & Separation
+
+Child custody agreements, spousal support calculators, parenting plans.
+
+Adoption & Guardianship
+
+Document automation for provincial adoption forms (e.g., Ontario’s Child and Family Services Act).
+
+Domestic Violence
+
+Emergency protection order applications, resource locators for shelters.
+
+B. Immigration Law
+Applications
+
+Study/work permits, PR applications, citizenship tests. Sync with IRCC processing times.
+
+Refugee Claims
+
+Form completion, hearing preparation tools.
+
+Compliance
+
+Employer LMIA checks, temporary resident obligations.
+
+C. Employment Law
+Termination
+
+Severance pay calculators, wrongful dismissal risk assessments.
+
+Discrimination
+
+Human rights tribunal form generators (e.g., Ontario HRTO).
+
+Labour Standards
+
+Provincial overtime calculators, leave entitlement guides.
+
+D. Real Estate Law
+Residential Transactions
+
+Purchase agreement generators, title search automation.
+
+Landlord-Tenant
+
+Provincial lease compliance (e.g., BC Residential Tenancy Act), eviction notice tools.
+
+Zoning & Development
+
+Municipal bylaw compliance checks, permit applications.
+
+E. Criminal Law (Limited scope due to ethical concerns)
+Summary Offenses
+
+Traffic ticket dispute letter generators.
+
+Rights Education
+
+Charter of Rights explainers, police interaction guides.
+
+F. Tax Law
+Disputes
+
+CRA objection letter templates, audit response workflows.
+
+Planning
+
+TFSA/RRSP contribution calculators, estate tax optimization.
+
+G. Environmental Law
+Permits
+
+Environmental compliance approvals (ECAs), waste management documentation.
+
+Indigenous Consultation
+
+Duty-to-consult frameworks for resource projects.
+
+H. Health Law
+Patient Rights
+
+Consent form generators, MAID (Medical Assistance in Dying) compliance.
+
+Privacy
+
+PHIPA compliance checks for healthcare providers.
+
+3. Additional Critical Additions
+Category	Subcategories & Purpose
+Privacy & Data Law	GDPR/PIPEDA compliance audits, breach response plans.
+Indigenous Law	Treaty rights databases, FNMI (First Nations, Métis, Inuit) land claim resources.
+Consumer Protection	Complaint letter generators, warranty dispute resolution (aligned with provincial Consumer Protection Acts).
+Estate Planning	Powers of attorney, healthcare directives, probate application assistants.
+Municipal Law	Bylaw dispute tools (e.g., noise complaints, parking tickets).

@@ -45,21 +45,25 @@ export type ChatMessage = typeof chatMessages.$inferSelect;
 // Document templates schema
 export const documentTemplates = pgTable("document_templates", {
   id: serial("id").primaryKey(),
-  templateType: text("template_type").notNull(), // 'contract', 'will', 'lease', etc.
+  templateType: text("template_type").notNull(), // Main category: 'family', 'immigration', 'employment', etc.
+  subcategory: text("subcategory"), // Subcategory: 'divorce', 'child-custody', etc.
   title: text("title").notNull(),
   description: text("description").notNull(),
   language: text("language").notNull().default("en"), // 'en' or 'fr'
   templateContent: text("template_content").notNull(),
   fields: jsonb("fields").notNull(), // Required fields for template generation
+  jurisdiction: text("jurisdiction").default("Canada"), // Jurisdiction: 'Canada', 'Ontario', etc.
 });
 
 export const insertDocumentTemplateSchema = createInsertSchema(documentTemplates).pick({
   templateType: true,
+  subcategory: true,
   title: true,
   description: true,
   language: true,
   templateContent: true,
   fields: true,
+  jurisdiction: true,
 });
 
 export type InsertDocumentTemplate = z.infer<typeof insertDocumentTemplateSchema>;

@@ -370,9 +370,11 @@ export class DatabaseStorage implements IStorage {
     // Service Agreement template
     await this.createDocumentTemplate({
       templateType: 'contract',
+      subcategory: 'service',
       title: 'Service Agreement',
       description: 'A basic service agreement between a service provider and client',
       language: 'en',
+      jurisdiction: 'Canada',
       templateContent: `SERVICE AGREEMENT
 
 This Service Agreement (the "Agreement") is made and entered into as of [DATE], by and between [CLIENT NAME], with a principal place of business at [CLIENT ADDRESS] (the "Client"), and [SERVICE PROVIDER NAME], with a principal place of business at [SERVICE PROVIDER ADDRESS] (the "Service Provider").
@@ -426,10 +428,12 @@ Title: [TITLE]`,
     
     // Residential Lease Agreement template
     await this.createDocumentTemplate({
-      templateType: 'lease',
+      templateType: 'real-estate',
+      subcategory: 'residential-lease',
       title: 'Residential Lease Agreement',
       description: 'A standard residential lease agreement for landlords and tenants',
       language: 'en',
+      jurisdiction: 'Canada',
       templateContent: `RESIDENTIAL LEASE AGREEMENT
 
 This Residential Lease Agreement (the "Lease") is made and entered into as of [DATE], by and between [LANDLORD NAME], with an address of [LANDLORD ADDRESS] (the "Landlord"), and [TENANT NAME], with an address of [TENANT ADDRESS] (the "Tenant").
@@ -485,10 +489,12 @@ Name: [TENANT NAME]`,
     
     // Simple Last Will and Testament template
     await this.createDocumentTemplate({
-      templateType: 'will',
+      templateType: 'estate',
+      subcategory: 'will',
       title: 'Simple Last Will and Testament',
       description: 'A basic will document for simple estates',
       language: 'en',
+      jurisdiction: 'Canada',
       templateContent: `LAST WILL AND TESTAMENT
 
 I, [TESTATOR NAME], a resident of [CITY], [PROVINCE], Canada, being of sound mind, declare this to be my Last Will and Testament, hereby revoking all previous wills and codicils made by me.
