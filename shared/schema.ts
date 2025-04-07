@@ -96,6 +96,8 @@ export const researchQueries = pgTable("research_queries", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }),
   query: text("query").notNull(),
+  jurisdiction: text("jurisdiction").default("canada"),
+  practiceArea: text("practice_area").default("all"),
   results: jsonb("results"),
   timestamp: timestamp("timestamp").defaultNow(),
 });
@@ -103,6 +105,8 @@ export const researchQueries = pgTable("research_queries", {
 export const insertResearchQuerySchema = createInsertSchema(researchQueries).pick({
   userId: true,
   query: true,
+  jurisdiction: true,
+  practiceArea: true,
   results: true,
 });
 

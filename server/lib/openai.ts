@@ -105,35 +105,98 @@ export async function analyzeContract(contractText: string): Promise<{
 /**
  * Perform legal research on a given query
  * @param query The research query
+ * @param jurisdiction The jurisdiction (e.g., "canada", "ontario")
+ * @param practiceArea The practice area (e.g., "family", "criminal")
  * @returns Research results
  */
-export async function performLegalResearch(query: string): Promise<{
-  relevantLaws: { title: string; description: string; source: string }[];
-  relevantCases: { name: string; citation: string; relevance: string }[];
+export async function performLegalResearch(
+  query: string,
+  jurisdiction: string = "canada",
+  practiceArea: string = "all"
+): Promise<{
+  relevantLaws: { 
+    title: string; 
+    description: string; 
+    source: string;
+    url?: string;
+    relevanceScore?: number;
+  }[];
+  relevantCases: { 
+    name: string; 
+    citation: string; 
+    relevance: string;
+    year?: string;
+    jurisdiction?: string;
+    judgment?: string;
+    keyPoints?: string[];
+    url?: string;
+  }[];
   summary: string;
+  legalConcepts?: {
+    concept: string;
+    definition: string;
+    relevance: string;
+  }[];
 }> {
   try {
+    // Format jurisdiction display name
+    const jurisdictionDisplay = jurisdiction === "canada" 
+      ? "Federal (Canada)" 
+      : jurisdiction.charAt(0).toUpperCase() + jurisdiction.slice(1).replace(/-/g, ' ');
+    
+    // Build practice area context
+    let practiceAreaContext = "";
+    if (practiceArea !== "all") {
+      practiceAreaContext = `with a focus on ${practiceArea.replace(/-/g, ' ')} law`;
+    }
+    
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
       messages: [
         {
           role: "system",
-          content: `You are a legal research assistant specialized in Canadian law.
-          For the given query, identify relevant laws, statutes, and case precedents in Canada.
+          content: `You are a legal research assistant specialized in Canadian law with expertise in ${jurisdictionDisplay} jurisdiction ${practiceAreaContext}.
+          
+          For the given query, provide comprehensive research focusing on ${jurisdictionDisplay} laws, statutes, and case precedents.
+          
+          Include relevant legal concepts, provide detailed case information with key points from judgments, and assign relevance scores to laws.
+          
           Respond with JSON in this format:
           {
             "relevantLaws": [
-              {"title": "Law title", "description": "Brief description", "source": "Source/citation"}
+              {
+                "title": "Law title",
+                "description": "Detailed description of the law and how it applies to the query",
+                "source": "Full source/citation",
+                "url": "URL to official source if available",
+                "relevanceScore": 0.95 // Number between 0 and 1 indicating relevance
+              }
             ],
             "relevantCases": [
-              {"name": "Case name", "citation": "Legal citation", "relevance": "Why relevant"}
+              {
+                "name": "Full case name",
+                "citation": "Precise legal citation",
+                "relevance": "Detailed explanation of relevance to query",
+                "year": "Year of the case",
+                "jurisdiction": "Court jurisdiction",
+                "judgment": "Brief summary of judgment",
+                "keyPoints": ["Key point 1", "Key point 2", "Key point 3"],
+                "url": "URL to case report if available"
+              }
             ],
-            "summary": "Research summary"
+            "legalConcepts": [
+              {
+                "concept": "Legal concept name",
+                "definition": "Clear definition of the concept",
+                "relevance": "How this concept applies to the query"
+              }
+            ],
+            "summary": "Comprehensive research summary with analysis and recommendations"
           }`
         },
         {
           role: "user",
-          content: `Research the following Canadian legal query:\n\n${query}`
+          content: `Research the following legal query for ${jurisdictionDisplay} ${practiceAreaContext}:\n\n${query}\n\nProvide detailed, jurisdiction-specific research with practical insights.`
         }
       ],
       response_format: { type: "json_object" }
@@ -154,6 +217,7 @@ export async function performLegalResearch(query: string): Promise<{
     return {
       relevantLaws: result.relevantLaws || [],
       relevantCases: result.relevantCases || [],
+      legalConcepts: result.legalConcepts || [],
       summary: result.summary || "No research summary available"
     };
   } catch (error) {
@@ -161,6 +225,7 @@ export async function performLegalResearch(query: string): Promise<{
     return {
       relevantLaws: [],
       relevantCases: [],
+      legalConcepts: [],
       summary: "An error occurred while performing research"
     };
   }

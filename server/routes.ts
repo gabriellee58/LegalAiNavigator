@@ -359,25 +359,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Legal research
   app.post("/api/research", isAuthenticated, async (req: Request, res: Response) => {
     try {
-      // Validate research query without userId
-      const researchSchema = insertResearchQuerySchema.omit({ userId: true });
+      // Create enhanced schema with jurisdiction and practiceArea
+      const researchSchema = z.object({
+        query: z.string().min(1),
+        jurisdiction: z.string().optional(),
+        practiceArea: z.string().optional(),
+      });
+      
       const parsed = researchSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ message: "Invalid research query" });
       }
       
-      // Perform research with OpenAI
-      const results = await performLegalResearch(parsed.data.query);
+      // Extract parameters with defaults
+      const { 
+        query, 
+        jurisdiction = "canada", 
+        practiceArea = "all" 
+      } = parsed.data;
+      
+      // Perform research with OpenAI using all parameters
+      const results = await performLegalResearch(
+        query,
+        jurisdiction,
+        practiceArea
+      );
       
       // Save the research query with user ID and results
       const savedQuery = await storage.createResearchQuery({
-        ...parsed.data,
+        query,
         userId: req.user!.id,
-        results
+        results: JSON.stringify(results),
+        jurisdiction,
+        practiceArea
       });
       
-      res.status(201).json(savedQuery);
+      res.status(201).json({
+        ...savedQuery,
+        results // Return parsed results directly
+      });
     } catch (error) {
+      console.error("Research error:", error);
       res.status(500).json({ message: "Error performing legal research" });
     }
   });

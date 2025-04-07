@@ -29,11 +29,20 @@ export const analyzeContract = async (content: string) => {
  * Perform legal research on a query
  * @param userId The user ID
  * @param query The research query
+ * @param jurisdiction The jurisdiction (e.g., "canada", "ontario")
+ * @param practiceArea The practice area (e.g., "family", "criminal")
  */
-export const performResearch = async (userId: number, query: string) => {
+export const performResearch = async (
+  userId: number, 
+  query: string,
+  jurisdiction: string = "canada",
+  practiceArea: string = "all"
+) => {
   return await apiRequest("POST", "/api/research", {
     userId,
     query,
+    jurisdiction,
+    practiceArea
   });
 };
 

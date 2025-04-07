@@ -31,6 +31,18 @@ export async function runDatabaseMigrations() {
       `);
     }
     
+    // Check if jurisdiction column exists in research_queries
+    const researchJurisdictionExists = await checkColumnExists('research_queries', 'jurisdiction');
+    
+    if (!researchJurisdictionExists) {
+      log('Adding jurisdiction and practice_area columns to research_queries table', 'db');
+      await db.execute(sql`
+        ALTER TABLE research_queries 
+        ADD COLUMN jurisdiction TEXT DEFAULT 'canada',
+        ADD COLUMN practice_area TEXT DEFAULT 'all'
+      `);
+    }
+    
     log('Database migrations completed successfully', 'db');
   } catch (error) {
     log(`Database migration error: ${error}`, 'db');
