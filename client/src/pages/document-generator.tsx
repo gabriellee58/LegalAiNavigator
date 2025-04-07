@@ -134,6 +134,31 @@ function DocumentGeneratorPage() {
               </p>
             </div>
             
+            {/* Legal domain quick links */}
+            <div className="bg-white border border-gray-100 rounded-lg p-4 shadow-sm">
+              <h3 className="font-medium text-primary mb-3">Browse by Legal Domain</h3>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" asChild>
+                  <a href="/legal-domains/family-law">Family Law</a>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <a href="/legal-domains/real-estate">Real Estate</a>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <a href="/legal-domains/business">Business</a>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <a href="/legal-domains/employment">Employment</a>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <a href="/legal-domains/immigration">Immigration</a>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <a href="/legal-domains/personal-injury">Personal Injury</a>
+                </Button>
+              </div>
+            </div>
+            
             {/* Main tabs for the document generator: Templates, External Templates */}
             <Tabs 
               value={generatorTab} 

@@ -24,6 +24,14 @@ import DocumentTemplatesPage from "./pages/document-templates";
 import HelpResourcesPage from "./pages/help-resources";
 import SettingsPage from "./pages/settings";
 
+// Import legal domain pages
+import FamilyLawPage from "./pages/legal-domains/family-law";
+import RealEstateLawPage from "./pages/legal-domains/real-estate";
+import BusinessLawPage from "./pages/legal-domains/business";
+import EmploymentLawPage from "./pages/legal-domains/employment";
+import ImmigrationLawPage from "./pages/legal-domains/immigration";
+import PersonalInjuryLawPage from "./pages/legal-domains/personal-injury";
+
 // Import style for Material Icons
 function Head() {
   useEffect(() => {
@@ -70,6 +78,14 @@ function Router() {
       <ProtectedRoute path="/documents/wills-estates" component={DocumentTemplatesPage} />
       <ProtectedRoute path="/documents/business-formation" component={DocumentTemplatesPage} />
       <ProtectedRoute path="/documents/ip-management" component={DocumentTemplatesPage} />
+      
+      {/* Legal Domains */}
+      <ProtectedRoute path="/legal-domains/family-law" component={FamilyLawPage} />
+      <ProtectedRoute path="/legal-domains/real-estate" component={RealEstateLawPage} />
+      <ProtectedRoute path="/legal-domains/business" component={BusinessLawPage} />
+      <ProtectedRoute path="/legal-domains/employment" component={EmploymentLawPage} />
+      <ProtectedRoute path="/legal-domains/immigration" component={ImmigrationLawPage} />
+      <ProtectedRoute path="/legal-domains/personal-injury" component={PersonalInjuryLawPage} />
       
       {/* Help and Settings */}
       <ProtectedRoute path="/help" component={HelpResourcesPage} />

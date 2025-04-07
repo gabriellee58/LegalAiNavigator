@@ -189,9 +189,43 @@ function HomePage() {
             Our platform offers templates and AI guidance across all major Canadian legal domains
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {["Family Law", "Real Estate", "Business", "Employment", "Immigration", "Tax", "Estate Planning", "Consumer Rights", "Criminal", "Civil Litigation", "Indigenous Law", "Environmental"].map((category) => (
-              <div key={category} className="bg-white border border-gray-100 rounded-lg p-4 text-center hover:shadow-md transition-shadow">
+            {/* Linked domains with available pages */}
+            <Link href="/legal-domains/family-law">
+              <div className="bg-white border border-gray-100 rounded-lg p-4 text-center hover:shadow-md transition-shadow">
+                <p className="font-medium text-primary">Family Law</p>
+              </div>
+            </Link>
+            <Link href="/legal-domains/real-estate">
+              <div className="bg-white border border-gray-100 rounded-lg p-4 text-center hover:shadow-md transition-shadow">
+                <p className="font-medium text-primary">Real Estate</p>
+              </div>
+            </Link>
+            <Link href="/legal-domains/business">
+              <div className="bg-white border border-gray-100 rounded-lg p-4 text-center hover:shadow-md transition-shadow">
+                <p className="font-medium text-primary">Business</p>
+              </div>
+            </Link>
+            <Link href="/legal-domains/employment">
+              <div className="bg-white border border-gray-100 rounded-lg p-4 text-center hover:shadow-md transition-shadow">
+                <p className="font-medium text-primary">Employment</p>
+              </div>
+            </Link>
+            <Link href="/legal-domains/immigration">
+              <div className="bg-white border border-gray-100 rounded-lg p-4 text-center hover:shadow-md transition-shadow">
+                <p className="font-medium text-primary">Immigration</p>
+              </div>
+            </Link>
+            <Link href="/legal-domains/personal-injury">
+              <div className="bg-white border border-gray-100 rounded-lg p-4 text-center hover:shadow-md transition-shadow">
+                <p className="font-medium text-primary">Personal Injury</p>
+              </div>
+            </Link>
+            
+            {/* Future domains (no pages yet) */}
+            {["Tax", "Estate Planning", "Consumer Rights", "Criminal", "Civil Litigation", "Indigenous Law", "Environmental"].map((category) => (
+              <div key={category} className="bg-white border border-gray-100 rounded-lg p-4 text-center opacity-80">
                 <p className="font-medium text-primary">{category}</p>
+                <span className="text-xs text-neutral-500">Coming soon</span>
               </div>
             ))}
           </div>
