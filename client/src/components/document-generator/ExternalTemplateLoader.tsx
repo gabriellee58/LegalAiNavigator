@@ -72,12 +72,24 @@ export default function ExternalTemplateLoader() {
   const {
     mutate: importTemplate,
     isPending: isImporting,
+    error: importError,
   } = useMutation({
     mutationFn: async (templateId: string) => {
+      // Validate template ID format
+      if (!templateId.includes('-')) {
+        throw new Error("Invalid template ID format. Expected format: 'source-category-name'");
+      }
+      
       const response = await apiRequest("POST", "/api/template-sources/import", {
         templateId,
         language
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || errorData.message || "Failed to import template");
+      }
+      
       return await response.json();
     },
     onSuccess: () => {
@@ -89,6 +101,7 @@ export default function ExternalTemplateLoader() {
       queryClient.invalidateQueries({ queryKey: ["/api/document-templates"] });
     },
     onError: (error: any) => {
+      console.error("Template import error:", error);
       toast({
         title: t("template_import_error"),
         description: error.message || t("template_import_error_description"),
@@ -123,6 +136,32 @@ export default function ExternalTemplateLoader() {
           </div>
         ) : (
           <>
+            {/* Helper info panel */}
+            <div className="mb-4 p-3 bg-blue-50 rounded-md text-sm border border-blue-100">
+              <h4 className="font-medium text-blue-800 mb-1 flex items-center">
+                <span className="material-icons text-blue-700 mr-1 text-sm">info</span>
+                Template Import Information
+              </h4>
+              <p className="text-blue-900 mb-2">
+                Templates are imported using AI generation based on the template ID. The proper format for template IDs is:
+                <code className="ml-1 p-1 bg-white text-blue-800 rounded border border-blue-200 text-xs">source-category-name</code>
+              </p>
+              <p className="text-blue-900 text-xs">
+                Example: <code className="p-1 bg-white text-blue-800 rounded border border-blue-200">canada-legal-nda</code> for a Canadian NDA legal template.
+              </p>
+            </div>
+
+            {/* Show error message if import fails */}
+            {importError && (
+              <div className="mb-4 p-3 bg-red-50 rounded-md text-sm border border-red-200">
+                <h4 className="font-medium text-red-800 mb-1 flex items-center">
+                  <span className="material-icons text-red-700 mr-1 text-sm">error</span>
+                  Import Failed
+                </h4>
+                <p className="text-red-700">{importError.message}</p>
+              </div>
+            )}
+            
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               {/* Source selector */}
               <div>

@@ -943,17 +943,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Import an external template
   app.post("/api/template-sources/import", isAuthenticated, async (req: Request, res: Response) => {
     try {
+      // Validate request body with more detailed schema
       const importSchema = z.object({
-        templateId: z.string(),
+        templateId: z.string()
+          .min(3, "Template ID is too short")
+          .regex(/^[a-z0-9-]+$/i, "Template ID can only contain letters, numbers, and hyphens")
+          .refine(val => val.includes('-'), {
+            message: "Template ID must include at least one hyphen (e.g., 'source-category')"
+          }),
         language: z.enum(['en', 'fr']).default('en')
       });
       
       const parsed = importSchema.safeParse(req.body);
       if (!parsed.success) {
-        return res.status(400).json({ message: "Invalid import data", errors: parsed.error.format() });
+        return res.status(400).json({ 
+          message: "Invalid import data", 
+          errors: parsed.error.format(),
+          detail: "Template ID format should be 'source-category-name', for example 'canada-legal-nda'"
+        });
       }
       
-      // Check API key availability first
+      // Check API key availability first with clearer error messages
       if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY) {
         return res.status(400).json({ 
           message: "Missing AI API keys", 
@@ -962,6 +972,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       try {
+        // Log the template ID being imported for debugging
+        console.log(`Attempting to import template with ID: ${parsed.data.templateId}`);
+        
         const template = await importAndSaveTemplate(
           parsed.data.templateId,
           parsed.data.language
@@ -970,16 +983,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!template) {
           return res.status(400).json({ 
             message: "Failed to import template", 
-            detail: "The template could not be generated. Please try again or choose a different template."
+            detail: "The template could not be generated. Please check your AI API keys and try again."
           });
         }
         
         res.status(201).json(template);
-      } catch (importError) {
+      } catch (importError: any) {
+        // Handle specific errors with appropriate status codes
         console.error("Template import execution error:", importError);
+        
+        // Format error message from the caught error
+        const errorMessage = importError?.message || "Unknown error during template generation";
+        
+        // If error contains "Invalid template ID format", it's a 400
+        if (errorMessage.includes("Invalid template ID format") || 
+            errorMessage.includes("template source not found")) {
+          return res.status(400).json({ 
+            message: "Failed to import template", 
+            detail: errorMessage
+          });
+        }
+        
+        // If error contains API key issues, it's a 401
+        if (errorMessage.includes("API key")) {
+          return res.status(401).json({ 
+            message: "AI service authorization failed", 
+            detail: "Please check your API keys in the environment settings."
+          });
+        }
+        
+        // Otherwise, it's a general 400 error
         return res.status(400).json({ 
           message: "Template import failed", 
-          detail: importError instanceof Error ? importError.message : "Unknown error during template generation"
+          detail: errorMessage
         });
       }
     } catch (error) {

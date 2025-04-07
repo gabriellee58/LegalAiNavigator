@@ -186,11 +186,17 @@ export async function importExternalTemplate(templateId: string, language: strin
     // In a production system, this would make an actual API call to the template source
     // For now, we'll generate the template using AI based on the ID
     
+    // Validate template ID format and parse it
+    if (!templateId.includes('-')) {
+      console.error("Invalid template ID format:", templateId);
+      throw new Error("Invalid template ID format. Expected format: 'source-category-name'");
+    }
+    
     // Parse template ID to get information
     const parts = templateId.split('-');
     if (parts.length < 2) {
       console.error("Invalid template ID format:", templateId);
-      return null;
+      throw new Error("Template ID must have at least a source and category (e.g., 'canada-legal')");
     }
     
     const sourceCode = parts[0];
@@ -202,7 +208,7 @@ export async function importExternalTemplate(templateId: string, language: strin
     const source = templateSources.find(s => s.id.startsWith(sourceCode));
     if (!source) {
       console.error("Template source not found for code:", sourceCode);
-      return null;
+      throw new Error(`Unknown template source: '${sourceCode}'. Valid sources include: ${templateSources.map(s => s.id).join(', ')}`);
     }
     
     // Generate a template based on the ID
@@ -359,14 +365,23 @@ function extractFieldsFromTemplate(templateContent: string): any[] {
  */
 export async function importAndSaveTemplate(templateId: string, language: string = 'en') {
   try {
+    // Validate template ID format first
+    if (!templateId.includes('-')) {
+      console.error("Invalid template ID format:", templateId);
+      throw new Error("Invalid template ID format. Expected format: 'source-category-name'");
+    }
+    
     const template = await importExternalTemplate(templateId, language);
-    if (!template) return null;
+    if (!template) {
+      throw new Error("Failed to generate template content. Please check your AI service API keys and try again.");
+    }
     
     // Save to database
     const savedTemplate = await storage.createDocumentTemplate(template);
     return savedTemplate;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error importing and saving template:", error);
-    return null;
+    // Re-throw the error so it can be properly handled by the route handler
+    throw error;
   }
 }

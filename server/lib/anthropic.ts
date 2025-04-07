@@ -28,7 +28,7 @@ interface DocumentAnalysisResponse {
  * @returns Enhanced document content
  */
 export async function generateEnhancedDocument(
-  content: string,
+  documentContent: string,
   formData: Record<string, any>,
   documentType: string,
   jurisdiction: string = 'Ontario'
@@ -54,7 +54,7 @@ export async function generateEnhancedDocument(
           content: `I need to enhance this ${documentType} for ${jurisdiction} jurisdiction. 
           
 Here is my drafted document:
-${content}
+${documentContent}
 
 Here is the form data I've entered (use this to add missing details):
 ${JSON.stringify(formData, null, 2)}
@@ -65,12 +65,16 @@ Please enhance this document to make it more comprehensive, legally sound, and c
     });
 
     // Extract the text content from the response
-    const content = typeof response.content[0] === 'object' && 'text' in response.content[0] 
-      ? response.content[0].text 
-      : "";
+    let responseText = "";
+    if (response.content && response.content.length > 0) {
+      const firstContent = response.content[0];
+      if (typeof firstContent === 'object' && 'text' in firstContent) {
+        responseText = firstContent.text;
+      }
+    }
       
     return {
-      content: content,
+      content: responseText,
     };
   } catch (error) {
     console.error('Error enhancing document with Anthropic:', error);
@@ -86,13 +90,13 @@ Please enhance this document to make it more comprehensive, legally sound, and c
  * @returns Analysis results
  */
 export async function analyzeLegalDocument(
-  content: string,
+  documentContent: string,
   documentType: string,
   jurisdiction: string = 'Canada'
 ): Promise<DocumentAnalysisResponse> {
   try {
     // the newest Anthropic model is "claude-3-7-sonnet-20250219" which was released February 24, 2025. do not change this unless explicitly requested by the user
-    const response = await anthropic.messages.create({
+    const anthropicResponse = await anthropic.messages.create({
       model: 'claude-3-7-sonnet-20250219',
       max_tokens: 2000,
       system: `You are a Canadian legal document analysis assistant specialized in analyzing legal documents for the ${jurisdiction} jurisdiction. Provide a comprehensive, structured analysis in JSON format.`,
@@ -107,15 +111,15 @@ export async function analyzeLegalDocument(
 5. jurisdiction (object with properties: valid (boolean), notes)
 
 Here is the document to analyze:
-${content}`
+${documentContent}`
         }
       ],
     });
 
     try {
       // Extract the text content from the response
-      const responseText = typeof response.content[0] === 'object' && 'text' in response.content[0] 
-        ? response.content[0].text as string
+      const responseText = typeof anthropicResponse.content[0] === 'object' && 'text' in anthropicResponse.content[0] 
+        ? anthropicResponse.content[0].text as string
         : "";
         
       // Extract JSON from the response
@@ -147,8 +151,8 @@ ${content}`
       console.error('Error parsing Anthropic response as JSON:', jsonError);
       
       // Extract the text content for fallback
-      const responseText = typeof response.content[0] === 'object' && 'text' in response.content[0] 
-        ? response.content[0].text as string
+      const responseText = typeof anthropicResponse.content[0] === 'object' && 'text' in anthropicResponse.content[0] 
+        ? anthropicResponse.content[0].text as string
         : "Error extracting content from AI response";
       
       // Fallback response
