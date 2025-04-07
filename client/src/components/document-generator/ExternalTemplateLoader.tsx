@@ -38,6 +38,7 @@ export default function ExternalTemplateLoader() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedJurisdiction, setSelectedJurisdiction] = useState<string | null>(null);
   const [language, setLanguage] = useState<string>("en");
+  const [manualTemplateId, setManualTemplateId] = useState<string>("");
   
   // Fetch template sources
   const {
@@ -56,6 +57,15 @@ export default function ExternalTemplateLoader() {
   
   // Get current selected source
   const currentSource = sources.find(s => s.id === selectedSource);
+  
+  // Format the default template ID when source or category changes
+  useEffect(() => {
+    if (selectedSource && selectedCategory) {
+      setManualTemplateId(`${selectedSource}-${selectedCategory}-template`);
+    } else if (selectedSource) {
+      setManualTemplateId(`${selectedSource}-legal-template`);
+    }
+  }, [selectedSource, selectedCategory]);
   
   // Fetch templates from selected source
   const {
@@ -162,6 +172,63 @@ export default function ExternalTemplateLoader() {
               </div>
             )}
             
+            {/* Manual template import */}
+            <div className="mb-4 p-4 border rounded-md">
+              <h4 className="font-medium text-lg mb-3">Quick Template Import</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="col-span-2">
+                  <label className="text-sm font-medium mb-1 block">
+                    Template ID
+                  </label>
+                  <div className="flex">
+                    <input 
+                      type="text" 
+                      value={manualTemplateId}
+                      onChange={(e) => setManualTemplateId(e.target.value)}
+                      className="flex-1 py-2 px-3 border rounded-l-md focus:outline-none focus:ring-1 focus:ring-primary"
+                      placeholder="source-category-name (e.g., canada-legal-nda)"
+                    />
+                    <Button
+                      className="rounded-l-none"
+                      disabled={isImporting || !manualTemplateId.includes('-')}
+                      onClick={() => importTemplate(manualTemplateId)}
+                    >
+                      {isImporting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          {t("importing")}
+                        </>
+                      ) : (
+                        t("import")
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {manualTemplateId.includes('-') 
+                      ? "✓ Valid template ID format" 
+                      : "⚠️ Invalid format: Must include source, category, and name separated by hyphens"}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">
+                    Template Language
+                  </label>
+                  <Select 
+                    value={language} 
+                    onValueChange={setLanguage}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="fr">French</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               {/* Source selector */}
               <div>
@@ -258,7 +325,11 @@ export default function ExternalTemplateLoader() {
                   <TemplateCard 
                     key={template.id} 
                     template={template}
-                    onImport={() => importTemplate(template.id)}
+                    onImport={() => {
+                      // Use formatted template ID helper to ensure proper format
+                      const formattedId = `${template.source}-${template.category}-${template.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`;
+                      importTemplate(formattedId);
+                    }}
                     isImporting={isImporting}
                   />
                 ))}
@@ -278,6 +349,19 @@ interface TemplateCardProps {
 }
 
 function TemplateCard({ template, onImport, isImporting }: TemplateCardProps) {
+  // Generate properly formatted template ID
+  const getFormattedTemplateId = () => {
+    // Format: source-category-name
+    // If template ID already has correct format with hyphens, use it
+    if (template.id.includes('-')) {
+      return template.id;
+    }
+    
+    // Otherwise, construct a valid ID from template properties
+    const name = template.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    return `${template.source}-${template.category}-${name}`;
+  };
+  
   // Get template icon based on category
   const getTemplateIcon = (category: string) => {
     switch (category) {
