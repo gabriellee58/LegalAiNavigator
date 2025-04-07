@@ -15,6 +15,8 @@ import { analyzeContract, compareContracts, extractTextFromPdf } from "./lib/con
 import { setupAuth } from "./auth";
 import multer from "multer";
 import path from "path";
+import { templateSources, importAndSaveTemplate } from "./lib/templateSources";
+import { generateEnhancedDocument, analyzeLegalDocument } from "./lib/anthropic";
 
 // Set up multer for file uploads
 const storage_config = multer.memoryStorage();
@@ -905,6 +907,161 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Session summary generation error:", error);
       res.status(500).json({ message: "Error generating session summary" });
+    }
+  });
+
+  // Template source routes - available publicly to show available templates
+  app.get("/api/template-sources", async (_req: Request, res: Response) => {
+    try {
+      res.json(templateSources);
+    } catch (error) {
+      console.error("Template sources error:", error);
+      res.status(500).json({ message: "Error retrieving template sources" });
+    }
+  });
+
+  // Get templates from a specific source
+  app.get("/api/template-sources/:sourceId/templates", async (req: Request, res: Response) => {
+    try {
+      const sourceId = req.params.sourceId;
+      const category = req.query.category as string | undefined;
+      const jurisdiction = req.query.jurisdiction as string | undefined;
+      
+      const source = templateSources.find(s => s.id === sourceId);
+      if (!source) {
+        return res.status(404).json({ message: "Template source not found" });
+      }
+      
+      const templates = await source.fetchTemplates(category, jurisdiction);
+      res.json(templates);
+    } catch (error) {
+      console.error("Template source templates error:", error);
+      res.status(500).json({ message: "Error retrieving templates from source" });
+    }
+  });
+
+  // Import an external template
+  app.post("/api/template-sources/import", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const importSchema = z.object({
+        templateId: z.string(),
+        language: z.enum(['en', 'fr']).default('en')
+      });
+      
+      const parsed = importSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid import data" });
+      }
+      
+      const template = await importAndSaveTemplate(
+        parsed.data.templateId,
+        parsed.data.language
+      );
+      
+      if (!template) {
+        return res.status(400).json({ message: "Failed to import template" });
+      }
+      
+      res.status(201).json(template);
+    } catch (error) {
+      console.error("Template import error:", error);
+      res.status(500).json({ message: "Error importing template" });
+    }
+  });
+
+  // Enhanced document generation with Anthropic
+  app.post("/api/documents/enhanced", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const enhancedSchema = z.object({
+        template: z.string().min(1),
+        formData: z.record(z.any()),
+        documentType: z.string().min(1),
+        jurisdiction: z.string().optional(),
+        saveDocument: z.boolean().optional(),
+        title: z.string().optional()
+      });
+      
+      const parsed = enhancedSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid enhanced document request" });
+      }
+      
+      // Generate enhanced document with Anthropic
+      const enhancedContent = await generateEnhancedDocument(
+        parsed.data.template,
+        parsed.data.formData,
+        parsed.data.documentType,
+        parsed.data.jurisdiction || 'Canada'
+      );
+      
+      // Save document if requested
+      if (parsed.data.saveDocument && parsed.data.title) {
+        await storage.createGeneratedDocument({
+          userId: req.user!.id,
+          documentTitle: parsed.data.title,
+          documentContent: enhancedContent.content,
+          templateId: null, // External template, no direct DB reference
+          documentData: {
+            type: parsed.data.documentType,
+            jurisdiction: parsed.data.jurisdiction || 'Canada',
+            generatedWith: 'anthropic',
+            formData: parsed.data.formData
+          }
+        });
+      }
+      
+      res.json({ content: enhancedContent.content });
+    } catch (error) {
+      console.error("Enhanced document generation error:", error);
+      res.status(500).json({ message: "Error generating enhanced document" });
+    }
+  });
+
+  // Legal document analysis
+  // Check if secret API keys are available
+  app.get("/api/secrets/check", async (req: Request, res: Response) => {
+    try {
+      const key = req.query.key as string;
+      
+      if (!key) {
+        return res.status(400).json({ message: "No key specified" });
+      }
+      
+      const available = !!process.env[key];
+      res.json({ available });
+    } catch (error) {
+      console.error("Secret check error:", error);
+      res.status(500).json({ message: "Error checking secret availability" });
+    }
+  });
+  
+  app.post("/api/document/analyze", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const analyzeSchema = z.object({
+        content: z.string().min(1),
+        documentType: z.string().min(1),
+        jurisdiction: z.string().optional()
+      });
+      
+      const parsed = analyzeSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid document analysis request" });
+      }
+      
+      // Analyze legal document with Anthropic
+      const analysis = await analyzeLegalDocument(
+        parsed.data.content,
+        parsed.data.documentType,
+        parsed.data.jurisdiction || 'Canada'
+      );
+      
+      res.json(analysis);
+    } catch (error) {
+      console.error("Document analysis error:", error);
+      res.status(500).json({ 
+        message: "Error analyzing document",
+        details: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 
