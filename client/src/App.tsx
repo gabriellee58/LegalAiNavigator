@@ -109,8 +109,8 @@ function Router() {
       <ProtectedRoute path="/documents/business-formation" component={DocumentTemplatesPage} />
       <ProtectedRoute path="/documents/ip-management" component={DocumentTemplatesPage} />
       
-      {/* Legal Domains */}
-      <ProtectedRoute path="/legal-domains" component={LegalDomainsPage} exact={true} />
+      {/* Legal Domains - Static paths first, dynamic path last */}
+      <ProtectedRoute path="/legal-domains" component={LegalDomainsPage} />
       <ProtectedRoute path="/legal-domains/family-law" component={FamilyLawPage} />
       <ProtectedRoute path="/legal-domains/real-estate" component={RealEstateLawPage} />
       <ProtectedRoute path="/legal-domains/business" component={BusinessLawPage} />

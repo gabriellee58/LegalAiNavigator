@@ -10,12 +10,44 @@ export function useLegalDomains() {
   });
 }
 
-// Hook to fetch a specific legal domain
+// Hook to fetch a specific legal domain by ID
 export function useLegalDomain(id: number | null) {
   return useQuery<LegalDomain>({
     queryKey: id ? [`/api/legal-domains/${id}`] : [""],
     enabled: !!id,
   });
+}
+
+// Hook to fetch a specific legal domain by name (slug)
+export function useLegalDomainByName(name: string | null) {
+  // Get all domains and find the one with matching name
+  const { data: domains = [], isLoading } = useQuery<LegalDomain[]>({
+    queryKey: ["/api/legal-domains"],
+    enabled: !!name,
+  });
+  
+  // Convert input name to normalized form for comparison
+  const normalizedName = name ? normalizeDomainName(name) : '';
+  
+  // Find domain with matching name
+  const domain = domains.find(d => normalizeDomainName(d.name) === normalizedName);
+  
+  // Create a domain ID
+  const domainId = domain?.id || null;
+  
+  return {
+    domain,
+    domainId,
+    isLoading
+  };
+}
+
+// Helper function to normalize domain names for comparison
+function normalizeDomainName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/\s+/g, '-')  // Replace spaces with hyphens
+    .replace(/[^a-z0-9-]/g, ''); // Remove special characters
 }
 
 // Hook to fetch subdomains for a specific domain
