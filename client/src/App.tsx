@@ -26,6 +26,7 @@ import SettingsPage from "./pages/settings";
 
 // Import legal domains browser
 import LegalDomainsPage from "./pages/legal-domains";
+import DomainPage from "./pages/legal-domains/domain-page";
 
 // Import legal domain pages
 import FamilyLawPage from "./pages/legal-domains/family-law";
@@ -133,6 +134,7 @@ function Router() {
       <ProtectedRoute path="/legal-domains/youth-justice" component={YouthJusticePage} />
       <ProtectedRoute path="/legal-domains/mediation" component={MediationPage} />
       <ProtectedRoute path="/legal-domains/land-claims" component={LandClaimsPage} />
+      <ProtectedRoute path="/legal-domains/:id" component={DomainPage} />
       
       {/* Help and Settings */}
       <ProtectedRoute path="/help-resources" component={HelpResourcesPage} />

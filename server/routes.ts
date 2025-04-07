@@ -1122,6 +1122,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // API endpoints for legal domains (Phase 3)
+  app.get("/api/legal-domains", async (req: Request, res: Response) => {
+    try {
+      const domains = await storage.getLegalDomains();
+      res.json(domains);
+    } catch (error) {
+      console.error("Error fetching legal domains:", error);
+      res.status(500).json({ message: "Failed to fetch legal domains" });
+    }
+  });
+  
+  // Get subdomains for a specific legal domain
+  app.get("/api/legal-domains/:id/subdomains", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid domain ID format" });
+      }
+      
+      const subdomains = await storage.getLegalSubdomains(id);
+      res.json(subdomains);
+    } catch (error) {
+      console.error("Error fetching legal subdomains:", error);
+      res.status(500).json({ message: "Failed to fetch legal subdomains" });
+    }
+  });
+  
+  // Get a specific legal domain by ID
+  app.get("/api/legal-domains/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid domain ID format" });
+      }
+      
+      const domain = await storage.getLegalDomain(id);
+      if (!domain) {
+        return res.status(404).json({ message: "Legal domain not found" });
+      }
+      
+      res.json(domain);
+    } catch (error) {
+      console.error("Error fetching legal domain:", error);
+      res.status(500).json({ message: "Failed to fetch legal domain" });
+    }
+  });
+  
+  // Domain knowledge endpoints (Phase 3)
+  app.get("/api/legal-domains/:id/knowledge", async (req: Request, res: Response) => {
+    try {
+      const domainId = parseInt(req.params.id);
+      if (isNaN(domainId)) {
+        return res.status(400).json({ message: "Invalid domain ID format" });
+      }
+      
+      const language = req.query.language as string || 'en';
+      const knowledge = await storage.getDomainKnowledgeByDomainId(domainId);
+      
+      // Filter by language if needed
+      const filteredKnowledge = language ? 
+        knowledge.filter(k => k.language === language) : 
+        knowledge;
+      
+      res.json(filteredKnowledge);
+    } catch (error) {
+      console.error("Error fetching domain knowledge:", error);
+      res.status(500).json({ message: "Failed to fetch domain knowledge" });
+    }
+  });
+  
+  // Search domain knowledge
+  app.get("/api/knowledge/search", async (req: Request, res: Response) => {
+    try {
+      const query = req.query.q as string;
+      if (!query) {
+        return res.status(400).json({ message: "Search query is required" });
+      }
+      
+      const domainId = req.query.domainId ? parseInt(req.query.domainId as string) : undefined;
+      const language = req.query.language as string || 'en';
+      
+      const results = await storage.searchDomainKnowledge(query, domainId, language);
+      res.json(results);
+    } catch (error) {
+      console.error("Error searching domain knowledge:", error);
+      res.status(500).json({ message: "Failed to search domain knowledge" });
+    }
+  });
+  
+  // Procedural guides endpoints (Phase 3)
+  app.get("/api/legal-domains/:id/guides", async (req: Request, res: Response) => {
+    try {
+      const domainId = parseInt(req.params.id);
+      if (isNaN(domainId)) {
+        return res.status(400).json({ message: "Invalid domain ID format" });
+      }
+      
+      const language = req.query.language as string || 'en';
+      const guides = await storage.getProceduralGuidesByDomainId(domainId, language);
+      res.json(guides);
+    } catch (error) {
+      console.error("Error fetching procedural guides:", error);
+      res.status(500).json({ message: "Failed to fetch procedural guides" });
+    }
+  });
+  
   app.post("/api/document/analyze", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const analyzeSchema = z.object({
@@ -1360,6 +1466,214 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting visualization:", error);
       res.status(500).json({ message: "Error deleting visualization" });
+    }
+  });
+  
+  // Escalated questions endpoints (Phase 3)
+  app.post("/api/escalated-questions", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Validate question data
+      const questionSchema = z.object({
+        question: z.string().min(5),
+        legalDomainId: z.number().optional(),
+        urgency: z.string().optional(),
+        additionalInfo: z.string().optional(),
+      });
+      
+      const parsed = questionSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid question data" });
+      }
+      
+      // Create the escalated question with pending status
+      const question = await storage.createEscalatedQuestion({
+        userId: req.user!.id,
+        question: parsed.data.question,
+        context: parsed.data.additionalInfo || '', // Use additionalInfo as context
+        domainId: parsed.data.legalDomainId, // Map legalDomainId to domainId
+        status: 'pending',
+        updatedAt: new Date()
+      });
+      
+      res.status(201).json(question);
+    } catch (error) {
+      console.error("Error creating escalated question:", error);
+      res.status(500).json({ message: "Error escalating question" });
+    }
+  });
+  
+  app.get("/api/escalated-questions", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Get userId from authenticated user session
+      const userId = req.user!.id;
+      const questions = await storage.getEscalatedQuestionsByUserId(userId);
+      res.json(questions);
+    } catch (error) {
+      console.error("Error retrieving escalated questions:", error);
+      res.status(500).json({ message: "Error retrieving escalated questions" });
+    }
+  });
+  
+  app.get("/api/escalated-questions/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      const question = await storage.getEscalatedQuestion(id);
+      if (!question) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+      
+      // Ensure the question belongs to the requesting user (or is admin in the future)
+      if (question.userId !== req.user!.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      res.json(question);
+    } catch (error) {
+      console.error("Error retrieving question:", error);
+      res.status(500).json({ message: "Error retrieving question" });
+    }
+  });
+  
+  // Conversation context endpoints (Phase 3)
+  app.get("/api/conversation-context", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      let context = await storage.getConversationContextByUserId(userId);
+      
+      if (!context) {
+        // Create new context if none exists
+        context = await storage.createConversationContext({
+          userId,
+          context: {},
+          domainId: null,
+          updatedAt: new Date()
+        });
+      }
+      
+      res.json(context);
+    } catch (error) {
+      console.error("Error retrieving conversation context:", error);
+      res.status(500).json({ message: "Error retrieving conversation context" });
+    }
+  });
+  
+  app.patch("/api/conversation-context", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      let context = await storage.getConversationContextByUserId(userId);
+      
+      if (!context) {
+        return res.status(404).json({ message: "Conversation context not found" });
+      }
+      
+      // Update allowed fields
+      const updateSchema = z.object({
+        context: z.record(z.any()).optional(),
+        domainId: z.number().nullable().optional(),
+      });
+      
+      const parsed = updateSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid update data" });
+      }
+      
+      const updated = await storage.updateConversationContext(context.id, {
+        ...parsed.data,
+        updatedAt: new Date()
+      });
+      
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating conversation context:", error);
+      res.status(500).json({ message: "Error updating conversation context" });
+    }
+  });
+  
+  // Case outcome prediction endpoints (Phase 4)
+  app.post("/api/case-outcome-predictions", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Validate prediction request data
+      const predictionSchema = z.object({
+        caseType: z.string().min(3),
+        caseDetails: z.string().min(10),
+        jurisdiction: z.string().min(2),
+        relevantFactors: z.array(z.string()).optional(),
+        legalIssues: z.array(z.string()).optional(),
+        legalDomainId: z.number().optional(),
+      });
+      
+      const parsed = predictionSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid prediction request data" });
+      }
+      
+      // Here we would actually call an AI service to generate the prediction
+      // For now, we'll just store the request with mock data based on schema
+      
+      // Create factor data object for the schema
+      const factorData = {
+        details: parsed.data.caseDetails,
+        factors: parsed.data.relevantFactors || [],
+        issues: parsed.data.legalIssues || [],
+        domainId: parsed.data.legalDomainId
+      };
+      
+      const prediction = await storage.createCaseOutcomePrediction({
+        userId: req.user!.id,
+        caseType: parsed.data.caseType,
+        jurisdiction: parsed.data.jurisdiction,
+        factorData: factorData,
+        predictedOutcome: "Pending analysis", // Placeholder
+        confidenceScore: "0", // Placeholder
+        updatedAt: new Date()
+      });
+      
+      // This would be done in a backend service/job
+      // For now, just return the pending prediction
+      res.status(201).json(prediction);
+    } catch (error) {
+      console.error("Error creating case outcome prediction:", error);
+      res.status(500).json({ message: "Error creating case outcome prediction" });
+    }
+  });
+  
+  app.get("/api/case-outcome-predictions", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Get userId from authenticated user session
+      const userId = req.user!.id;
+      const predictions = await storage.getCaseOutcomePredictionsByUserId(userId);
+      res.json(predictions);
+    } catch (error) {
+      console.error("Error retrieving case outcome predictions:", error);
+      res.status(500).json({ message: "Error retrieving case outcome predictions" });
+    }
+  });
+  
+  app.get("/api/case-outcome-predictions/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      const prediction = await storage.getCaseOutcomePrediction(id);
+      if (!prediction) {
+        return res.status(404).json({ message: "Prediction not found" });
+      }
+      
+      // Ensure the prediction belongs to the requesting user
+      if (prediction.userId !== req.user!.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      res.json(prediction);
+    } catch (error) {
+      console.error("Error retrieving prediction:", error);
+      res.status(500).json({ message: "Error retrieving prediction" });
     }
   });
 

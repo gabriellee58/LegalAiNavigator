@@ -606,7 +606,7 @@ export class DatabaseStorage implements IStorage {
     return results.filter(item => 
       item.question.toLowerCase().includes(query.toLowerCase()) || 
       item.answer.toLowerCase().includes(query.toLowerCase())
-    ).sort((a, b) => b.relevanceScore - a.relevanceScore);
+    ).sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
   }
 
   // Procedural guides operations (Phase 3)
@@ -767,7 +767,79 @@ export class DatabaseStorage implements IStorage {
     const existingDomains = await this.getLegalDomains();
     if (existingDomains.length > 0) return;
     
-    // Implementation would go here to create default legal domains
+    // Default legal domains for Canadian legal system
+    const defaultDomains = [
+      {
+        name: "Family Law",
+        description: "Legal matters related to family relationships, including divorce, child custody, and support",
+        resources: {
+          websites: ["https://www.justice.gc.ca/eng/fl-df/index.html"],
+          keyLegislation: ["Divorce Act", "Family Law Act"]
+        }
+      },
+      {
+        name: "Immigration Law",
+        description: "Legal matters related to immigration, citizenship, and refugee status in Canada",
+        resources: {
+          websites: ["https://www.canada.ca/en/services/immigration-citizenship.html"],
+          keyLegislation: ["Immigration and Refugee Protection Act", "Citizenship Act"]
+        }
+      },
+      {
+        name: "Real Estate Law",
+        description: "Legal matters related to property ownership, transactions, and land use",
+        resources: {
+          websites: ["https://www.cmhc-schl.gc.ca/"],
+          keyLegislation: ["Land Titles Act", "Residential Tenancies Act"]
+        }
+      },
+      {
+        name: "Employment Law",
+        description: "Legal matters related to employment relationships, workplace rights, and labor standards",
+        resources: {
+          websites: ["https://www.canada.ca/en/services/jobs/workplace.html"],
+          keyLegislation: ["Canada Labour Code", "Employment Standards Act"]
+        }
+      },
+      {
+        name: "Criminal Law",
+        description: "Legal matters related to offenses against public law, prosecution, and defense",
+        resources: {
+          websites: ["https://www.justice.gc.ca/eng/cj-jp/index.html"],
+          keyLegislation: ["Criminal Code", "Youth Criminal Justice Act"]
+        }
+      },
+      {
+        name: "Business Law",
+        description: "Legal matters related to business operations, corporate governance, and commercial transactions",
+        resources: {
+          websites: ["https://www.ic.gc.ca/eic/site/icgc.nsf/eng/home"],
+          keyLegislation: ["Canada Business Corporations Act", "Competition Act"]
+        }
+      },
+      {
+        name: "Tax Law",
+        description: "Legal matters related to taxation, compliance, and disputes with tax authorities",
+        resources: {
+          websites: ["https://www.canada.ca/en/services/taxes.html"],
+          keyLegislation: ["Income Tax Act", "Excise Tax Act"]
+        }
+      },
+      {
+        name: "Intellectual Property Law",
+        description: "Legal matters related to patents, trademarks, copyrights, and other intellectual property",
+        resources: {
+          websites: ["https://www.ic.gc.ca/eic/site/cipointernet-internetopic.nsf/eng/home"],
+          keyLegislation: ["Patent Act", "Copyright Act", "Trademarks Act"]
+        }
+      }
+    ];
+    
+    // Insert default domains
+    for (const domain of defaultDomains) {
+      await db.insert(legalDomains).values(domain);
+    }
+    
     console.log("Initialized legal domains");
   }
 }
