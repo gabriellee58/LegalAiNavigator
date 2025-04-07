@@ -1,28 +1,30 @@
-import session from "express-session";
-import connectPg from "connect-pg-simple";
-import { pool, db } from "./db";
-import { eq, desc, and, SQL, sql } from "drizzle-orm";
-import {
-  users, User, InsertUser,
-  chatMessages, ChatMessage, InsertChatMessage,
-  documentTemplates, DocumentTemplate, InsertDocumentTemplate,
-  generatedDocuments, GeneratedDocument, InsertGeneratedDocument,
-  researchQueries, ResearchQuery, InsertResearchQuery,
-  contractAnalyses, ContractAnalysis, InsertContractAnalysis,
-  complianceChecks, ComplianceCheck, InsertComplianceCheck,
-  disputes, Dispute, InsertDispute,
-  mediationSessions, MediationSession, InsertMediationSession,
-  mediationMessages, MediationMessage, InsertMediationMessage,
-  savedCitations, SavedCitation, InsertSavedCitation,
-  researchVisualizations, ResearchVisualization, InsertResearchVisualization,
-  legalDomains, LegalDomain, InsertLegalDomain,
-  domainKnowledge, DomainKnowledge, InsertDomainKnowledge,
-  proceduralGuides, ProceduralGuide, InsertProceduralGuide,
-  escalatedQuestions, EscalatedQuestion, InsertEscalatedQuestion,
-  conversationContexts, ConversationContext, InsertConversationContext,
-  caseOutcomePredictions, CaseOutcomePrediction, InsertCaseOutcomePrediction
+import { 
+  users, type User, type InsertUser,
+  chatMessages, type ChatMessage, type InsertChatMessage,
+  documentTemplates, type DocumentTemplate, type InsertDocumentTemplate,
+  generatedDocuments, type GeneratedDocument, type InsertGeneratedDocument,
+  researchQueries, type ResearchQuery, type InsertResearchQuery,
+  contractAnalyses, type ContractAnalysis, type InsertContractAnalysis,
+  complianceChecks, type ComplianceCheck, type InsertComplianceCheck,
+  disputes, type Dispute, type InsertDispute,
+  mediationSessions, type MediationSession, type InsertMediationSession,
+  mediationMessages, type MediationMessage, type InsertMediationMessage,
+  savedCitations, type SavedCitation, type InsertSavedCitation,
+  researchVisualizations, type ResearchVisualization, type InsertResearchVisualization,
+  legalDomains, type LegalDomain, type InsertLegalDomain,
+  domainKnowledge, type DomainKnowledge, type InsertDomainKnowledge,
+  proceduralGuides, type ProceduralGuide, type InsertProceduralGuide,
+  escalatedQuestions, type EscalatedQuestion, type InsertEscalatedQuestion,
+  conversationContexts, type ConversationContext, type InsertConversationContext,
+  caseOutcomePredictions, type CaseOutcomePrediction, type InsertCaseOutcomePrediction
 } from "@shared/schema";
+import { db } from './db';
+import { eq, and, desc, inArray, sql } from 'drizzle-orm';
+import session from 'express-session';
+import connectPg from 'connect-pg-simple';
+import { type json as Json } from 'drizzle-orm/pg-core';
 
+// Interface for storage operations
 export interface IStorage {
   // Session store for auth
   sessionStore: session.Store;
@@ -137,13 +139,15 @@ export interface IStorage {
   initializeLegalDomains(): Promise<void>;
 }
 
-class DatabaseStorage implements IStorage {
-  sessionStore: session.Store;
+// Database storage implementation using PostgreSQL
+export class DatabaseStorage implements IStorage {
+  public sessionStore: session.Store;
 
   constructor() {
+    // Initialize PostgreSQL session store
     const PostgresSessionStore = connectPg(session);
     this.sessionStore = new PostgresSessionStore({
-      pool,
+      conString: process.env.DATABASE_URL,
       createTableIfMissing: true,
     });
   }
@@ -159,9 +163,9 @@ class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
-    return user;
+  async createUser(user: InsertUser): Promise<User> {
+    const [newUser] = await db.insert(users).values(user).returning();
+    return newUser;
   }
 
   // Chat message operations
