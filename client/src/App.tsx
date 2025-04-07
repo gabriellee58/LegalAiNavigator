@@ -31,6 +31,23 @@ import BusinessLawPage from "./pages/legal-domains/business";
 import EmploymentLawPage from "./pages/legal-domains/employment";
 import ImmigrationLawPage from "./pages/legal-domains/immigration";
 import PersonalInjuryLawPage from "./pages/legal-domains/personal-injury";
+import EstatePlanningPage from "./pages/legal-domains/estate-planning";
+import ConsumerRightsPage from "./pages/legal-domains/consumer-rights";
+import CriminalLawPage from "./pages/legal-domains/criminal";
+import CivilLitigationPage from "./pages/legal-domains/civil-litigation";
+import IndigenousLawPage from "./pages/legal-domains/indigenous-law";
+import EnvironmentalLawPage from "./pages/legal-domains/environmental";
+import IntellectualPropertyPage from "./pages/legal-domains/intellectual-property";
+import HumanRightsPage from "./pages/legal-domains/human-rights";
+import InsuranceLawPage from "./pages/legal-domains/insurance";
+import AdministrativeLawPage from "./pages/legal-domains/administrative";
+import TaxLawPage from "./pages/legal-domains/tax";
+import ConstitutionalLawPage from "./pages/legal-domains/constitutional";
+import EntertainmentLawPage from "./pages/legal-domains/entertainment";
+import TechnologyLawPage from "./pages/legal-domains/technology";
+import YouthJusticePage from "./pages/legal-domains/youth-justice";
+import MediationPage from "./pages/legal-domains/mediation";
+import LandClaimsPage from "./pages/legal-domains/land-claims";
 
 // Import style for Material Icons
 function Head() {
@@ -86,6 +103,23 @@ function Router() {
       <ProtectedRoute path="/legal-domains/employment" component={EmploymentLawPage} />
       <ProtectedRoute path="/legal-domains/immigration" component={ImmigrationLawPage} />
       <ProtectedRoute path="/legal-domains/personal-injury" component={PersonalInjuryLawPage} />
+      <ProtectedRoute path="/legal-domains/estate-planning" component={EstatePlanningPage} />
+      <ProtectedRoute path="/legal-domains/consumer-rights" component={ConsumerRightsPage} />
+      <ProtectedRoute path="/legal-domains/criminal" component={CriminalLawPage} />
+      <ProtectedRoute path="/legal-domains/civil-litigation" component={CivilLitigationPage} />
+      <ProtectedRoute path="/legal-domains/indigenous-law" component={IndigenousLawPage} />
+      <ProtectedRoute path="/legal-domains/environmental" component={EnvironmentalLawPage} />
+      <ProtectedRoute path="/legal-domains/intellectual-property" component={IntellectualPropertyPage} />
+      <ProtectedRoute path="/legal-domains/human-rights" component={HumanRightsPage} />
+      <ProtectedRoute path="/legal-domains/insurance" component={InsuranceLawPage} />
+      <ProtectedRoute path="/legal-domains/administrative" component={AdministrativeLawPage} />
+      <ProtectedRoute path="/legal-domains/tax" component={TaxLawPage} />
+      <ProtectedRoute path="/legal-domains/constitutional" component={ConstitutionalLawPage} />
+      <ProtectedRoute path="/legal-domains/entertainment" component={EntertainmentLawPage} />
+      <ProtectedRoute path="/legal-domains/technology" component={TechnologyLawPage} />
+      <ProtectedRoute path="/legal-domains/youth-justice" component={YouthJusticePage} />
+      <ProtectedRoute path="/legal-domains/mediation" component={MediationPage} />
+      <ProtectedRoute path="/legal-domains/land-claims" component={LandClaimsPage} />
       
       {/* Help and Settings */}
       <ProtectedRoute path="/help" component={HelpResourcesPage} />
