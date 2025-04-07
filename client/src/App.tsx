@@ -23,6 +23,7 @@ import ComplianceCheckerPage from "./pages/compliance-checker";
 import DocumentTemplatesPage from "./pages/document-templates";
 import HelpResourcesPage from "./pages/help-resources";
 import SettingsPage from "./pages/settings";
+import MorePage from "./pages/more";
 
 // Import legal domains browser
 import LegalDomainsPage from "./pages/legal-domains";
@@ -139,6 +140,7 @@ function Router() {
       {/* Help and Settings */}
       <ProtectedRoute path="/help-resources" component={HelpResourcesPage} />
       <ProtectedRoute path="/settings" component={SettingsPage} />
+      <ProtectedRoute path="/more" component={MorePage} />
       
       {/* Guide Pages */}
       <ProtectedRoute path="/guides/getting-started" component={GettingStartedGuide} />

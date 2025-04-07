@@ -8,6 +8,7 @@ export function Sidebar() {
   const [isContractAnalysisRoute] = useRoute("/contract-analysis");
   const [isDisputeResolutionRoute] = useRoute("/dispute-resolution");
   const [isComplianceCheckerRoute] = useRoute("/compliance-checker");
+  const [isLegalDomainsRoute] = useRoute("/legal-domains");
   
   const [isContractsRoute] = useRoute("/documents/contracts");
   const [isLeasesRoute] = useRoute("/documents/leases");
@@ -79,6 +80,14 @@ export function Sidebar() {
                 </div>
               </Link>
             </li>
+            <li>
+              <Link href="/legal-domains">
+                <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isLegalDomainsRoute ? 'bg-blue-50 text-primary' : ''}`}>
+                  <span className={`material-icons mr-3 ${isLegalDomainsRoute ? 'text-primary' : 'text-neutral-500'}`}>category</span>
+                  <span>{t("legal_domains")}</span>
+                </div>
+              </Link>
+            </li>
           </ul>
         </div>
         
@@ -130,7 +139,7 @@ export function Sidebar() {
       </nav>
       
       <div className="border-t border-neutral-200 p-4">
-        <Link href="/help">
+        <Link href="/help-resources">
           <div className="flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary">
             <span className="material-icons mr-3 text-neutral-500">help_outline</span>
             <span>{t("help_resources")}</span>
