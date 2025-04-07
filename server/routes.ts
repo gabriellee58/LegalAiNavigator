@@ -7,7 +7,9 @@ import {
   insertGeneratedDocumentSchema,
   insertDisputeSchema,
   insertMediationSessionSchema,
-  insertMediationMessageSchema
+  insertMediationMessageSchema,
+  insertSavedCitationSchema,
+  insertResearchVisualizationSchema
 } from "@shared/schema";
 import { z } from "zod";
 import { generateAIResponse, performLegalResearch } from "./lib/openai";
@@ -16,7 +18,12 @@ import { setupAuth } from "./auth";
 import multer from "multer";
 import path from "path";
 import { templateSources, importAndSaveTemplate } from "./lib/templateSources";
-import { generateEnhancedDocument, analyzeLegalDocument } from "./lib/anthropic";
+import { 
+  generateEnhancedDocument, 
+  analyzeLegalDocument, 
+  generateClaudeResponse, 
+  performLegalResearch as performClaudeLegalResearch 
+} from "./anthropic";
 
 // Set up multer for file uploads
 const storage_config = multer.memoryStorage();
@@ -1142,6 +1149,217 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Error analyzing document",
         details: error instanceof Error ? error.message : String(error)
       });
+    }
+  });
+
+  // Saved citations routes
+  app.post("/api/saved-citations", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Validate citation data
+      const citationSchema = insertSavedCitationSchema.omit({ userId: true });
+      const parsed = citationSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid citation data" });
+      }
+      
+      // Save the citation with the authenticated user ID
+      const citation = await storage.createSavedCitation({
+        ...parsed.data,
+        userId: req.user!.id
+      });
+      
+      res.status(201).json(citation);
+    } catch (error) {
+      console.error("Error saving citation:", error);
+      res.status(500).json({ message: "Error saving citation" });
+    }
+  });
+
+  app.get("/api/saved-citations", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Get userId from authenticated user session
+      const userId = req.user!.id;
+      const citations = await storage.getSavedCitationsByUserId(userId);
+      res.json(citations);
+    } catch (error) {
+      console.error("Error retrieving saved citations:", error);
+      res.status(500).json({ message: "Error retrieving saved citations" });
+    }
+  });
+
+  app.get("/api/saved-citations/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      const citation = await storage.getSavedCitation(id);
+      if (!citation) {
+        return res.status(404).json({ message: "Citation not found" });
+      }
+      
+      // Ensure the citation belongs to the requesting user
+      if (citation.userId !== req.user!.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      res.json(citation);
+    } catch (error) {
+      console.error("Error retrieving citation:", error);
+      res.status(500).json({ message: "Error retrieving citation" });
+    }
+  });
+  
+  app.delete("/api/saved-citations/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      const citation = await storage.getSavedCitation(id);
+      if (!citation) {
+        return res.status(404).json({ message: "Citation not found" });
+      }
+      
+      // Ensure the citation belongs to the requesting user
+      if (citation.userId !== req.user!.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      await storage.deleteSavedCitation(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting citation:", error);
+      res.status(500).json({ message: "Error deleting citation" });
+    }
+  });
+
+  // Research visualizations routes
+  app.post("/api/research-visualizations", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Validate visualization data
+      const visualizationSchema = insertResearchVisualizationSchema.omit({ userId: true });
+      const parsed = visualizationSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid visualization data" });
+      }
+      
+      // Save the visualization with the authenticated user ID
+      const visualization = await storage.createResearchVisualization({
+        ...parsed.data,
+        userId: req.user!.id,
+        updatedAt: new Date()
+      });
+      
+      res.status(201).json(visualization);
+    } catch (error) {
+      console.error("Error creating visualization:", error);
+      res.status(500).json({ message: "Error creating visualization" });
+    }
+  });
+
+  app.get("/api/research-visualizations", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Get userId from authenticated user session
+      const userId = req.user!.id;
+      const visualizations = await storage.getResearchVisualizationsByUserId(userId);
+      res.json(visualizations);
+    } catch (error) {
+      console.error("Error retrieving visualizations:", error);
+      res.status(500).json({ message: "Error retrieving visualizations" });
+    }
+  });
+
+  app.get("/api/research-visualizations/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      const visualization = await storage.getResearchVisualization(id);
+      if (!visualization) {
+        return res.status(404).json({ message: "Visualization not found" });
+      }
+      
+      // Ensure the visualization belongs to the requesting user or is public
+      if (!visualization.isPublic && visualization.userId !== req.user!.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      res.json(visualization);
+    } catch (error) {
+      console.error("Error retrieving visualization:", error);
+      res.status(500).json({ message: "Error retrieving visualization" });
+    }
+  });
+  
+  app.patch("/api/research-visualizations/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      const visualization = await storage.getResearchVisualization(id);
+      if (!visualization) {
+        return res.status(404).json({ message: "Visualization not found" });
+      }
+      
+      // Ensure the visualization belongs to the requesting user
+      if (visualization.userId !== req.user!.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      // Update allowed fields
+      const updateSchema = z.object({
+        title: z.string().optional(),
+        description: z.string().optional(),
+        isPublic: z.boolean().optional(),
+        visualizationData: z.any().optional(),
+      });
+      
+      const parsed = updateSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid update data" });
+      }
+      
+      const updatedVisualization = await storage.updateResearchVisualization(id, {
+        ...parsed.data,
+        updatedAt: new Date()
+      });
+      
+      res.json(updatedVisualization);
+    } catch (error) {
+      console.error("Error updating visualization:", error);
+      res.status(500).json({ message: "Error updating visualization" });
+    }
+  });
+  
+  app.delete("/api/research-visualizations/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      const visualization = await storage.getResearchVisualization(id);
+      if (!visualization) {
+        return res.status(404).json({ message: "Visualization not found" });
+      }
+      
+      // Ensure the visualization belongs to the requesting user
+      if (visualization.userId !== req.user!.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      await storage.deleteResearchVisualization(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting visualization:", error);
+      res.status(500).json({ message: "Error deleting visualization" });
     }
   });
 

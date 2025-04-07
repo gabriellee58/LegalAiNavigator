@@ -246,6 +246,58 @@ export type InsertMediationMessage = z.infer<typeof insertMediationMessageSchema
 export type MediationMessage = typeof mediationMessages.$inferSelect;
 
 // Define relations after all tables are defined
+// Saved legal citations schema
+export const savedCitations = pgTable("saved_citations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }),
+  name: text("name").notNull(),
+  citation: text("citation").notNull(),
+  sourceName: text("source_name"),
+  sourceUrl: text("source_url"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertSavedCitationSchema = createInsertSchema(savedCitations).pick({
+  userId: true,
+  name: true,
+  citation: true,
+  sourceName: true, 
+  sourceUrl: true,
+  notes: true,
+});
+
+export type InsertSavedCitation = z.infer<typeof insertSavedCitationSchema>;
+export type SavedCitation = typeof savedCitations.$inferSelect;
+
+// Research visualization schema
+export const researchVisualizations = pgTable("research_visualizations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }),
+  queryId: integer("query_id").references(() => researchQueries.id, { onDelete: 'cascade' }),
+  title: text("title").notNull(),
+  description: text("description"),
+  visualizationType: text("visualization_type").notNull(), // 'network', 'timeline', 'hierarchy', etc.
+  visualizationData: jsonb("visualization_data").notNull(),
+  isPublic: boolean("is_public").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const insertResearchVisualizationSchema = createInsertSchema(researchVisualizations).pick({
+  userId: true,
+  queryId: true,
+  title: true,
+  description: true,
+  visualizationType: true,
+  visualizationData: true,
+  isPublic: true,
+  updatedAt: true,
+});
+
+export type InsertResearchVisualization = z.infer<typeof insertResearchVisualizationSchema>;
+export type ResearchVisualization = typeof researchVisualizations.$inferSelect;
+
 export const usersRelations = relations(users, ({ many }) => ({
   chatMessages: many(chatMessages),
   generatedDocuments: many(generatedDocuments),
@@ -255,6 +307,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   disputes: many(disputes),
   mediatedSessions: many(mediationSessions, { relationName: "mediator" }),
   mediationMessages: many(mediationMessages),
+  savedCitations: many(savedCitations),
+  researchVisualizations: many(researchVisualizations),
 }));
 
 export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
@@ -279,10 +333,29 @@ export const generatedDocumentsRelations = relations(generatedDocuments, ({ one 
   }),
 }));
 
-export const researchQueriesRelations = relations(researchQueries, ({ one }) => ({
+export const researchQueriesRelations = relations(researchQueries, ({ one, many }) => ({
   user: one(users, {
     fields: [researchQueries.userId],
     references: [users.id],
+  }),
+  visualizations: many(researchVisualizations),
+}));
+
+export const savedCitationsRelations = relations(savedCitations, ({ one }) => ({
+  user: one(users, {
+    fields: [savedCitations.userId],
+    references: [users.id],
+  }),
+}));
+
+export const researchVisualizationsRelations = relations(researchVisualizations, ({ one }) => ({
+  user: one(users, {
+    fields: [researchVisualizations.userId],
+    references: [users.id],
+  }),
+  query: one(researchQueries, {
+    fields: [researchVisualizations.queryId],
+    references: [researchQueries.id],
   }),
 }));
 

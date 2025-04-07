@@ -8,7 +8,9 @@ import {
   complianceChecks, type ComplianceCheck, type InsertComplianceCheck,
   disputes, type Dispute, type InsertDispute,
   mediationSessions, type MediationSession, type InsertMediationSession,
-  mediationMessages, type MediationMessage, type InsertMediationMessage
+  mediationMessages, type MediationMessage, type InsertMediationMessage,
+  savedCitations, type SavedCitation, type InsertSavedCitation,
+  researchVisualizations, type ResearchVisualization, type InsertResearchVisualization
 } from "@shared/schema";
 import { db } from './db';
 import { eq, and, desc, inArray } from 'drizzle-orm';
@@ -73,6 +75,19 @@ export interface IStorage {
   // Mediation message operations
   getMediationMessagesBySessionId(sessionId: number): Promise<MediationMessage[]>;
   createMediationMessage(message: InsertMediationMessage): Promise<MediationMessage>;
+  
+  // Saved citations operations
+  getSavedCitationsByUserId(userId: number): Promise<SavedCitation[]>;
+  getSavedCitation(id: number): Promise<SavedCitation | undefined>;
+  createSavedCitation(citation: InsertSavedCitation): Promise<SavedCitation>;
+  deleteSavedCitation(id: number): Promise<void>;
+  
+  // Research visualizations operations
+  getResearchVisualizationsByUserId(userId: number): Promise<ResearchVisualization[]>;
+  getResearchVisualization(id: number): Promise<ResearchVisualization | undefined>;
+  createResearchVisualization(visualization: InsertResearchVisualization): Promise<ResearchVisualization>;
+  updateResearchVisualization(id: number, updates: Partial<ResearchVisualization>): Promise<ResearchVisualization | undefined>;
+  deleteResearchVisualization(id: number): Promise<void>;
   
   // Initialize default templates
   initializeDefaultDocumentTemplates(): Promise<void>;
@@ -359,6 +374,77 @@ export class DatabaseStorage implements IStorage {
       .values(message)
       .returning();
     return newMessage;
+  }
+  
+  // Saved citations operations
+  async getSavedCitationsByUserId(userId: number): Promise<SavedCitation[]> {
+    return await db
+      .select()
+      .from(savedCitations)
+      .where(eq(savedCitations.userId, userId))
+      .orderBy(desc(savedCitations.createdAt));
+  }
+  
+  async getSavedCitation(id: number): Promise<SavedCitation | undefined> {
+    const [citation] = await db
+      .select()
+      .from(savedCitations)
+      .where(eq(savedCitations.id, id));
+    return citation;
+  }
+  
+  async createSavedCitation(citation: InsertSavedCitation): Promise<SavedCitation> {
+    const [newCitation] = await db
+      .insert(savedCitations)
+      .values(citation)
+      .returning();
+    return newCitation;
+  }
+  
+  async deleteSavedCitation(id: number): Promise<void> {
+    await db
+      .delete(savedCitations)
+      .where(eq(savedCitations.id, id));
+  }
+  
+  // Research visualizations operations
+  async getResearchVisualizationsByUserId(userId: number): Promise<ResearchVisualization[]> {
+    return await db
+      .select()
+      .from(researchVisualizations)
+      .where(eq(researchVisualizations.userId, userId))
+      .orderBy(desc(researchVisualizations.updatedAt));
+  }
+  
+  async getResearchVisualization(id: number): Promise<ResearchVisualization | undefined> {
+    const [visualization] = await db
+      .select()
+      .from(researchVisualizations)
+      .where(eq(researchVisualizations.id, id));
+    return visualization;
+  }
+  
+  async createResearchVisualization(visualization: InsertResearchVisualization): Promise<ResearchVisualization> {
+    const [newVisualization] = await db
+      .insert(researchVisualizations)
+      .values(visualization)
+      .returning();
+    return newVisualization;
+  }
+  
+  async updateResearchVisualization(id: number, updates: Partial<ResearchVisualization>): Promise<ResearchVisualization | undefined> {
+    const [updatedVisualization] = await db
+      .update(researchVisualizations)
+      .set(updates)
+      .where(eq(researchVisualizations.id, id))
+      .returning();
+    return updatedVisualization;
+  }
+  
+  async deleteResearchVisualization(id: number): Promise<void> {
+    await db
+      .delete(researchVisualizations)
+      .where(eq(researchVisualizations.id, id));
   }
 
   // Method to initialize default document templates if not already present
