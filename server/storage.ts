@@ -841,6 +841,126 @@ export class DatabaseStorage implements IStorage {
     }
     
     console.log("Initialized legal domains");
+    
+    // Initialize procedural guides after domains are created
+    await this.initializeProceduralGuides();
+  }
+  
+  async initializeProceduralGuides(): Promise<void> {
+    // Check if procedural guides already exist
+    const existingGuides = await db.select().from(proceduralGuides);
+    if (existingGuides.length > 0) return;
+    
+    // Get domain IDs for reference
+    const domains = await this.getLegalDomains();
+    const domainMap = new Map<string, number>();
+    
+    for (const domain of domains) {
+      domainMap.set(domain.name, domain.id);
+    }
+    
+    // Create default procedural guides
+    if (domainMap.has("Business Law")) {
+      const businessLawId = domainMap.get("Business Law")!;
+      
+      // Guide for incorporating a business
+      await db.insert(proceduralGuides).values({
+        domainId: businessLawId,
+        title: "How to Incorporate a Business in Canada",
+        description: "A step-by-step guide to incorporating a business under Canadian federal law",
+        steps: [
+          {
+            title: "Choose a Corporate Name",
+            description: "Conduct a NUANS search to ensure your proposed corporate name is available and meets the requirements of the Canada Business Corporations Act."
+          },
+          {
+            title: "Prepare Articles of Incorporation",
+            description: "Draft the Articles of Incorporation which include details about your company such as its name, registered office address, share structure, and restrictions on business."
+          },
+          {
+            title: "Select Initial Directors",
+            description: "Identify the initial directors of your corporation. Federal corporations require at least one director (25% must be Canadian residents)."
+          },
+          {
+            title: "File Incorporation Documents",
+            description: "Submit your Articles of Incorporation and other required forms to Corporations Canada along with the required fee."
+          },
+          {
+            title: "Create Corporate By-laws",
+            description: "Prepare by-laws to govern the internal management of your corporation."
+          },
+          {
+            title: "Organize Corporate Records",
+            description: "Set up a corporate minute book to maintain important records including articles, by-laws, minutes of meetings, and share registers."
+          },
+          {
+            title: "Register for Government Programs",
+            description: "Register for a business number, GST/HST account, corporate income tax account, and provincial programs as required."
+          }
+        ],
+        jurisdiction: "canada",
+        language: "en",
+        estimatedTime: "3-4 weeks",
+        prerequisites: [
+          "Legal capacity to form a corporation",
+          "Completed NUANS name search report",
+          "Registration fees"
+        ]
+      });
+      
+      console.log("Initialized procedural guides for Business Law");
+    }
+    
+    if (domainMap.has("Family Law")) {
+      const familyLawId = domainMap.get("Family Law")!;
+      
+      // Guide for divorce process
+      await db.insert(proceduralGuides).values({
+        domainId: familyLawId,
+        title: "Navigating the Divorce Process in Canada",
+        description: "A comprehensive guide to the legal process of divorce under the Divorce Act",
+        steps: [
+          {
+            title: "Determine Eligibility",
+            description: "Ensure you meet the residency requirements (you or your spouse must have been a resident in the province for at least one year)."
+          },
+          {
+            title: "Prepare Divorce Application",
+            description: "Complete the application for divorce form and gather supporting documents such as your marriage certificate."
+          },
+          {
+            title: "File the Application",
+            description: "Submit your application to the court along with the required filing fee."
+          },
+          {
+            title: "Serve the Documents",
+            description: "If filing a joint application, service is not required. Otherwise, serve the documents to your spouse according to the rules of service in your province."
+          },
+          {
+            title: "Wait for Response",
+            description: "Your spouse has a limited time (usually 30 days) to respond to the application."
+          },
+          {
+            title: "Address Disputed Issues",
+            description: "If there are disputes over child custody, support, or division of property, these may need to be resolved through negotiation, mediation, or court proceedings."
+          },
+          {
+            title: "Obtain Divorce Judgment",
+            description: "After the application is processed, the court issues a divorce judgment. The divorce becomes final 31 days after the judgment is issued."
+          }
+        ],
+        jurisdiction: "canada",
+        language: "en",
+        estimatedTime: "4-6 months (uncontested), 1-2 years (contested)",
+        prerequisites: [
+          "Valid marriage",
+          "Marriage breakdown (separation for at least one year, adultery, or cruelty)",
+          "Original or certified copy of marriage certificate"
+        ]
+      });
+      
+      console.log("Initialized procedural guides for Family Law");
+    }
   }
 }
 

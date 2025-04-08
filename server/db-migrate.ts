@@ -95,6 +95,30 @@ export async function runDatabaseMigrations() {
     console.log('domain_knowledge table already exists');
   }
 
+  // Check if procedural_guides table exists, create if it doesn't
+  const proceduralGuidesExists = await checkTableExists('procedural_guides');
+  if (!proceduralGuidesExists) {
+    console.log('Creating procedural_guides table...');
+    await db.execute(sql`
+      CREATE TABLE "procedural_guides" (
+        "id" SERIAL PRIMARY KEY,
+        "domain_id" INTEGER REFERENCES "legal_domains"("id") ON DELETE CASCADE,
+        "title" TEXT NOT NULL,
+        "description" TEXT NOT NULL,
+        "steps" JSONB NOT NULL,
+        "jurisdiction" TEXT DEFAULT 'canada',
+        "language" TEXT DEFAULT 'en',
+        "estimated_time" TEXT,
+        "prerequisites" JSONB,
+        "created_at" TIMESTAMP DEFAULT NOW(),
+        "updated_at" TIMESTAMP
+      )
+    `);
+    console.log('procedural_guides table created successfully');
+  } else {
+    console.log('procedural_guides table already exists');
+  }
+
   console.log('Database migrations completed successfully');
 }
 

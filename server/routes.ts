@@ -1231,6 +1231,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get a specific procedural guide by ID
+  app.get("/api/procedural-guides/:id", async (req: Request, res: Response) => {
+    try {
+      const guideId = parseInt(req.params.id);
+      if (isNaN(guideId)) {
+        return res.status(400).json({ message: "Invalid guide ID format" });
+      }
+      
+      const guide = await storage.getProceduralGuide(guideId);
+      if (!guide) {
+        return res.status(404).json({ message: "Procedural guide not found" });
+      }
+      
+      res.json(guide);
+    } catch (error) {
+      console.error("Error fetching procedural guide:", error);
+      res.status(500).json({ message: "Failed to fetch procedural guide" });
+    }
+  });
+  
   app.post("/api/document/analyze", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const analyzeSchema = z.object({
