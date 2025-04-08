@@ -15,10 +15,17 @@ type AuthContextType = {
   loginMutation: UseMutationResult<User, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
   registerMutation: UseMutationResult<User, Error, RegisterData>;
+  updateProfileMutation: UseMutationResult<User, Error, UpdateProfileData>;
+  updatePasswordMutation: UseMutationResult<{ message: string }, Error, UpdatePasswordData>;
 };
 
 export type LoginData = Pick<User, "username" | "password">;
 export type RegisterData = typeof insertUserSchema._type;
+export type UpdateProfileData = Pick<User, "fullName" | "preferredLanguage">;
+export type UpdatePasswordData = {
+  currentPassword: string;
+  newPassword: string;
+};
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -94,6 +101,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
   });
+  
+  const updateProfileMutation = useMutation({
+    mutationFn: async (profileData: UpdateProfileData) => {
+      const res = await apiRequest("PATCH", "/api/user", profileData);
+      return await res.json();
+    },
+    onSuccess: (updatedUser: User) => {
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been updated successfully",
+      });
+      queryClient.setQueryData(["/api/user"], updatedUser);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Profile update failed",
+        description: error.message || "Could not update profile",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const updatePasswordMutation = useMutation({
+    mutationFn: async (passwordData: UpdatePasswordData) => {
+      const res = await apiRequest("PATCH", "/api/user/password", passwordData);
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Password updated",
+        description: "Your password has been updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Password update failed",
+        description: error.message || "Could not update password",
+        variant: "destructive",
+      });
+    },
+  });
 
   return (
     <AuthContext.Provider
@@ -104,6 +152,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginMutation,
         logoutMutation,
         registerMutation,
+        updateProfileMutation,
+        updatePasswordMutation
       }}
     >
       {children}

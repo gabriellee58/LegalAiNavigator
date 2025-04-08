@@ -161,4 +161,81 @@ export function setupAuth(app: Express) {
     // User data in req.user already has password removed by our middleware
     res.json(req.user);
   });
+  
+  app.patch("/api/user", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      // Only allow updating specific fields
+      const allowedFields = ['fullName', 'preferredLanguage'];
+      const updateData: Record<string, string> = {};
+      
+      for (const field of allowedFields) {
+        if (field in req.body) {
+          updateData[field] = req.body[field];
+        }
+      }
+      
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ message: "No valid fields to update" });
+      }
+      
+      const updatedUser = await storage.updateUser(req.user.id, updateData);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Update the session user
+      const sessionUser: Express.User = {
+        id: updatedUser.id,
+        username: updatedUser.username,
+        fullName: updatedUser.fullName || undefined,
+        preferredLanguage: updatedUser.preferredLanguage || undefined
+      };
+      
+      // Update the session
+      req.user = sessionUser;
+      
+      // Return the updated user
+      res.status(200).json(sessionUser);
+    } catch (err) {
+      next(err);
+    }
+  });
+  
+  app.patch("/api/user/password", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const { currentPassword, newPassword } = req.body;
+      
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: "Current password and new password are required" });
+      }
+      
+      // Get the complete user record to verify password
+      const user = await storage.getUser(req.user.id);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Verify current password
+      const isPasswordValid = await comparePasswords(currentPassword, user.password);
+      
+      if (!isPasswordValid) {
+        return res.status(401).json({ message: "Current password is incorrect" });
+      }
+      
+      // Update with new hashed password
+      await storage.updateUser(user.id, { 
+        password: await hashPassword(newPassword) 
+      } as any); // Type cast needed since password isn't in the allowed fields type
+      
+      res.status(200).json({ message: "Password updated successfully" });
+    } catch (err) {
+      next(err);
+    }
+  });
 }

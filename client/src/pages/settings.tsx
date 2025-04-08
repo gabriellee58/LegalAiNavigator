@@ -14,7 +14,7 @@ import { useAuth } from "@/hooks/use-auth";
 export default function SettingsPage() {
   const [currentTab, setCurrentTab] = useState("profile");
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, updateProfileMutation, updatePasswordMutation } = useAuth();
   
   // Form states
   const [fullName, setFullName] = useState(user?.fullName || "");
@@ -37,13 +37,11 @@ export default function SettingsPage() {
   const handleProfileUpdate = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Simulate API call to update profile
-    setTimeout(() => {
-      toast({
-        title: t("profile_updated"),
-        description: t("profile_update_success"),
-      });
-    }, 500);
+    // Call the real API endpoint
+    updateProfileMutation.mutate({
+      fullName,
+      preferredLanguage: language
+    });
   };
 
   const handleNotificationUpdate = (e: React.FormEvent) => {
@@ -70,16 +68,17 @@ export default function SettingsPage() {
       return;
     }
     
-    // Simulate API call to update password
-    setTimeout(() => {
-      toast({
-        title: t("password_updated"),
-        description: t("password_update_success"),
-      });
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-    }, 500);
+    // Call the real API endpoint
+    updatePasswordMutation.mutate({
+      currentPassword,
+      newPassword
+    }, {
+      onSuccess: () => {
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      }
+    });
   };
 
   const getInitials = (name: string) => {
