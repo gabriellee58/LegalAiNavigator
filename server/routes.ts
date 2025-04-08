@@ -1231,15 +1231,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Additional procedural guides routes
+  app.get("/api/procedural-guides", async (req: Request, res: Response) => {
+    try {
+      const domainId = req.query.domainId ? parseInt(req.query.domainId as string) : undefined;
+      
+      if (!domainId) {
+        return res.status(400).json({ message: "Domain ID is required" });
+      }
+      
+      const language = req.query.language as string || 'en';
+      const guides = await storage.getProceduralGuidesByDomainId(domainId, language);
+      res.json(guides);
+    } catch (error) {
+      console.error("Error fetching procedural guides:", error);
+      res.status(500).json({ message: "Failed to fetch procedural guides" });
+    }
+  });
+  
   // Get a specific procedural guide by ID
   app.get("/api/procedural-guides/:id", async (req: Request, res: Response) => {
     try {
-      const guideId = parseInt(req.params.id);
-      if (isNaN(guideId)) {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid guide ID format" });
       }
       
-      const guide = await storage.getProceduralGuide(guideId);
+      const guide = await storage.getProceduralGuide(id);
       if (!guide) {
         return res.status(404).json({ message: "Procedural guide not found" });
       }

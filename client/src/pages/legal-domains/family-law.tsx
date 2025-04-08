@@ -5,6 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { InfoIcon } from "lucide-react";
 import { DomainDetail } from "@/components/legal-domains/DomainDetail";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ProceduralGuides from "@/components/legal-domains/ProceduralGuides";
 
 function FamilyLawPage() {
   // Fetch domain data from the database
@@ -32,11 +33,18 @@ function FamilyLawPage() {
         <Tabs defaultValue="details">
           <TabsList className="mb-4">
             <TabsTrigger value="details">Domain Details</TabsTrigger>
+            <TabsTrigger value="guides">Procedural Guides</TabsTrigger>
             <TabsTrigger value="templates">Templates & Resources</TabsTrigger>
           </TabsList>
           
           <TabsContent value="details">
             <DomainDetail domainId={domainId} />
+          </TabsContent>
+          
+          <TabsContent value="guides">
+            <div className="bg-card rounded-lg border p-6 shadow-sm">
+              <ProceduralGuides domainId={domainId} />
+            </div>
           </TabsContent>
           
           <TabsContent value="templates">

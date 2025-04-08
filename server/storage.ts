@@ -908,6 +908,51 @@ export class DatabaseStorage implements IStorage {
         ]
       });
       
+      // Guide for registering a business name
+      await db.insert(proceduralGuides).values({
+        domainId: businessLawId,
+        title: "How to Register a Business Name in Canada",
+        description: "Steps to register a business name for a sole proprietorship or partnership in Canada",
+        steps: [
+          {
+            title: "Choose a Business Name",
+            description: "Select a unique business name that isn't already registered in your province/territory and complies with local regulations."
+          },
+          {
+            title: "Conduct a Name Search",
+            description: "Research to ensure the name isn't already in use. Many provinces offer online databases to check business name availability."
+          },
+          {
+            title: "Prepare Registration Documents",
+            description: "Complete the business name registration form for your province or territory, including business contact information and ownership details."
+          },
+          {
+            title: "Submit Registration",
+            description: "File your registration documents with the appropriate provincial or territorial business registry and pay the required fee."
+          },
+          {
+            title: "Obtain Business Number",
+            description: "Apply for a business number from the Canada Revenue Agency (CRA) for tax purposes."
+          },
+          {
+            title: "Register for Additional Accounts",
+            description: "Register for GST/HST, payroll, and import/export accounts if applicable to your business activities."
+          },
+          {
+            title: "Renew Registration",
+            description: "Most business name registrations expire after a certain period (usually 3-5 years) and must be renewed."
+          }
+        ],
+        jurisdiction: "canada",
+        language: "en",
+        estimatedTime: "1-2 weeks",
+        prerequisites: [
+          "Business name selection",
+          "Registration fee",
+          "Valid identification"
+        ]
+      });
+      
       console.log("Initialized procedural guides for Business Law");
     }
     
@@ -959,7 +1004,167 @@ export class DatabaseStorage implements IStorage {
         ]
       });
       
+      // Guide for child custody agreements
+      await db.insert(proceduralGuides).values({
+        domainId: familyLawId,
+        title: "Creating a Child Custody Agreement in Canada",
+        description: "How to establish a legally binding child custody and parenting arrangement",
+        steps: [
+          {
+            title: "Understand Types of Custody",
+            description: "Learn the difference between sole custody, joint custody, shared custody, and split custody to determine what arrangement best serves your children's interests."
+          },
+          {
+            title: "Negotiate a Parenting Plan",
+            description: "Work with the other parent to create a detailed parenting plan that addresses schedules, decision-making, communication, and special occasions."
+          },
+          {
+            title: "Consider Mediation",
+            description: "If direct negotiation is difficult, engage a family mediator to help facilitate an agreement between parents."
+          },
+          {
+            title: "Draft a Parenting Agreement",
+            description: "Create a written document that outlines all aspects of the custody arrangement and parenting responsibilities."
+          },
+          {
+            title: "Review with Legal Counsel",
+            description: "Have a family lawyer review the agreement to ensure it protects your rights and the best interests of your children."
+          },
+          {
+            title: "File with the Court",
+            description: "Submit the agreement to the court to be incorporated into a court order, making it legally binding and enforceable."
+          },
+          {
+            title: "Implement and Revise as Needed",
+            description: "Follow the agreement consistently and be prepared to revise it as children grow and circumstances change."
+          }
+        ],
+        jurisdiction: "canada",
+        language: "en",
+        estimatedTime: "1-3 months",
+        prerequisites: [
+          "Children from the relationship",
+          "Willingness to cooperate with the other parent",
+          "Child's best interests as the primary consideration"
+        ]
+      });
+      
       console.log("Initialized procedural guides for Family Law");
+    }
+    
+    if (domainMap.has("Immigration Law")) {
+      const immigrationLawId = domainMap.get("Immigration Law")!;
+      
+      // Guide for Express Entry immigration
+      await db.insert(proceduralGuides).values({
+        domainId: immigrationLawId,
+        title: "Canadian Express Entry Immigration Process",
+        description: "Steps to immigrate to Canada through the Express Entry system for skilled workers",
+        steps: [
+          {
+            title: "Check Eligibility",
+            description: "Determine if you qualify for one of the Express Entry programs: Federal Skilled Worker Program, Federal Skilled Trades Program, or Canadian Experience Class."
+          },
+          {
+            title: "Get Educational Credential Assessment",
+            description: "Have your foreign education credentials assessed by a designated organization to verify they meet Canadian standards."
+          },
+          {
+            title: "Take Language Tests",
+            description: "Complete an approved language test (IELTS or CELPIP for English, TEF for French) to demonstrate proficiency."
+          },
+          {
+            title: "Create Express Entry Profile",
+            description: "Submit your profile to the Express Entry pool, including information about your skills, education, work experience, and language abilities."
+          },
+          {
+            title: "Receive Comprehensive Ranking System Score",
+            description: "Get ranked in the Express Entry pool based on your CRS score, which considers factors like age, education, work experience, and language skills."
+          },
+          {
+            title: "Receive Invitation to Apply",
+            description: "If selected in an Express Entry draw, you'll receive an Invitation to Apply (ITA) for permanent residence."
+          },
+          {
+            title: "Submit Complete Application",
+            description: "Submit your permanent residence application with all supporting documents within 60 days of receiving your ITA."
+          },
+          {
+            title: "Medical Examination and Background Checks",
+            description: "Complete a medical exam with an approved physician and provide police certificates from countries where you've lived."
+          },
+          {
+            title: "Receive Permanent Residence",
+            description: "If approved, pay the Right of Permanent Residence Fee and receive your Confirmation of Permanent Residence and permanent resident visa."
+          }
+        ],
+        jurisdiction: "canada",
+        language: "en",
+        estimatedTime: "6-12 months",
+        prerequisites: [
+          "Meet eligibility criteria for at least one Express Entry program",
+          "Valid passport or travel document",
+          "Proof of funds to support yourself in Canada",
+          "Language test results",
+          "Educational Credential Assessment (if applicable)"
+        ]
+      });
+      
+      // Guide for family sponsorship
+      await db.insert(proceduralGuides).values({
+        domainId: immigrationLawId,
+        title: "Sponsoring Family Members for Canadian Immigration",
+        description: "Process for Canadian citizens and permanent residents to sponsor eligible family members",
+        steps: [
+          {
+            title: "Confirm Eligibility to Sponsor",
+            description: "Verify that you meet the requirements to be a sponsor (Canadian citizen or permanent resident, 18+ years old, financially capable)."
+          },
+          {
+            title: "Verify Sponsored Person's Eligibility",
+            description: "Ensure your family member is eligible for sponsorship (spouse, partner, dependent child, parent, or grandparent)."
+          },
+          {
+            title: "Submit Sponsorship Application",
+            description: "Complete and submit the sponsorship forms, including an undertaking to provide financial support."
+          },
+          {
+            title: "Pay Application Fees",
+            description: "Pay the processing fee, right of permanent residence fee (if applicable), and biometric fee."
+          },
+          {
+            title: "Permanent Residence Application",
+            description: "Help your family member complete and submit their application for permanent residence."
+          },
+          {
+            title: "Medical Examination",
+            description: "Your family member must undergo a medical examination with an approved panel physician."
+          },
+          {
+            title: "Background and Security Checks",
+            description: "Provide police certificates for the family member from each country they've lived in for 6+ months since age 18."
+          },
+          {
+            title: "Interview (if required)",
+            description: "In some cases, the sponsored family member may need to attend an interview at a visa office."
+          },
+          {
+            title: "Receive Decision",
+            description: "If approved, your family member will receive a Confirmation of Permanent Residence and (if applicable) a permanent resident visa."
+          }
+        ],
+        jurisdiction: "canada",
+        language: "en",
+        estimatedTime: "12-24 months (depending on relationship and country)",
+        prerequisites: [
+          "Eligible relationship to the sponsored person",
+          "Meet income requirements for sponsorship",
+          "Not receiving social assistance (except for disability)",
+          "No criminal convictions that would make you ineligible"
+        ]
+      });
+      
+      console.log("Initialized procedural guides for Immigration Law");
     }
   }
 }
