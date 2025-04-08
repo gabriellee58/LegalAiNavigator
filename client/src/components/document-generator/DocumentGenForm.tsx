@@ -24,16 +24,57 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
   const [activeTab, setActiveTab] = useState("form");
   const [generatedDocument, setGeneratedDocument] = useState<string | null>(null);
   
-  // Initialize form with default values
+  // Initialize form with default values and validation
   const form = useForm({
     defaultValues: (template.fields as any[]).reduce((acc: Record<string, string>, field: any) => {
       acc[field.name] = "";
       return acc;
     }, {} as Record<string, string>),
+    // Add basic validation
+    validate: (values) => {
+      const errors: Record<string, string> = {};
+      
+      // Validate each field based on type and required status
+      for (const field of template.fields as any[]) {
+        // Skip validation for non-required empty fields
+        if (!field.required && (!values[field.name] || values[field.name].trim() === "")) {
+          continue;
+        }
+        
+        // Required field validation
+        if (field.required && (!values[field.name] || values[field.name].trim() === "")) {
+          errors[field.name] = `${field.label} is required`;
+          continue;
+        }
+        
+        // Type-specific validation
+        if (field.type === 'email' && values[field.name]) {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(values[field.name])) {
+            errors[field.name] = "Please enter a valid email address";
+          }
+        }
+        
+        if (field.type === 'number' && values[field.name]) {
+          if (isNaN(Number(values[field.name]))) {
+            errors[field.name] = "Please enter a valid number";
+          }
+        }
+        
+        if (field.type === 'date' && values[field.name]) {
+          const dateValue = new Date(values[field.name]);
+          if (dateValue.toString() === 'Invalid Date') {
+            errors[field.name] = "Please enter a valid date";
+          }
+        }
+      }
+      
+      return Object.keys(errors).length > 0 ? errors : undefined;
+    }
   });
   
   // Generate document mutation
-  const { mutate: generateDocumentMutation, isPending } = useMutation({
+  const { mutate: generateDocumentMutation, isPending, error, reset } = useMutation({
     mutationFn: (data: Record<string, any>) => 
       generateDocument(
         user?.id || 0, 
@@ -49,14 +90,22 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
         description: "Your document has been successfully generated.",
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
+      console.error("Document generation error:", error);
       toast({
-        title: "Error",
-        description: "There was an error generating your document. Please try again.",
+        title: "Error Generating Document",
+        description: error.message || "There was an error generating your document. Please try again.",
         variant: "destructive",
       });
     },
   });
+  
+  // Function to retry document generation after error
+  const retryGeneration = () => {
+    reset();
+    const formData = form.getValues();
+    generateDocumentMutation(formData);
+  };
   
   const onSubmit = (data: Record<string, any>) => {
     generateDocumentMutation(data);
@@ -122,6 +171,25 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
                   ))}
                 </div>
                 
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start mb-4">
+                    <span className="material-icons text-red-500 mr-2 mt-0.5">error</span>
+                    <div className="flex-1">
+                      <p className="font-medium">Document generation failed</p>
+                      <p className="text-sm">{error instanceof Error ? error.message : "An unexpected error occurred. Please try again."}</p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={retryGeneration}
+                      className="ml-2 text-xs"
+                    >
+                      <span className="material-icons text-sm mr-1">refresh</span>
+                      Retry
+                    </Button>
+                  </div>
+                )}
+
                 <div className="flex justify-end">
                   <Button 
                     type="submit" 

@@ -83,29 +83,46 @@ export default function EnhancedDocGenForm({ template }: EnhancedDocGenFormProps
   });
   
   // Generate document mutation
-  const { mutate: generateDocumentMutation, isPending } = useMutation({
+  const { mutate: generateDocumentMutation, isPending, error, reset } = useMutation({
     mutationFn: async (data: Record<string, any>) => {
-      // Process original template with field values
-      let processedTemplate = template.templateContent;
-      
-      // Exclude documentTitle from form data to be sent to API
-      const { documentTitle, ...formData } = data;
-      
-      // First perform basic variable replacement (will be enhanced by Anthropic)
-      for (const [key, value] of Object.entries(formData)) {
-        const placeholder = new RegExp(`\\[${key.toUpperCase()}\\]`, 'g');
-        processedTemplate = processedTemplate.replace(placeholder, value?.toString() || '');
+      try {
+        // Process original template with field values
+        let processedTemplate = template.templateContent;
+        
+        // Exclude documentTitle from form data to be sent to API
+        const { documentTitle, ...formData } = data;
+        
+        // First perform basic variable replacement (will be enhanced by Anthropic)
+        for (const [key, value] of Object.entries(formData)) {
+          const placeholder = new RegExp(`\\[${key.toUpperCase()}\\]`, 'g');
+          processedTemplate = processedTemplate.replace(placeholder, value?.toString() || '');
+        }
+        
+        // Generate enhanced document with Anthropic
+        const result = await generateEnhancedDocument(
+          processedTemplate,
+          formData,
+          template.templateType,
+          jurisdiction,
+          saveDocument,
+          documentTitle
+        );
+        
+        return result;
+      } catch (err) {
+        console.error("Enhanced document generation error:", err);
+        // Enhance error message for common AI service issues
+        if (err instanceof Error) {
+          if (err.message.includes("429") || err.message.includes("rate limit")) {
+            throw new Error("AI service is currently experiencing high demand. Please try again in a few minutes.");
+          }
+          if (err.message.includes("401") || err.message.includes("authentication")) {
+            throw new Error("Authentication error with AI service. Please check your API keys and try again.");
+          }
+          throw err;
+        }
+        throw new Error("An unexpected error occurred while generating your enhanced document.");
       }
-      
-      // Generate enhanced document with Anthropic
-      return generateEnhancedDocument(
-        processedTemplate,
-        formData,
-        template.templateType,
-        jurisdiction,
-        saveDocument,
-        documentTitle
-      );
     },
     onSuccess: (documentContent: string) => {
       setGeneratedDocument(documentContent);
@@ -115,14 +132,22 @@ export default function EnhancedDocGenForm({ template }: EnhancedDocGenFormProps
         description: t("document_enhanced_success"),
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
+      console.error("Document generation error:", error);
       toast({
-        title: t("error"),
+        title: "AI Document Generation Error",
         description: error.message || t("document_generation_error"),
         variant: "destructive",
       });
     },
   });
+  
+  // Function to retry document generation after error
+  const retryGeneration = () => {
+    reset();
+    const formData = form.getValues();
+    generateDocumentMutation(formData);
+  };
   
   const onSubmit = (data: Record<string, any>) => {
     generateDocumentMutation(data);
@@ -261,6 +286,25 @@ export default function EnhancedDocGenForm({ template }: EnhancedDocGenFormProps
                   </div>
                 </div>
                 
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start mb-4">
+                    <span className="material-icons text-red-500 mr-2 mt-0.5">error</span>
+                    <div className="flex-1">
+                      <p className="font-medium">AI Document Generation Failed</p>
+                      <p className="text-sm">{error instanceof Error ? error.message : "An unexpected error occurred. Please try again."}</p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={retryGeneration}
+                      className="ml-2 text-xs"
+                    >
+                      <span className="material-icons text-sm mr-1">refresh</span>
+                      Retry
+                    </Button>
+                  </div>
+                )}
+
                 <div className="pt-2">
                   <Button 
                     type="submit" 

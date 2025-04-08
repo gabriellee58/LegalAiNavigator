@@ -118,25 +118,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
         templates = await storage.getDocumentTemplates(language);
       }
       
+      if (!templates || templates.length === 0) {
+        console.log(`No templates found for language: ${language}${templateType ? `, type: ${templateType}` : ''}`);
+      }
+      
       res.json(templates);
     } catch (error) {
       console.error('Error retrieving document templates:', error);
-      res.status(500).json({ message: "Error retrieving document templates" });
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      res.status(500).json({ 
+        message: "Error retrieving document templates", 
+        details: errorMessage,
+        language: req.query.language || "en",
+        type: req.query.type || "all" 
+      });
     }
   });
 
   app.get("/api/document-templates/:id", async (req: Request, res: Response) => {
     try {
+      if (!req.params.id || isNaN(parseInt(req.params.id))) {
+        return res.status(400).json({ 
+          message: "Invalid template ID", 
+          details: "Template ID must be a valid number" 
+        });
+      }
+      
       const id = parseInt(req.params.id);
+      console.log(`Retrieving template with ID: ${id}`);
+      
       const template = await storage.getDocumentTemplate(id);
       
       if (!template) {
-        return res.status(404).json({ message: "Template not found" });
+        console.log(`Template with ID ${id} not found`);
+        return res.status(404).json({ 
+          message: "Template not found", 
+          details: `No template exists with ID: ${id}`
+        });
       }
       
       res.json(template);
     } catch (error) {
-      res.status(500).json({ message: "Error retrieving document template" });
+      console.error(`Error retrieving document template with ID ${req.params.id}:`, error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      res.status(500).json({ 
+        message: "Error retrieving document template", 
+        details: errorMessage,
+        templateId: req.params.id
+      });
     }
   });
 
