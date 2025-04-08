@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 function RealEstateLawPage() {
   // Fetch domain data from the database
-  const { domain, domainId, isLoading } = useLegalDomainByName("real estate law");
+  const { domain, domainId, isLoading } = useLegalDomainByName("Real Estate Law");
 
   // If loading, show skeleton
   if (isLoading) {

@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 function EmploymentLawPage() {
   // Fetch domain data from the database
-  const { domain, domainId, isLoading } = useLegalDomainByName("employment law");
+  const { domain, domainId, isLoading } = useLegalDomainByName("Employment Law");
 
   // If loading, show skeleton
   if (isLoading) {

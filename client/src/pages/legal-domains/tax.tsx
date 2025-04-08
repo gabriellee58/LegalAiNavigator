@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 function TaxLawPage() {
   // Fetch domain data from the database
-  const { domain, domainId, isLoading } = useLegalDomainByName("tax law");
+  const { domain, domainId, isLoading } = useLegalDomainByName("Tax Law");
 
   // If loading, show skeleton
   if (isLoading) {
