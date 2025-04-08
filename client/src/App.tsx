@@ -14,6 +14,8 @@ import LegalResearchPage from "@/pages/legal-research";
 import ContractAnalysisPage from "@/pages/contract-analysis";
 import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
+import ProfilePage from "@/pages/profile";
+import LogoutPage from "@/pages/logout";
 
 // Import newly created pages
 import DisputeResolutionPage from "./pages/dispute-resolution";
@@ -144,6 +146,8 @@ function Router() {
       <ProtectedRoute path="/help-resources" component={HelpResourcesPage} />
       <ProtectedRoute path="/settings" component={SettingsPage} />
       <ProtectedRoute path="/more" component={MorePage} />
+      <ProtectedRoute path="/profile" component={ProfilePage} />
+      <Route path="/logout" component={LogoutPage} />
       
       {/* Guide Pages */}
       <ProtectedRoute path="/guides/getting-started" component={GettingStartedGuide} />

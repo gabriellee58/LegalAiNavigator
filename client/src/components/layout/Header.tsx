@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { t } from "@/lib/i18n";
+import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +13,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 function Header() {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   
   const handleSearch = (e: React.FormEvent) => {
@@ -96,14 +98,12 @@ function Header() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="ml-4 flex items-center text-white hover:bg-white/10">
-              <div className="w-8 h-8 rounded-full bg-white/20 overflow-hidden border-2 border-white/30">
-                <img
-                  src="https://randomuser.me/api/portraits/women/43.jpg"
-                  alt="User avatar"
-                  className="w-full h-full object-cover"
-                />
+              <div className="w-8 h-8 rounded-full bg-white/20 overflow-hidden border-2 border-white/30 flex items-center justify-center text-white">
+                {user?.fullName?.charAt(0).toUpperCase() || user?.username?.charAt(0).toUpperCase() || '?'}
               </div>
-              <span className="ml-2 text-sm font-medium hidden md:block">Sarah Mitchell</span>
+              <span className="ml-2 text-sm font-medium hidden md:block">
+                {user?.fullName || user?.username || 'User'}
+              </span>
               <span className="material-icons text-sm ml-1">arrow_drop_down</span>
             </Button>
           </DropdownMenuTrigger>
@@ -134,6 +134,8 @@ function Header() {
 }
 
 function MobileSidebar() {
+  const { user } = useAuth();
+  
   return (
     <div className="flex flex-col h-full">
       <div className="purple-gradient-bg p-5 flex items-center justify-between">
@@ -142,6 +144,17 @@ function MobileSidebar() {
             <span className="material-icons text-primary text-lg">balance</span>
           </div>
           <h1 className="font-heading font-bold text-xl text-white">LegalAI</h1>
+        </div>
+      </div>
+      
+      {/* User info in mobile view */}
+      <div className="p-4 border-b border-gray-200 flex items-center">
+        <div className="w-10 h-10 rounded-full bg-primary/20 overflow-hidden border-2 border-primary/30 flex items-center justify-center text-primary font-medium">
+          {user?.fullName?.charAt(0).toUpperCase() || user?.username?.charAt(0).toUpperCase() || '?'}
+        </div>
+        <div className="ml-3">
+          <p className="font-medium">{user?.fullName || user?.username || 'User'}</p>
+          <p className="text-xs text-gray-500">{user?.username}</p>
         </div>
       </div>
       
@@ -226,13 +239,21 @@ function MobileSidebar() {
       </nav>
       
       <div className="border-t border-neutral-100 p-4">
-        <Link href="/help" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
+        <Link href="/help-resources" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
           <span className="material-icons mr-3 text-primary">help_outline</span>
           <span className="font-medium">{t("help_resources")}</span>
+        </Link>
+        <Link href="/profile" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
+          <span className="material-icons mr-3 text-primary">person</span>
+          <span className="font-medium">Profile</span>
         </Link>
         <Link href="/settings" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
           <span className="material-icons mr-3 text-primary">settings</span>
           <span className="font-medium">{t("settings")}</span>
+        </Link>
+        <Link href="/logout" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
+          <span className="material-icons mr-3 text-primary">logout</span>
+          <span className="font-medium">Logout</span>
         </Link>
       </div>
     </div>
