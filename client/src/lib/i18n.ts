@@ -116,6 +116,7 @@ export const translations: Translations = {
     faq: "FAQ",
     guides: "Guides",
     tutorial_videos: "Tutorial Videos",
+    getting_started_description: "Learn how to use the Legal AI Navigator effectively",
     legal_resources: "Legal Resources",
     frequently_asked_questions: "Frequently Asked Questions",
     faq_description: "Common questions about using our platform",
@@ -125,6 +126,11 @@ export const translations: Translations = {
     check_compliance: "Check Compliance",
     compliance_history: "Compliance History", 
     compliance_history_description: "View your previous compliance check results",
+    compliance_checker_steps_description: "Follow these steps to check your business compliance",
+    questionnaire_tips_description: "Tips for completing the compliance questionnaire accurately",
+    compliance_report_description: "Understanding your compliance report and recommended actions",
+    implementation_description: "How to implement compliance recommendations effectively",
+    ready_to_check_description: "Ready to check your business compliance with Canadian regulations",
     business_compliance_check: "Business Compliance Check",
     compliance_form_description: "Fill out the form below to check your business compliance",
     compliance_supporting_documents: "Supporting Documents",
@@ -143,6 +149,7 @@ export const translations: Translations = {
     // Document Generator
     document_gen_title: "Document Generator",
     document_gen_subtitle: "Create customized legal documents for your needs",
+    document_generation_description: "Create legally-sound documents tailored to your needs",
     my_templates: "My Templates",
     external_templates: "External Templates",
     all_templates: "All Templates",
@@ -159,12 +166,16 @@ export const translations: Translations = {
     all_jurisdictions: "All Jurisdictions",
     import_template: "Import Template",
     import: "Import",
+    tips_description: "Tips to help you create effective legal documents",
+    examples_description: "Examples of professionally created legal documents",
+    ready_to_create_description: "Ready to create customized legal documents for your needs",
     
     // Global Search
     global_search_placeholder: "Search...",
     
     // Contract Analysis
     upload_analyze_description: "Upload and analyze contracts to identify key terms and potential issues",
+    contract_analysis_description: "Analyze legal agreements to identify risks, opportunities, and ambiguities",
     upload: "Upload",
     compare: "Compare",
     history: "History",
@@ -176,10 +187,17 @@ export const translations: Translations = {
     text_input: "Text Input",
     upload_contract_document: "Upload contract document",
     analyze_file: "Analyze File",
+    analysis_steps_description: "Step-by-step guide to analyzing your contract",
+    report_components_description: "Key sections in your contract analysis report",
+    risk_categories_description: "Understanding contract risk levels and examples",
+    common_pitfalls_description: "Common issues to watch for in contracts",
+    expert_tips_description: "Expert tips for effective contract review",
+    ready_to_analyze_description: "Ready to analyze your contract for potential issues and improvements",
     
     // Legal Research
     research_title: "Legal Research",
     research_subtitle: "Search and analyze Canadian legal information",
+    legal_research_description: "Find and analyze Canadian legal cases, statutes, and regulations",
     advanced_search: "Advanced Search",
     search_description: "Search for legal cases, statutes, and regulations",
     research_search_placeholder: "Enter keywords, case names, or citations...",
@@ -192,6 +210,9 @@ export const translations: Translations = {
     no_recent_searches: "No recent searches",
     saved_citations: "Saved Citations",
     no_saved_citations: "No saved citations",
+    research_process_description: "Follow these steps for effective legal research",
+    search_strategies_description: "Effective approaches for finding relevant legal information",
+    ready_to_research_description: "Ready to start searching Canadian legal information",
     
     // Dispute Resolution
     dispute_resolution_description: "Submit and manage legal disputes for resolution",
@@ -337,6 +358,7 @@ export const translations: Translations = {
     faq: "FAQ",
     guides: "Guides",
     tutorial_videos: "Vidéos Tutorielles",
+    getting_started_description: "Apprenez à utiliser efficacement le Navigateur JuridiqueIA",
     legal_resources: "Ressources Juridiques",
     frequently_asked_questions: "Questions Fréquemment Posées",
     faq_description: "Questions courantes sur l'utilisation de notre plateforme",
@@ -346,6 +368,11 @@ export const translations: Translations = {
     check_compliance: "Vérifier la Conformité",
     compliance_history: "Historique de Conformité", 
     compliance_history_description: "Consultez vos résultats de vérification de conformité précédents",
+    compliance_checker_steps_description: "Suivez ces étapes pour vérifier la conformité de votre entreprise",
+    questionnaire_tips_description: "Conseils pour remplir avec précision le questionnaire de conformité",
+    compliance_report_description: "Comprendre votre rapport de conformité et les actions recommandées",
+    implementation_description: "Comment mettre en œuvre efficacement les recommandations de conformité",
+    ready_to_check_description: "Prêt à vérifier la conformité de votre entreprise aux réglementations canadiennes",
     business_compliance_check: "Vérification de Conformité d'Entreprise",
     compliance_form_description: "Remplissez le formulaire ci-dessous pour vérifier la conformité de votre entreprise",
     compliance_supporting_documents: "Documents Justificatifs",
@@ -364,9 +391,13 @@ export const translations: Translations = {
     // Document Generator
     document_gen_title: "Générateur de Documents",
     document_gen_subtitle: "Créez des documents juridiques personnalisés pour vos besoins",
+    document_generation_description: "Créez des documents juridiques solides adaptés à vos besoins",
     my_templates: "Mes Modèles",
     external_templates: "Modèles Externes",
     all_templates: "Tous les Modèles",
+    tips_description: "Conseils pour vous aider à créer des documents juridiques efficaces",
+    examples_description: "Exemples de documents juridiques créés professionnellement",
+    ready_to_create_description: "Prêt à créer des documents juridiques personnalisés pour vos besoins",
     external_templates_description: "Importez des modèles de sources externes pour des documents spécialisés",
     template_import_information: "Informations d'Importation de Modèle",
     quick_template_import: "Importation Rapide de Modèle",
@@ -386,6 +417,7 @@ export const translations: Translations = {
     
     // Contract Analysis
     upload_analyze_description: "Téléchargez et analysez des contrats pour identifier les clauses clés et les problèmes potentiels",
+    contract_analysis_description: "Analysez les accords juridiques pour identifier les risques, les opportunités et les ambiguïtés",
     upload: "Télécharger",
     compare: "Comparer",
     history: "Historique",
@@ -397,10 +429,17 @@ export const translations: Translations = {
     text_input: "Saisie de Texte",
     upload_contract_document: "Télécharger document contractuel",
     analyze_file: "Analyser Fichier",
+    analysis_steps_description: "Guide étape par étape pour analyser votre contrat",
+    report_components_description: "Sections clés de votre rapport d'analyse de contrat",
+    risk_categories_description: "Comprendre les niveaux de risque contractuel et exemples",
+    common_pitfalls_description: "Problèmes courants à surveiller dans les contrats",
+    expert_tips_description: "Conseils d'experts pour une révision efficace des contrats",
+    ready_to_analyze_description: "Prêt à analyser votre contrat pour identifier les problèmes potentiels et les améliorations",
     
     // Legal Research
     research_title: "Recherche Juridique",
     research_subtitle: "Rechercher et analyser l'information juridique canadienne",
+    legal_research_description: "Trouvez et analysez des cas juridiques, des lois et des règlements canadiens",
     advanced_search: "Recherche Avancée",
     search_description: "Rechercher des cas juridiques, des lois et des règlements",
     research_search_placeholder: "Entrez des mots-clés, noms de cas ou citations...",
@@ -413,6 +452,9 @@ export const translations: Translations = {
     no_recent_searches: "Aucune recherche récente",
     saved_citations: "Citations Sauvegardées",
     no_saved_citations: "Aucune citation sauvegardée",
+    research_process_description: "Suivez ces étapes pour une recherche juridique efficace",
+    search_strategies_description: "Approches efficaces pour trouver des informations juridiques pertinentes",
+    ready_to_research_description: "Prêt à commencer à rechercher des informations juridiques canadiennes",
     
     // Dispute Resolution
     dispute_resolution_description: "Soumettez et gérez des litiges juridiques pour résolution",
