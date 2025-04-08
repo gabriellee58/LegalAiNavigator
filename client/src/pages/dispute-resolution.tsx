@@ -151,7 +151,7 @@ export default function DisputeResolutionPage() {
                     <Input 
                       value={disputeTitle}
                       onChange={(e) => setDisputeTitle(e.target.value)}
-                      placeholder={t("dispute_title_placeholder") || "Enter a title for your dispute"}
+                      placeholder={t("dispute_title_placeholder")}
                       required
                     />
                   </div>
@@ -162,15 +162,15 @@ export default function DisputeResolutionPage() {
                       onValueChange={setDisputeType}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder={t("select_dispute_type") || "Select dispute type"} />
+                        <SelectValue placeholder={t("select_dispute_type")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="contract">{t("contract_dispute") || "Contract Dispute"}</SelectItem>
-                        <SelectItem value="property">{t("property_dispute") || "Property Dispute"}</SelectItem>
-                        <SelectItem value="family">{t("family_dispute") || "Family Dispute"}</SelectItem>
-                        <SelectItem value="employment">{t("employment_dispute") || "Employment Dispute"}</SelectItem>
-                        <SelectItem value="consumer">{t("consumer_dispute") || "Consumer Dispute"}</SelectItem>
-                        <SelectItem value="other">{t("other_dispute") || "Other"}</SelectItem>
+                        <SelectItem value="contract">{t("contract_dispute")}</SelectItem>
+                        <SelectItem value="property">{t("property_dispute")}</SelectItem>
+                        <SelectItem value="family">{t("family_dispute")}</SelectItem>
+                        <SelectItem value="employment">{t("employment_dispute")}</SelectItem>
+                        <SelectItem value="consumer">{t("consumer_dispute")}</SelectItem>
+                        <SelectItem value="other">{t("other_dispute")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -179,7 +179,7 @@ export default function DisputeResolutionPage() {
                     <Textarea 
                       value={disputeDescription}
                       onChange={(e) => setDisputeDescription(e.target.value)}
-                      placeholder={t("dispute_description_placeholder") || "Describe your dispute in detail..."}
+                      placeholder={t("dispute_description_placeholder")}
                       className="min-h-[150px]"
                       required
                     />
@@ -189,17 +189,17 @@ export default function DisputeResolutionPage() {
                     <Textarea 
                       value={parties}
                       onChange={(e) => setParties(e.target.value)}
-                      placeholder={t("parties_placeholder") || "List all parties involved in the dispute..."}
+                      placeholder={t("parties_placeholder")}
                       className="min-h-[100px]"
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">{t("supporting_documents")}</label>
+                    <label className="text-sm font-medium">{t("dispute_supporting_documents")}</label>
                     <div className="border border-dashed rounded-md p-6 text-center">
-                      <p className="text-sm text-neutral-500 mb-2">{t("drag_drop_files") || "Drag and drop files here"}</p>
+                      <p className="text-sm text-neutral-500 mb-2">{t("drag_drop_files")}</p>
                       <Button variant="outline" size="sm" type="button">
-                        {t("browse_files") || "Browse Files"}
+                        {t("dispute_browse_files")}
                       </Button>
                     </div>
                   </div>
@@ -209,8 +209,8 @@ export default function DisputeResolutionPage() {
                       disabled={createDisputeMutation.isPending}
                     >
                       {createDisputeMutation.isPending ? 
-                        t("submitting") || "Submitting..." : 
-                        t("submit_dispute") || "Submit Dispute"}
+                        t("submitting") : 
+                        t("submit_dispute")}
                     </Button>
                   </div>
                 </form>
@@ -246,14 +246,14 @@ export default function DisputeResolutionPage() {
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Error</AlertTitle>
                     <AlertDescription>
-                      {t("disputes_fetch_error") || "Failed to load disputes. Please try again."}
+                      {t("disputes_fetch_error")}
                     </AlertDescription>
                   </Alert>
                 ) : activeDisputes.length === 0 ? (
                   <div className="space-y-2">
                     <p className="text-neutral-500 text-center py-8">
                       <Clock className="h-12 w-12 mx-auto mb-3 text-blue-500 opacity-50" />
-                      {t("no_active_disputes") || "You don't have any active disputes."}
+                      {t("no_active_disputes")}
                     </p>
                   </div>
                 ) : (
@@ -268,7 +268,7 @@ export default function DisputeResolutionPage() {
                             dispute.status === "mediation" ? "default" : "outline"
                           }>
                             {dispute.status === "mediation" ? 
-                              t("in_mediation") || "In Mediation" : 
+                              t("in_mediation") : 
                               dispute.status.charAt(0).toUpperCase() + dispute.status.slice(1)}
                           </Badge>
                         </div>
@@ -278,7 +278,7 @@ export default function DisputeResolutionPage() {
                         <div className="flex items-center text-xs text-muted-foreground gap-4 mb-3">
                           <span className="flex items-center gap-1">
                             <FileText className="h-3 w-3" />
-                            {t(dispute.disputeType) || dispute.disputeType}
+                            {t(dispute.disputeType)}
                           </span>
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
@@ -286,19 +286,19 @@ export default function DisputeResolutionPage() {
                           </span>
                           <span className="flex items-center gap-1">
                             <Users className="h-3 w-3" />
-                            {dispute.parties.split(',').length} {t("parties") || "parties"}
+                            {dispute.parties.split(',').length} {t("parties")}
                           </span>
                         </div>
                         <div className="flex gap-2 mt-2">
                           <Button size="sm" variant="outline" asChild>
                             <Link href={`/dispute/${dispute.id}`}>
-                              {t("view_details") || "View Details"}
+                              {t("view_details")}
                             </Link>
                           </Button>
                           {dispute.status === "pending" && (
                             <Button size="sm" asChild>
                               <Link href={`/dispute/${dispute.id}`}>
-                                {t("start_mediation") || "Start Mediation"}
+                                {t("start_mediation")}
                               </Link>
                             </Button>
                           )}
@@ -335,14 +335,14 @@ export default function DisputeResolutionPage() {
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Error</AlertTitle>
                     <AlertDescription>
-                      {t("disputes_fetch_error") || "Failed to load resolved disputes. Please try again."}
+                      {t("disputes_fetch_error")}
                     </AlertDescription>
                   </Alert>
                 ) : resolvedDisputes.length === 0 ? (
                   <div className="space-y-2">
                     <p className="text-neutral-500 text-center py-8">
                       <CheckCircle className="h-12 w-12 mx-auto mb-3 text-green-500 opacity-50" />
-                      {t("no_resolved_disputes") || "You don't have any resolved disputes."}
+                      {t("no_resolved_disputes")}
                     </p>
                   </div>
                 ) : (
@@ -353,8 +353,8 @@ export default function DisputeResolutionPage() {
                           <h3 className="font-medium text-lg">{dispute.title}</h3>
                           <Badge variant="secondary">
                             {dispute.status === "resolved" ? 
-                              t("resolved") || "Resolved" : 
-                              t("closed") || "Closed"}
+                              t("resolved") : 
+                              t("closed")}
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
@@ -363,7 +363,7 @@ export default function DisputeResolutionPage() {
                         <div className="flex items-center text-xs text-muted-foreground gap-4 mb-1">
                           <span className="flex items-center gap-1">
                             <FileText className="h-3 w-3" />
-                            {t(dispute.disputeType) || dispute.disputeType}
+                            {t(dispute.disputeType)}
                           </span>
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
@@ -372,7 +372,7 @@ export default function DisputeResolutionPage() {
                         </div>
                         <Button size="sm" variant="outline" className="mt-2" asChild>
                           <Link href={`/dispute/${dispute.id}`}>
-                            {t("view_resolution") || "View Resolution"}
+                            {t("view_resolution")}
                           </Link>
                         </Button>
                       </div>

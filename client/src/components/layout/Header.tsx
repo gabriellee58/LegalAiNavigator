@@ -81,7 +81,7 @@ function Header() {
         </span>
         <Input
           type="text"
-          placeholder={t("search_placeholder")}
+          placeholder={t("global_search_placeholder")}
           className="pl-10 pr-4 py-2 bg-white/10 text-white rounded-full w-full focus:outline-none focus:ring-2 focus:ring-white/30 focus:bg-white/20 border-white/20"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}

@@ -246,11 +246,11 @@ export default function ComplianceCheckerPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">{t("supporting_documents")}</label>
+                      <label className="text-sm font-medium">{t("compliance_supporting_documents")}</label>
                       <div className="border border-dashed rounded-md p-6 text-center">
                         <p className="text-sm text-neutral-500 mb-2">{t("drag_drop_files")}</p>
                         <Button variant="outline" size="sm" type="button">
-                          {t("browse_files")}
+                          {t("compliance_browse_files")}
                         </Button>
                       </div>
                     </div>

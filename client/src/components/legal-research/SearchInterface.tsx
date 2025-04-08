@@ -153,7 +153,7 @@ function SearchInterface() {
                 <div className="relative">
                   <Input
                     type="text"
-                    placeholder={t("search_placeholder")}
+                    placeholder={t("research_search_placeholder")}
                     className="pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
