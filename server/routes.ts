@@ -13,8 +13,14 @@ import {
   insertUserFeedbackSchema
 } from "@shared/schema";
 import { z } from "zod";
-import { generateAIResponse, performLegalResearch } from "./lib/openai";
-import { analyzeContract, compareContracts, extractTextFromPdf } from "./lib/contractAnalysis";
+// Replace OpenAI with DeepSeek implementation
+import { 
+  generateAIResponse, 
+  performLegalResearch,
+  analyzeContract,
+  compareContracts,
+  extractTextFromPdf
+} from "./lib/deepseek";
 import { setupAuth } from "./auth";
 import multer from "multer";
 import path from "path";
@@ -158,14 +164,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: req.user!.id
       });
       
-      // Generate AI response with fallback to Claude if OpenAI fails
+      // Generate AI response with DeepSeek, fallback to Claude if DeepSeek fails
       let aiResponse: string;
       try {
-        // First try with OpenAI
+        // First try with DeepSeek
         aiResponse = await generateAIResponse(parsed.data.content);
       } catch (aiError) {
-        console.error("OpenAI error, falling back to Claude:", aiError);
-        // Fall back to Claude if OpenAI fails
+        console.error("DeepSeek API error, falling back to Claude:", aiError);
+        // Fall back to Claude if DeepSeek fails
         aiResponse = await generateAIResponseClaude(parsed.data.content);
       }
       
@@ -496,18 +502,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         practiceArea = "all" 
       } = parsed.data;
       
-      // Perform research with OpenAI using all parameters, fallback to Claude if needed
+      // Perform research with DeepSeek using all parameters, fallback to Claude if needed
       let results;
       try {
-        // First try with OpenAI
+        // First try with DeepSeek
         results = await performLegalResearch(
           query,
           jurisdiction,
           practiceArea
         );
       } catch (aiError) {
-        console.error("OpenAI research error, falling back to Claude:", aiError);
-        // Fall back to Claude if OpenAI fails
+        console.error("DeepSeek research error, falling back to Claude:", aiError);
+        // Fall back to Claude if DeepSeek fails
         results = await performClaudeLegalResearch(
           query,
           jurisdiction,

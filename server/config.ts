@@ -19,6 +19,7 @@ interface ConfigInterface {
   LOG_LEVEL: string;
   ANTHROPIC_API_KEY?: string;
   OPENAI_API_KEY?: string;
+  DEEPSEEK_API_KEY?: string;
   SENDGRID_API_KEY?: string;
   BACKUP_FREQUENCY?: string; // 'daily', 'hourly', etc.
   BACKUP_RETENTION_DAYS?: number;
@@ -45,6 +46,7 @@ export const config: ConfigInterface = {
   LOG_LEVEL: process.env.LOG_LEVEL || 'info',
   ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
   OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+  DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY,
   SENDGRID_API_KEY: process.env.SENDGRID_API_KEY,
   BACKUP_FREQUENCY: process.env.BACKUP_FREQUENCY || 'daily',
   BACKUP_RETENTION_DAYS: parseInt(process.env.BACKUP_RETENTION_DAYS || '7', 10),
@@ -60,7 +62,7 @@ export function initializeConfig() {
   
   // Mask sensitive values for logging
   Object.keys(safeConfig).forEach(key => {
-    if (['DATABASE_URL', 'SESSION_SECRET', 'ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'SENDGRID_API_KEY'].includes(key)) {
+    if (['DATABASE_URL', 'SESSION_SECRET', 'ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'DEEPSEEK_API_KEY', 'SENDGRID_API_KEY'].includes(key)) {
       (safeConfig as any)[key] = (safeConfig as any)[key] ? '[REDACTED]' : undefined;
     }
   });
@@ -78,6 +80,7 @@ export function initializeConfig() {
   logger.info(`[config] Available AI services: ${[
     config.ANTHROPIC_API_KEY ? 'Anthropic Claude' : null,
     config.OPENAI_API_KEY ? 'OpenAI GPT' : null,
+    config.DEEPSEEK_API_KEY ? 'DeepSeek AI' : null,
   ].filter(Boolean).join(', ') || 'None'}`);
 
   return config;
