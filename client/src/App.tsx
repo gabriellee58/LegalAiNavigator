@@ -1,11 +1,10 @@
 import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
 import { useEffect, useState } from "react";
 import { getLanguage } from "./lib/i18n";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
+import { ErrorBoundary } from "./components/error-boundary";
+import { Toaster } from "@/components/ui/toaster";
 
 // Import pages
 import HomePage from "@/pages/home";
@@ -181,15 +180,15 @@ function App() {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
+    <AuthProvider>
+      <ErrorBoundary>
         <Head />
         <div className="app-container" key={language}>
           <Router />
         </div>
         <Toaster />
-      </AuthProvider>
-    </QueryClientProvider>
+      </ErrorBoundary>
+    </AuthProvider>
   );
 }
 

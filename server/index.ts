@@ -1,39 +1,55 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+import { setupVite, serveStatic } from "./vite";
+import { logInfo, logError, logRequest } from "./utils/logger";
+import { errorHandler, setupUncaughtExceptionHandling } from "./utils/errorHandler";
+import { db } from "./db";
+import { enhanceDbClient } from "./utils/dbMiddleware";
+
+// Setup global error handlers for unhandled exceptions
+setupUncaughtExceptionHandling();
+
+// Enhance database client with logging and error handling
+enhanceDbClient(db);
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Request logger middleware
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
+  // Capture JSON responses for logging
   const originalResJson = res.json;
   res.json = function (bodyJson, ...args) {
     capturedJsonResponse = bodyJson;
     return originalResJson.apply(res, [bodyJson, ...args]);
   };
 
+  // Log completed requests
   res.on("finish", () => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
-      log(logLine);
+      logRequest(req.method, path, res.statusCode, duration, capturedJsonResponse);
     }
   });
 
   next();
+});
+
+// Add endpoint for client-side error logging
+app.post('/api/log-client-error', (req, res) => {
+  try {
+    const { error, url, timestamp } = req.body;
+    logError(`Client error at ${url}: ${error}`, 'client');
+    res.status(200).send('Error logged');
+  } catch (err) {
+    // Don't let client logging failures disrupt the app
+    res.status(500).send('Failed to log error');
+  }
 });
 
 (async () => {
@@ -41,29 +57,25 @@ app.use((req, res, next) => {
   try {
     // Run database migrations first
     const { runDatabaseMigrations } = await import("./db-migrate");
-    log("Running database migrations...");
+    logInfo("Running database migrations...");
     await runDatabaseMigrations();
     
     // Import here to avoid circular dependencies
     const { storage } = await import("./storage");
-    log("Initializing database and creating default templates...");
+    logInfo("Initializing database and creating default templates...");
     await storage.initializeDefaultDocumentTemplates();
-    log("Initializing legal domains and knowledge base...");
+    logInfo("Initializing legal domains and knowledge base...");
     await storage.initializeLegalDomains();
-    log("Database initialization completed");
+    logInfo("Database initialization completed");
   } catch (error) {
-    log(`Database initialization error: ${error}`);
+    logError(`Database initialization error: ${(error as Error).message}`);
+    console.error(error);
   }
 
   const server = await registerRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
-  });
+  // Global error handler middleware
+  app.use(errorHandler);
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
@@ -83,6 +95,6 @@ app.use((req, res, next) => {
     host: "0.0.0.0",
     reusePort: true,
   }, () => {
-    log(`serving on port ${port}`);
+    logInfo(`Server started and listening on port ${port}`);
   });
 })();
