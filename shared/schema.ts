@@ -442,6 +442,20 @@ export const domainKnowledge = pgTable("domain_knowledge", {
   updatedAt: timestamp("updated_at"),
 });
 
+// Provincial-specific legal information
+export const provincialInfo = pgTable("provincial_info", {
+  id: serial("id").primaryKey(),
+  domainId: integer("domain_id").references(() => legalDomains.id, { onDelete: 'cascade' }),
+  province: text("province").notNull(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  language: text("language").default("en"),
+  keyLegislation: jsonb("key_legislation"),
+  resources: jsonb("resources"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
 export const insertDomainKnowledgeSchema = createInsertSchema(domainKnowledge).pick({
   domainId: true,
   question: true,
@@ -456,6 +470,20 @@ export const insertDomainKnowledgeSchema = createInsertSchema(domainKnowledge).p
 
 export type InsertDomainKnowledge = z.infer<typeof insertDomainKnowledgeSchema>;
 export type DomainKnowledge = typeof domainKnowledge.$inferSelect;
+
+export const insertProvincialInfoSchema = createInsertSchema(provincialInfo).pick({
+  domainId: true,
+  province: true,
+  title: true,
+  content: true,
+  language: true,
+  keyLegislation: true,
+  resources: true,
+  updatedAt: true,
+});
+
+export type InsertProvincialInfo = z.infer<typeof insertProvincialInfoSchema>;
+export type ProvincialInfo = typeof provincialInfo.$inferSelect;
 
 // Procedural guidance for step-by-step instructions
 export const proceduralGuides = pgTable("procedural_guides", {
@@ -583,6 +611,7 @@ export const legalDomainsRelations = relations(legalDomains, ({ one, many }) => 
   domainKnowledge: many(domainKnowledge),
   proceduralGuides: many(proceduralGuides),
   conversationContexts: many(conversationContexts),
+  provincialInfo: many(provincialInfo),
 }));
 
 export const domainKnowledgeRelations = relations(domainKnowledge, ({ one }) => ({
@@ -626,9 +655,57 @@ export const conversationContextsRelations = relations(conversationContexts, ({ 
   }),
 }));
 
+export const provincialInfoRelations = relations(provincialInfo, ({ one }) => ({
+  domain: one(legalDomains, {
+    fields: [provincialInfo.domainId],
+    references: [legalDomains.id],
+  }),
+}));
+
 export const caseOutcomePredictionsRelations = relations(caseOutcomePredictions, ({ one }) => ({
   user: one(users, {
     fields: [caseOutcomePredictions.userId],
+    references: [users.id],
+  }),
+}));
+
+// User feedback table for collecting ratings, suggestions, and questions
+export const userFeedback = pgTable("user_feedback", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: 'set null' }),
+  type: text("type").notNull(), // 'rating', 'suggestion', 'question'
+  contextType: text("context_type").notNull(), // 'general', 'document', 'guide', 'domain', 'research'
+  contextId: integer("context_id"),
+  contextTitle: text("context_title"),
+  rating: integer("rating"),
+  content: text("content").notNull(),
+  status: text("status").default("new"), // 'new', 'reviewed', 'addressed', 'closed'
+  response: text("response"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  respondedAt: timestamp("responded_at"),
+});
+
+export const insertUserFeedbackSchema = createInsertSchema(userFeedback).pick({
+  userId: true,
+  type: true,
+  contextType: true,
+  contextId: true,
+  contextTitle: true,
+  rating: true,
+  content: true,
+  status: true,
+  response: true,
+  updatedAt: true,
+  respondedAt: true,
+});
+
+export type InsertUserFeedback = z.infer<typeof insertUserFeedbackSchema>;
+export type UserFeedback = typeof userFeedback.$inferSelect;
+
+export const userFeedbackRelations = relations(userFeedback, ({ one }) => ({
+  user: one(users, {
+    fields: [userFeedback.userId],
     references: [users.id],
   }),
 }));

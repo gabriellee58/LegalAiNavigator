@@ -29,6 +29,10 @@ import MorePage from "./pages/more";
 import LegalDomainsPage from "./pages/legal-domains";
 import DomainPage from "./pages/legal-domains/domain-page";
 
+// Import feedback pages
+import MyFeedbackPage from "./pages/my-feedback";
+import AdminFeedbackPage from "./pages/admin/feedback";
+
 // Import legal domain pages
 import FamilyLawPage from "./pages/legal-domains/family-law";
 import RealEstateLawPage from "./pages/legal-domains/real-estate";
@@ -148,6 +152,10 @@ function Router() {
       <ProtectedRoute path="/guides/contract-analysis" component={ContractAnalysisGuide} />
       <ProtectedRoute path="/guides/legal-research" component={LegalResearchGuide} />
       <ProtectedRoute path="/guides/compliance-checker" component={ComplianceCheckerTutorial} />
+      
+      {/* Feedback Pages */}
+      <ProtectedRoute path="/my-feedback" component={MyFeedbackPage} />
+      <ProtectedRoute path="/admin/feedback" component={AdminFeedbackPage} />
       
       <Route path="/auth" component={AuthPage} />
       {/* Fallback to 404 */}

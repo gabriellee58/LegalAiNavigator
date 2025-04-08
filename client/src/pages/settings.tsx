@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/use-auth";
+import { Link } from "wouter";
 
 export default function SettingsPage() {
   const [currentTab, setCurrentTab] = useState("profile");
@@ -329,6 +330,29 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent>
                 <Button variant="outline">{t("setup_two_factor")}</Button>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("feedback_and_support")}</CardTitle>
+                <CardDescription>
+                  {t("feedback_description") || "View your submitted feedback and access support options"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex gap-4">
+                <Link href="/my-feedback">
+                  <Button variant="outline">
+                    {t("view_my_feedback") || "View My Feedback"}
+                  </Button>
+                </Link>
+                {(user as any)?.isAdmin && (
+                  <Link href="/admin/feedback">
+                    <Button variant="secondary">
+                      {t("manage_feedback") || "Manage All Feedback"}
+                    </Button>
+                  </Link>
+                )}
               </CardContent>
             </Card>
             

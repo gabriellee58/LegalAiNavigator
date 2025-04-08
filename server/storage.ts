@@ -13,10 +13,12 @@ import {
   researchVisualizations, type ResearchVisualization, type InsertResearchVisualization,
   legalDomains, type LegalDomain, type InsertLegalDomain,
   domainKnowledge, type DomainKnowledge, type InsertDomainKnowledge,
+  provincialInfo, type ProvincialInfo, type InsertProvincialInfo,
   proceduralGuides, type ProceduralGuide, type InsertProceduralGuide,
   escalatedQuestions, type EscalatedQuestion, type InsertEscalatedQuestion,
   conversationContexts, type ConversationContext, type InsertConversationContext,
-  caseOutcomePredictions, type CaseOutcomePrediction, type InsertCaseOutcomePrediction
+  caseOutcomePredictions, type CaseOutcomePrediction, type InsertCaseOutcomePrediction,
+  userFeedback, type UserFeedback, type InsertUserFeedback
 } from "@shared/schema";
 import { db } from './db';
 import { eq, and, desc, inArray, sql } from 'drizzle-orm';
@@ -1176,6 +1178,86 @@ export class DatabaseStorage implements IStorage {
       
       console.log("Initialized procedural guides for Immigration Law");
     }
+  }
+  
+  // Provincial info operations
+  async getProvincialInfo(domainId: number, province?: string, language: string = 'en'): Promise<ProvincialInfo[]> {
+    let query = db
+      .select()
+      .from(provincialInfo)
+      .where(eq(provincialInfo.domainId, domainId))
+      .where(eq(provincialInfo.language, language));
+    
+    if (province) {
+      query = query.where(eq(provincialInfo.province, province));
+    }
+    
+    return await query;
+  }
+  
+  async getProvincialInfoById(id: number): Promise<ProvincialInfo | undefined> {
+    const [info] = await db
+      .select()
+      .from(provincialInfo)
+      .where(eq(provincialInfo.id, id));
+    return info;
+  }
+  
+  async createProvincialInfo(info: InsertProvincialInfo): Promise<ProvincialInfo> {
+    const [newInfo] = await db
+      .insert(provincialInfo)
+      .values(info)
+      .returning();
+    return newInfo;
+  }
+  
+  // User feedback operations
+  async getAllUserFeedback(): Promise<UserFeedback[]> {
+    return await db
+      .select()
+      .from(userFeedback)
+      .orderBy(desc(userFeedback.createdAt));
+  }
+  
+  async getUserFeedbackByStatus(status: string): Promise<UserFeedback[]> {
+    return await db
+      .select()
+      .from(userFeedback)
+      .where(eq(userFeedback.status, status))
+      .orderBy(desc(userFeedback.createdAt));
+  }
+  
+  async getUserFeedback(id: number): Promise<UserFeedback | undefined> {
+    const [feedback] = await db
+      .select()
+      .from(userFeedback)
+      .where(eq(userFeedback.id, id));
+    return feedback;
+  }
+  
+  async getUserFeedbackByUserId(userId: number): Promise<UserFeedback[]> {
+    return await db
+      .select()
+      .from(userFeedback)
+      .where(eq(userFeedback.userId, userId))
+      .orderBy(desc(userFeedback.createdAt));
+  }
+  
+  async createUserFeedback(feedback: InsertUserFeedback): Promise<UserFeedback> {
+    const [newFeedback] = await db
+      .insert(userFeedback)
+      .values(feedback)
+      .returning();
+    return newFeedback;
+  }
+  
+  async updateUserFeedback(id: number, data: Partial<InsertUserFeedback>): Promise<UserFeedback | undefined> {
+    const [updatedFeedback] = await db
+      .update(userFeedback)
+      .set(data)
+      .where(eq(userFeedback.id, id))
+      .returning();
+    return updatedFeedback;
   }
 }
 

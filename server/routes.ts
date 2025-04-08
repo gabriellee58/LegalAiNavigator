@@ -9,7 +9,8 @@ import {
   insertMediationSessionSchema,
   insertMediationMessageSchema,
   insertSavedCitationSchema,
-  insertResearchVisualizationSchema
+  insertResearchVisualizationSchema,
+  insertUserFeedbackSchema
 } from "@shared/schema";
 import { z } from "zod";
 import { generateAIResponse, performLegalResearch } from "./lib/openai";
@@ -54,6 +55,14 @@ const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
     return next();
   }
   res.status(401).json({ message: "Not authenticated" });
+};
+
+// Middleware to check if user is an admin
+const isAdmin = (req: Request, res: Response, next: NextFunction) => {
+  if (req.isAuthenticated() && req.user && (req.user as any).isAdmin) {
+    return next();
+  }
+  res.status(403).json({ message: "Admin access required" });
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -1744,6 +1753,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error retrieving prediction:", error);
       res.status(500).json({ message: "Error retrieving prediction" });
+    }
+  });
+
+  // User feedback routes
+  app.post("/api/feedback", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Validate feedback data without userId
+      const feedbackSchema = insertUserFeedbackSchema.omit({ userId: true, respondedAt: true });
+      const parsed = feedbackSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ 
+          message: "Invalid feedback data", 
+          errors: parsed.error.errors 
+        });
+      }
+      
+      // Add authenticated user ID to the feedback data
+      const feedback = await storage.createUserFeedback({
+        ...parsed.data,
+        userId: req.user!.id
+      });
+      
+      res.status(201).json(feedback);
+    } catch (error) {
+      console.error("Error creating feedback:", error);
+      res.status(500).json({ message: "Error submitting feedback" });
+    }
+  });
+
+  // Get all feedback (admin only)
+  app.get("/api/feedback", isAdmin, async (req: Request, res: Response) => {
+    try {
+      const status = req.query.status as string;
+      let feedback;
+      
+      if (status) {
+        feedback = await storage.getUserFeedbackByStatus(status);
+      } else {
+        feedback = await storage.getAllUserFeedback();
+      }
+      
+      res.json(feedback);
+    } catch (error) {
+      console.error("Error retrieving feedback:", error);
+      res.status(500).json({ message: "Error retrieving feedback" });
+    }
+  });
+
+  // Get feedback by ID (admin or owner)
+  app.get("/api/feedback/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      const feedback = await storage.getUserFeedback(id);
+      if (!feedback) {
+        return res.status(404).json({ message: "Feedback not found" });
+      }
+      
+      // Check if user is admin or owns this feedback
+      const isUserAdmin = (req.user as any).isAdmin;
+      if (!isUserAdmin && feedback?.userId !== req.user!.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      res.json(feedback);
+    } catch (error) {
+      console.error("Error retrieving feedback:", error);
+      res.status(500).json({ message: "Error retrieving feedback" });
+    }
+  });
+
+  // Get user's own feedback
+  app.get("/api/my-feedback", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const feedback = await storage.getUserFeedbackByUserId(userId);
+      res.json(feedback);
+    } catch (error) {
+      console.error("Error retrieving user feedback:", error);
+      res.status(500).json({ message: "Error retrieving your feedback" });
+    }
+  });
+
+  // Update feedback status and response (admin only)
+  app.patch("/api/feedback/:id", isAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      const updateSchema = z.object({
+        status: z.enum(["new", "reviewed", "addressed", "closed"]).optional(),
+        response: z.string().optional()
+      });
+      
+      const parsed = updateSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ 
+          message: "Invalid update data", 
+          errors: parsed.error.errors 
+        });
+      }
+      
+      const feedback = await storage.getUserFeedback(id);
+      if (!feedback) {
+        return res.status(404).json({ message: "Feedback not found" });
+      }
+      
+      // If response is being added or updated, set respondedAt to now
+      const now = new Date();
+      const updateData: any = {
+        ...parsed.data,
+        updatedAt: now
+      };
+      
+      if (parsed.data.response !== undefined && (!feedback.response || parsed.data.response !== feedback.response)) {
+        updateData.respondedAt = now;
+      }
+      
+      const updatedFeedback = await storage.updateUserFeedback(id, updateData);
+      res.json(updatedFeedback);
+    } catch (error) {
+      console.error("Error updating feedback:", error);
+      res.status(500).json({ message: "Error updating feedback" });
     }
   });
 
