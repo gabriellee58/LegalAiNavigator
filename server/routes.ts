@@ -111,6 +111,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       let templates;
       if (templateType) {
+        // Add logging for debugging
+        console.log(`Retrieving templates for type: ${templateType}, language: ${language}`);
         templates = await storage.getDocumentTemplatesByType(templateType, language);
       } else {
         templates = await storage.getDocumentTemplates(language);
@@ -118,6 +120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(templates);
     } catch (error) {
+      console.error('Error retrieving document templates:', error);
       res.status(500).json({ message: "Error retrieving document templates" });
     }
   });

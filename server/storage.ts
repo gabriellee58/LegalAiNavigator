@@ -191,7 +191,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(documentTemplates)
       .where(eq(documentTemplates.language, language))
-      .orderBy(documentTemplates.name);
+      .orderBy(documentTemplates.title);
   }
 
   async getDocumentTemplatesByType(templateType: string, language: string = 'en'): Promise<DocumentTemplate[]> {
@@ -200,11 +200,11 @@ export class DatabaseStorage implements IStorage {
       .from(documentTemplates)
       .where(
         and(
-          eq(documentTemplates.type, templateType),
+          eq(documentTemplates.templateType, templateType),
           eq(documentTemplates.language, language)
         )
       )
-      .orderBy(documentTemplates.name);
+      .orderBy(documentTemplates.title);
   }
 
   async getDocumentTemplate(id: number): Promise<DocumentTemplate | undefined> {
