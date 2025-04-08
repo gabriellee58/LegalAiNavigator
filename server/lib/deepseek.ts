@@ -36,6 +36,8 @@ const DEFAULT_MODEL = "deepseek-chat"; // Replace with the appropriate DeepSeek 
  */
 export async function generateAIResponse(userMessage: string): Promise<string> {
   try {
+    console.log(`Attempting DeepSeek API request for prompt: "${userMessage.substring(0, 50)}..."`);
+    
     const response = await fetch(`${DEEPSEEK_API_URL}/chat/completions`, {
       method: "POST",
       headers: {
@@ -65,7 +67,14 @@ export async function generateAIResponse(userMessage: string): Promise<string> {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(`DeepSeek API Error: ${response.status} - ${JSON.stringify(errorData)}`);
+      console.error(`DeepSeek API Error (Status ${response.status}):`, JSON.stringify(errorData));
+      
+      // Handle specific error cases
+      if (response.status === 402) {
+        throw new Error(`DeepSeek API Error: Insufficient account balance - using fallback API`);
+      } else {
+        throw new Error(`DeepSeek API Error: ${response.status} - ${JSON.stringify(errorData)}`);
+      }
     }
 
     const data: DeepSeekCompletionResponse = await response.json();

@@ -89,6 +89,148 @@ Please enhance this document to make it more comprehensive, legally sound, and c
  * @param jurisdiction Legal jurisdiction (province)
  * @returns Analysis results
  */
+/**
+ * Generate a response to a user message using Claude
+ * @param userMessage The user's message
+ * @returns AI generated response
+ */
+export async function generateAIResponseClaude(userMessage: string): Promise<string> {
+  try {
+    console.log(`Attempting Claude API fallback for prompt: "${userMessage.substring(0, 50)}..."`);
+    
+    // the newest Anthropic model is "claude-3-7-sonnet-20250219" which was released February 24, 2025
+    const response = await anthropic.messages.create({
+      model: 'claude-3-7-sonnet-20250219',
+      max_tokens: 800,
+      system: `You are an AI legal assistant specialized in Canadian law. 
+      Provide helpful, accurate information about Canadian legal topics. 
+      Always clarify that you are not providing legal advice and recommend consulting a qualified lawyer for specific legal issues.
+      Focus on Canadian legal frameworks, regulations, and precedents.
+      Be respectful, concise, and easy to understand.
+      Avoid excessive legalese, but maintain accuracy in legal concepts.`,
+      messages: [{ role: 'user', content: userMessage }],
+    });
+
+    // Extract the text content from the response
+    let responseText = "";
+    if (response.content && response.content.length > 0) {
+      const firstContent = response.content[0];
+      if (typeof firstContent === 'object' && 'text' in firstContent) {
+        responseText = firstContent.text;
+      }
+    }
+    
+    return responseText || "I'm sorry, but I couldn't generate a response to your question.";
+  } catch (error) {
+    console.error('Error generating response with Claude:', error);
+    return "I'm sorry, but I encountered an error processing your request. Please try again later.";
+  }
+}
+
+/**
+ * Perform legal research on a given query using Claude as fallback
+ * @param query The research query
+ * @param jurisdiction The jurisdiction (e.g., "canada", "ontario")
+ * @param practiceArea The practice area (e.g., "family", "criminal")
+ * @returns Research results
+ */
+export async function performLegalResearch(
+  query: string,
+  jurisdiction: string = 'Canada',
+  practiceArea: string = 'general'
+): Promise<{
+  summary: string;
+  cases: { name: string; citation: string; relevance: string }[];
+  statutes: { name: string; citation: string; relevance: string }[];
+  analysis: string;
+}> {
+  try {
+    console.log(`Performing Claude legal research: "${query}" (${jurisdiction}, ${practiceArea})`);
+    
+    // the newest Anthropic model is "claude-3-7-sonnet-20250219" which was released February 24, 2025
+    const response = await anthropic.messages.create({
+      model: 'claude-3-7-sonnet-20250219',
+      max_tokens: 1500,
+      system: `You are a Canadian legal research assistant with expertise in ${jurisdiction} jurisdiction and ${practiceArea} law.
+      Provide comprehensive, accurate legal research results.
+      Include relevant cases, statutes, and analysis.
+      Format your response as structured JSON with these sections:
+      1. summary - Brief overview of findings
+      2. cases - Array of relevant cases with name, citation, and relevance
+      3. statutes - Array of relevant statutes with name, citation, and relevance
+      4. analysis - Detailed legal analysis of the query
+      
+      Remember that Canadian law combines federal and provincial/territorial jurisdictions.
+      Focus on the most recent and relevant legal authorities.`,
+      messages: [{ 
+        role: 'user', 
+        content: `I need legal research on the following query in ${jurisdiction} regarding ${practiceArea}:
+        
+        ${query}
+        
+        Please provide a comprehensive answer with relevant cases, statutes, and analysis.` 
+      }],
+    });
+
+    try {
+      // Extract JSON from the response
+      let responseText = "";
+      if (response.content && response.content.length > 0) {
+        const firstContent = response.content[0];
+        if (typeof firstContent === 'object' && 'text' in firstContent) {
+          responseText = firstContent.text;
+        }
+      }
+      
+      // Try to find and extract JSON
+      const jsonStart = responseText.indexOf('{');
+      const jsonEnd = responseText.lastIndexOf('}') + 1;
+      
+      if (jsonStart >= 0 && jsonEnd > jsonStart) {
+        const jsonStr = responseText.substring(jsonStart, jsonEnd);
+        const research = JSON.parse(jsonStr);
+        
+        return {
+          summary: research.summary || 'No summary provided',
+          cases: research.cases || [],
+          statutes: research.statutes || [],
+          analysis: research.analysis || 'No analysis provided'
+        };
+      } else {
+        // If no valid JSON, parse the free-form response
+        return {
+          summary: responseText.substring(0, 300) + '...',
+          cases: [],
+          statutes: [],
+          analysis: responseText
+        };
+      }
+    } catch (parseError) {
+      console.error('Error parsing Claude legal research response:', parseError);
+      
+      // Extract the text for a fallback response
+      let responseText = "";
+      if (response.content && response.content.length > 0) {
+        const firstContent = response.content[0];
+        if (typeof firstContent === 'object' && 'text' in firstContent) {
+          responseText = firstContent.text;
+        }
+      }
+      
+      // Fallback response with raw text
+      return {
+        summary: 'Error parsing structured research results',
+        cases: [],
+        statutes: [],
+        analysis: responseText || 'No analysis available due to processing error'
+      };
+    }
+  } catch (error) {
+    console.error('Error performing legal research with Claude:', error);
+    throw new Error('Failed to perform legal research');
+  }
+}
+
 export async function analyzeLegalDocument(
   documentContent: string,
   documentType: string,

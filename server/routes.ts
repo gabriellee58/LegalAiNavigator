@@ -27,11 +27,9 @@ import path from "path";
 import { templateSources, importAndSaveTemplate } from "./lib/templateSources";
 import { 
   generateEnhancedDocument, 
-  analyzeLegalDocument, 
-  generateClaudeResponse, 
-  generateAIResponseClaude,
-  performLegalResearch as performClaudeLegalResearch 
-} from "./anthropic";
+  analyzeLegalDocument,
+  generateAIResponseClaude
+} from "./lib/anthropic";
 
 // Set up multer for file uploads
 const storage_config = multer.memoryStorage();
@@ -514,7 +512,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (aiError) {
         console.error("DeepSeek research error, falling back to Claude:", aiError);
         // Fall back to Claude if DeepSeek fails
-        results = await performClaudeLegalResearch(
+        results = await performLegalResearch(
           query,
           jurisdiction,
           practiceArea

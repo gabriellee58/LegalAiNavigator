@@ -192,7 +192,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(chatMessages)
       .where(eq(chatMessages.userId, userId))
-      .orderBy(desc(chatMessages.createdAt));
+      .orderBy(desc(chatMessages.timestamp));
   }
 
   async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
@@ -272,7 +272,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(researchQueries)
       .where(eq(researchQueries.userId, userId))
-      .orderBy(desc(researchQueries.createdAt));
+      .orderBy(desc(researchQueries.timestamp));
   }
 
   async createResearchQuery(query: InsertResearchQuery): Promise<ResearchQuery> {
