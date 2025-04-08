@@ -153,17 +153,16 @@ function DomainSubcategories({ subdomains, isLoading, error }: { subdomains: any
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {subdomains.map((subdomain: any) => (
         <Card key={subdomain.id} className="hover:border-primary transition-colors overflow-hidden">
-          <Link href={`/legal-domains/${subdomain.name.toLowerCase().replace(/\s+/g, '-')}`}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">{subdomain.name}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-3">{subdomain.description}</p>
-              <Badge variant="outline" className="text-primary bg-primary/10">
-                View subcategory
-              </Badge>
-            </CardContent>
-          </Link>
+          {/* Display subcategory details without linking since we don't have specific pages for them */}
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">{subdomain.name}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-3">{subdomain.description}</p>
+            <Badge variant="outline" className="text-primary bg-primary/10">
+              {subdomain.name}
+            </Badge>
+          </CardContent>
         </Card>
       ))}
     </div>
