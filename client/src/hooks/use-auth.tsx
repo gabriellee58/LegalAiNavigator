@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext } from "react";
+import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import {
   useQuery,
   useMutation,
@@ -7,6 +7,7 @@ import {
 import { insertUserSchema, User, InsertUser } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { signInWithGoogle, signOutUser, onAuthChange, FirebaseUser } from "@/lib/firebase";
 
 type AuthContextType = {
   user: User | null;
@@ -17,6 +18,7 @@ type AuthContextType = {
   registerMutation: UseMutationResult<User, Error, RegisterData>;
   updateProfileMutation: UseMutationResult<User, Error, UpdateProfileData>;
   updatePasswordMutation: UseMutationResult<{ message: string }, Error, UpdatePasswordData>;
+  googleSignInMutation: UseMutationResult<User, Error, void>;
 };
 
 export type LoginData = Pick<User, "username" | "password">;
@@ -143,6 +145,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  // Google Sign-in Mutation
+  const googleSignInMutation = useMutation({
+    mutationFn: async () => {
+      // First sign in with Google
+      const googleUser = await signInWithGoogle();
+      if (!googleUser) {
+        throw new Error("Google sign-in failed");
+      }
+      
+      // Then register or login the user on our backend
+      const res = await apiRequest("POST", "/api/google-auth", {
+        email: googleUser.email,
+        displayName: googleUser.displayName,
+        photoURL: googleUser.photoURL,
+        uid: googleUser.uid
+      });
+      
+      return await res.json();
+    },
+    onSuccess: (user: User) => {
+      toast({
+        title: "Google Sign-in Successful",
+        description: `Welcome, ${user.fullName || user.username}!`,
+      });
+      queryClient.setQueryData(["/api/user"], user);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Google Sign-in Failed",
+        description: error.message || "Could not sign in with Google",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Firebase auth state effect
+  useEffect(() => {
+    const unsubscribe = onAuthChange(async (firebaseUser) => {
+      // If Firebase user exists but our session doesn't, attempt to 
+      // login on our backend with the Firebase credentials
+      if (firebaseUser && !user) {
+        try {
+          const res = await apiRequest("POST", "/api/google-auth", {
+            email: firebaseUser.email,
+            displayName: firebaseUser.displayName,
+            photoURL: firebaseUser.photoURL,
+            uid: firebaseUser.uid
+          });
+          
+          const userData = await res.json();
+          queryClient.setQueryData(["/api/user"], userData);
+        } catch (err) {
+          console.error("Error synchronizing with Firebase auth:", err);
+        }
+      }
+    });
+    
+    return () => unsubscribe();
+  }, [user]);
+
   return (
     <AuthContext.Provider
       value={{
@@ -153,7 +215,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logoutMutation,
         registerMutation,
         updateProfileMutation,
-        updatePasswordMutation
+        updatePasswordMutation,
+        googleSignInMutation
       }}
     >
       {children}

@@ -11,6 +11,7 @@ export const users = pgTable("users", {
   fullName: text("full_name"),
   preferredLanguage: text("preferred_language").default("en"),
   createdAt: timestamp("created_at").defaultNow(),
+  firebaseUid: text("firebase_uid").unique(), // For Google authentication
 });
 
 const userSchema = createInsertSchema(users);
@@ -19,6 +20,7 @@ export const insertUserSchema = userSchema.pick({
   password: true,
   fullName: true,
   preferredLanguage: true,
+  firebaseUid: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

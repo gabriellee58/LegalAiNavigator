@@ -49,6 +49,14 @@ const upload = multer({
   }
 });
 
+// Define Google Auth schema
+const googleAuthSchema = z.object({
+  email: z.string().email(),
+  displayName: z.string().optional().nullable(),
+  photoURL: z.string().optional().nullable(),
+  uid: z.string()
+});
+
 // Middleware to check if user is authenticated
 const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
   if (req.isAuthenticated() && req.user) {
@@ -68,6 +76,59 @@ const isAdmin = (req: Request, res: Response, next: NextFunction) => {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
+
+  // Google Authentication
+  app.post("/api/google-auth", async (req: Request, res: Response) => {
+    try {
+      const parsed = googleAuthSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ 
+          message: "Invalid Google auth data",
+          errors: parsed.error.errors
+        });
+      }
+
+      const { email, displayName, uid } = parsed.data;
+      const fullName = displayName || email.split('@')[0];
+
+      // Check if user exists
+      let user = await storage.getUserByUsername(email);
+      
+      if (!user) {
+        // Create a new user with the Google info
+        const randomPassword = Math.random().toString(36).slice(-10);
+        user = await storage.createUser({
+          username: email,
+          password: randomPassword, // Will be hashed by storage
+          fullName: fullName,
+          preferredLanguage: "en",
+          firebaseUid: uid
+        });
+      } else {
+        // Update user with Firebase UID if not present
+        if (!user.firebaseUid) {
+          user = await storage.updateUser(user.id, {
+            firebaseUid: uid,
+            fullName: user.fullName || fullName
+          });
+        }
+      }
+
+      // Log in the user
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ message: "Login failed after Google auth" });
+        }
+        return res.status(200).json(user);
+      });
+    } catch (error) {
+      console.error("Google authentication error:", error);
+      res.status(500).json({ 
+        message: "Error processing Google authentication",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
 
   // Chat message routes
   app.get("/api/chat/messages", isAuthenticated, async (req: Request, res: Response) => {
