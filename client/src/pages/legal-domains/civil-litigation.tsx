@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 function CivilLitigationPage() {
   // Fetch domain data from the database
-  const { domain, domainId, isLoading } = useLegalDomainByName("civil litigation law");
+  const { domain, domainId, isLoading } = useLegalDomainByName("Civil Litigation Law");
 
   // If loading, show skeleton
   if (isLoading) {

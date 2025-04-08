@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 function EstatePlanningPage() {
   // Fetch domain data from the database
-  const { domain, domainId, isLoading } = useLegalDomainByName("estate planning law");
+  const { domain, domainId, isLoading } = useLegalDomainByName("Estate Planning Law");
 
   // If loading, show skeleton
   if (isLoading) {

@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 function EnvironmentalLawPage() {
   // Fetch domain data from the database
-  const { domain, domainId, isLoading } = useLegalDomainByName("environmental law");
+  const { domain, domainId, isLoading } = useLegalDomainByName("Environmental Law");
 
   // If loading, show skeleton
   if (isLoading) {

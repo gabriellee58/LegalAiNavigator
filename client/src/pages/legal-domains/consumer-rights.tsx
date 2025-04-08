@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 function ConsumerRightsPage() {
   // Fetch domain data from the database
-  const { domain, domainId, isLoading } = useLegalDomainByName("consumer rights law");
+  const { domain, domainId, isLoading } = useLegalDomainByName("Consumer Rights Law");
 
   // If loading, show skeleton
   if (isLoading) {

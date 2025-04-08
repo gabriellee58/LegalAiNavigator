@@ -92,6 +92,42 @@ export default function LegalDomainsPage() {
                     path="/legal-domains/personal-injury"
                     tags={["Accidents", "Compensation", "Liability"]}
                   />
+                  <FeaturedDomainCard 
+                    title="Criminal Law" 
+                    description="Deals with offenses against the public, prosecuted by the state. Includes criminal procedures and rights."
+                    path="/legal-domains/criminal"
+                    tags={["Defense", "Offenses", "Procedures"]}
+                  />
+                  <FeaturedDomainCard 
+                    title="Civil Litigation" 
+                    description="Legal process for resolving disputes between individuals, businesses, or entities seeking compensation."
+                    path="/legal-domains/civil-litigation"
+                    tags={["Disputes", "Lawsuits", "Resolution"]}
+                  />
+                  <FeaturedDomainCard 
+                    title="Indigenous Law" 
+                    description="Legal matters relating to Indigenous peoples, including treaty rights, land claims, and self-governance."
+                    path="/legal-domains/indigenous-law"
+                    tags={["Aboriginal", "Treaties", "Rights"]}
+                  />
+                  <FeaturedDomainCard 
+                    title="Environmental Law" 
+                    description="Regulations governing human impact on the natural environment, resources, and sustainability."
+                    path="/legal-domains/environmental"
+                    tags={["Conservation", "Compliance", "Resources"]}
+                  />
+                  <FeaturedDomainCard 
+                    title="Consumer Rights" 
+                    description="Laws protecting consumers in transactions with businesses, product safety, and fair trade."
+                    path="/legal-domains/consumer-rights"
+                    tags={["Protection", "Complaints", "Safety"]}
+                  />
+                  <FeaturedDomainCard 
+                    title="Estate Planning" 
+                    description="Preparation for the management and transfer of a person's assets after death or incapacitation."
+                    path="/legal-domains/estate-planning"
+                    tags={["Wills", "Trusts", "Succession"]}
+                  />
                 </div>
               )}
               
@@ -121,6 +157,12 @@ export default function LegalDomainsPage() {
                     </Link>
                     <Link href="/legal-domains/environmental">
                       <Badge variant="outline" className="cursor-pointer hover:bg-accent">Environmental Law</Badge>
+                    </Link>
+                    <Link href="/legal-domains/civil-litigation">
+                      <Badge variant="outline" className="cursor-pointer hover:bg-accent">Civil Litigation</Badge>
+                    </Link>
+                    <Link href="/legal-domains/consumer-rights">
+                      <Badge variant="outline" className="cursor-pointer hover:bg-accent">Consumer Rights</Badge>
                     </Link>
                   </div>
                 </div>

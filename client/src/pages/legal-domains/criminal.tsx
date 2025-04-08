@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 function CriminalLawPage() {
   // Fetch domain data from the database
-  const { domain, domainId, isLoading } = useLegalDomainByName("criminal law");
+  const { domain, domainId, isLoading } = useLegalDomainByName("Criminal Law");
 
   // If loading, show skeleton
   if (isLoading) {

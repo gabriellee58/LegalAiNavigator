@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 function IndigenousLawPage() {
   // Fetch domain data from the database
-  const { domain, domainId, isLoading } = useLegalDomainByName("indigenous law law");
+  const { domain, domainId, isLoading } = useLegalDomainByName("Indigenous Law");
 
   // If loading, show skeleton
   if (isLoading) {
