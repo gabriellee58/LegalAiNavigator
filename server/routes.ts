@@ -23,6 +23,7 @@ import {
   generateEnhancedDocument, 
   analyzeLegalDocument, 
   generateClaudeResponse, 
+  generateAIResponseClaude,
   performLegalResearch as performClaudeLegalResearch 
 } from "./anthropic";
 
@@ -157,8 +158,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: req.user!.id
       });
       
-      // Generate AI response
-      const aiResponse = await generateAIResponse(parsed.data.content);
+      // Generate AI response with fallback to Claude if OpenAI fails
+      let aiResponse: string;
+      try {
+        // First try with OpenAI
+        aiResponse = await generateAIResponse(parsed.data.content);
+      } catch (aiError) {
+        console.error("OpenAI error, falling back to Claude:", aiError);
+        // Fall back to Claude if OpenAI fails
+        aiResponse = await generateAIResponseClaude(parsed.data.content);
+      }
       
       // Save the AI message
       const aiMessage = await storage.createChatMessage({
@@ -487,12 +496,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         practiceArea = "all" 
       } = parsed.data;
       
-      // Perform research with OpenAI using all parameters
-      const results = await performLegalResearch(
-        query,
-        jurisdiction,
-        practiceArea
-      );
+      // Perform research with OpenAI using all parameters, fallback to Claude if needed
+      let results;
+      try {
+        // First try with OpenAI
+        results = await performLegalResearch(
+          query,
+          jurisdiction,
+          practiceArea
+        );
+      } catch (aiError) {
+        console.error("OpenAI research error, falling back to Claude:", aiError);
+        // Fall back to Claude if OpenAI fails
+        results = await performClaudeLegalResearch(
+          query,
+          jurisdiction,
+          practiceArea
+        );
+      }
       
       // Save the research query with user ID and results
       const savedQuery = await storage.createResearchQuery({
