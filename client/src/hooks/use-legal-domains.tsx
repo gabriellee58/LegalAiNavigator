@@ -18,7 +18,7 @@ export function useLegalDomain(id: number | null) {
   });
 }
 
-// Hook to fetch a specific legal domain by name (slug)
+// Hook to fetch a specific legal domain by name (exact match)
 export function useLegalDomainByName(name: string | null) {
   // Get all domains and find the one with matching name
   const { data: domains = [], isLoading } = useQuery<LegalDomain[]>({
@@ -26,11 +26,13 @@ export function useLegalDomainByName(name: string | null) {
     enabled: !!name,
   });
   
-  // Convert input name to normalized form for comparison
-  const normalizedName = name ? normalizeDomainName(name) : '';
+  // Find domain with matching name (exact case-sensitive match)
+  const domain = domains.find(d => d.name === name);
   
-  // Find domain with matching name
-  const domain = domains.find(d => normalizeDomainName(d.name) === normalizedName);
+  // For debugging
+  console.log(`Looking for domain: "${name}"`, 
+              `Available domains:`, domains.map(d => d.name), 
+              `Found:`, domain);
   
   // Create a domain ID
   const domainId = domain?.id || null;
@@ -40,14 +42,6 @@ export function useLegalDomainByName(name: string | null) {
     domainId,
     isLoading
   };
-}
-
-// Helper function to normalize domain names for comparison
-function normalizeDomainName(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/\s+/g, '-')  // Replace spaces with hyphens
-    .replace(/[^a-z0-9-]/g, ''); // Remove special characters
 }
 
 // Hook to fetch subdomains for a specific domain
