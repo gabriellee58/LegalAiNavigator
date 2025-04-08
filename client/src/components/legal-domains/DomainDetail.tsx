@@ -1,21 +1,23 @@
-import { useLegalDomain, useDomainKnowledge, useProceduralGuides } from '@/hooks/use-legal-domains';
+import { useLegalDomain, useDomainKnowledge, useProceduralGuides, useLegalSubdomains } from '@/hooks/use-legal-domains';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { InfoIcon, BookOpen, FileText, ArrowLeft } from 'lucide-react';
+import { InfoIcon, BookOpen, FileText, ArrowLeft, FolderTree, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'wouter';
+import { Badge } from '@/components/ui/badge';
 
 interface DomainDetailProps {
   domainId: number;
 }
 
 export function DomainDetail({ domainId }: DomainDetailProps) {
-  const { data: domain, isLoading: isLoadingDomain } = useLegalDomain(domainId);
-  const { data: knowledge, isLoading: isLoadingKnowledge } = useDomainKnowledge(domainId);
-  const { data: guides, isLoading: isLoadingGuides } = useProceduralGuides(domainId);
+  const { data: domain, isLoading: isLoadingDomain, error: domainError } = useLegalDomain(domainId);
+  const { data: knowledge, isLoading: isLoadingKnowledge, error: knowledgeError } = useDomainKnowledge(domainId);
+  const { data: guides, isLoading: isLoadingGuides, error: guidesError } = useProceduralGuides(domainId);
+  const { data: subdomains, isLoading: isLoadingSubdomains, error: subdomainsError } = useLegalSubdomains(domainId);
 
   if (isLoadingDomain) {
     return (
@@ -25,9 +27,24 @@ export function DomainDetail({ domainId }: DomainDetailProps) {
           <Skeleton className="h-4 w-1/2" />
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-40 w-full" />
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-40 w-full" />
+          </div>
         </CardContent>
       </Card>
+    );
+  }
+
+  if (domainError) {
+    return (
+      <Alert variant="destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Error Loading Domain</AlertTitle>
+        <AlertDescription>
+          There was a problem loading this legal domain. Please try again later or contact support.
+        </AlertDescription>
+      </Alert>
     );
   }
 
@@ -58,8 +75,12 @@ export function DomainDetail({ domainId }: DomainDetailProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="knowledge">
+        <Tabs defaultValue="subdomains">
           <TabsList className="mb-4">
+            <TabsTrigger value="subdomains">
+              <FolderTree className="h-4 w-4 mr-2" />
+              Subdomains
+            </TabsTrigger>
             <TabsTrigger value="knowledge">
               <BookOpen className="h-4 w-4 mr-2" />
               Knowledge Base
@@ -70,12 +91,16 @@ export function DomainDetail({ domainId }: DomainDetailProps) {
             </TabsTrigger>
           </TabsList>
           
+          <TabsContent value="subdomains">
+            <DomainSubcategories subdomains={subdomains} isLoading={isLoadingSubdomains} error={subdomainsError} />
+          </TabsContent>
+          
           <TabsContent value="knowledge">
-            <DomainKnowledge knowledge={knowledge} isLoading={isLoadingKnowledge} />
+            <DomainKnowledge knowledge={knowledge} isLoading={isLoadingKnowledge} error={knowledgeError} />
           </TabsContent>
           
           <TabsContent value="guides">
-            <ProceduralGuides guides={guides} isLoading={isLoadingGuides} />
+            <ProceduralGuides guides={guides} isLoading={isLoadingGuides} error={guidesError} />
           </TabsContent>
         </Tabs>
       </CardContent>
@@ -83,7 +108,67 @@ export function DomainDetail({ domainId }: DomainDetailProps) {
   );
 }
 
-function DomainKnowledge({ knowledge, isLoading }: { knowledge: any; isLoading: boolean }) {
+function DomainSubcategories({ subdomains, isLoading, error }: { subdomains: any; isLoading: boolean; error: any }) {
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="border rounded-lg p-4 space-y-2">
+            <Skeleton className="h-6 w-2/3" />
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-4 w-1/3" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Error Loading Subdomains</AlertTitle>
+        <AlertDescription>
+          There was a problem loading subdomains. Please try again later.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (!subdomains || subdomains.length === 0) {
+    return (
+      <Alert>
+        <InfoIcon className="h-4 w-4" />
+        <AlertTitle>No Subdomains Available</AlertTitle>
+        <AlertDescription>
+          There are no subcategories defined for this legal domain yet.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {subdomains.map((subdomain: any) => (
+        <Card key={subdomain.id} className="hover:border-primary transition-colors overflow-hidden">
+          <Link href={`/legal-domains/${subdomain.name.toLowerCase().replace(/\s+/g, '-')}`}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">{subdomain.name}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-3">{subdomain.description}</p>
+              <Badge variant="outline" className="text-primary bg-primary/10">
+                View subcategory
+              </Badge>
+            </CardContent>
+          </Link>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function DomainKnowledge({ knowledge, isLoading, error }: { knowledge: any; isLoading: boolean; error: any }) {
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -92,6 +177,18 @@ function DomainKnowledge({ knowledge, isLoading }: { knowledge: any; isLoading: 
         <Skeleton className="h-12 w-full" />
         <Skeleton className="h-20 w-full" />
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Error Loading Knowledge Base</AlertTitle>
+        <AlertDescription>
+          There was a problem loading the knowledge base. Please try again later.
+        </AlertDescription>
+      </Alert>
     );
   }
 
@@ -120,13 +217,25 @@ function DomainKnowledge({ knowledge, isLoading }: { knowledge: any; isLoading: 
   );
 }
 
-function ProceduralGuides({ guides, isLoading }: { guides: any; isLoading: boolean }) {
+function ProceduralGuides({ guides, isLoading, error }: { guides: any; isLoading: boolean; error: any }) {
   if (isLoading) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-12 w-full" />
         <Skeleton className="h-40 w-full" />
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Error Loading Procedural Guides</AlertTitle>
+        <AlertDescription>
+          There was a problem loading the procedural guides. Please try again later.
+        </AlertDescription>
+      </Alert>
     );
   }
 
