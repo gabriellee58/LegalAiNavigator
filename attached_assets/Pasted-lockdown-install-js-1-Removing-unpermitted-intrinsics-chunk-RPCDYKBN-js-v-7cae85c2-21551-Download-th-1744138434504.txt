@@ -1,0 +1,34 @@
+lockdown-install.js:1 Removing unpermitted intrinsics
+chunk-RPCDYKBN.js?v=7cae85c2:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+content-script.js:104442 current location https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/
+main.tsx:15 Warning: validateDOMNesting(...): <a> cannot appear as a descendant of <a>.
+    at a
+    at a
+    at https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=7cae85c2:337:18
+    at li
+    at ul
+    at div
+    at _c9 (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/src/components/ui/card.tsx:114:12)
+    at div
+    at _c (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/src/components/ui/card.tsx:20:11)
+    at div
+    at DomainCategories (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/src/components/legal/DomainCategories.tsx:32:17)
+    at div
+    at Container (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/src/components/ui/container.tsx:19:3)
+    at LegalDomainsPage (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/src/pages/legal-domains.tsx:26:17)
+    at Route (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=7cae85c2:323:16)
+    at ProtectedRoute (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/src/lib/protected-route.tsx:22:3)
+    at Switch (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=7cae85c2:379:17)
+    at Router
+    at div
+    at ErrorBoundary (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/src/components/error-boundary.tsx:10:5)
+    at AuthProvider (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/src/hooks/use-auth.tsx:26:32)
+    at App (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/src/App.tsx?v=M5XNYDX2FRNw7IT7rYze:372:35)
+    at QueryClientProvider (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=7cae85c2:2805:3)
+console.error @ main.tsx:15Understand this error
+
+                
+          
+          
+          
+         Chrome is moving towards a new experience that allows users to choose to browse without third-party cookies.

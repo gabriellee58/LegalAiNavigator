@@ -14,6 +14,8 @@ interface DomainDetailProps {
 }
 
 export function DomainDetail({ domainId }: DomainDetailProps) {
+  console.log(`DomainDetail received domainId: ${domainId}`);
+  
   const { data: domain, isLoading: isLoadingDomain, error: domainError } = useLegalDomain(domainId);
   const { data: knowledge, isLoading: isLoadingKnowledge, error: knowledgeError } = useDomainKnowledge(domainId);
   const { data: guides, isLoading: isLoadingGuides, error: guidesError } = useProceduralGuides(domainId);
