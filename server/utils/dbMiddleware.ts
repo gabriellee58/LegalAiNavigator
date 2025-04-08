@@ -17,7 +17,7 @@ export function enhanceDbClient(db: PostgresJsDatabase<typeof schema>): Postgres
   const originalExecute = db.execute.bind(db);
   
   // Define a wrapper that safely handles all query types
-  // @ts-ignore - We need to temporarily bypass type checking for logging
+  // @ts-ignore - We need to temporarily bypass type checking for enhanced DB client
   db.execute = async function(...args: any[]) {
     const query = args[0];
     const params = args.length > 1 ? args[1] : [];
@@ -34,8 +34,9 @@ export function enhanceDbClient(db: PostgresJsDatabase<typeof schema>): Postgres
     
     try {
       // Execute the query using the original method
-      // Keep the exact same argument structure as the original call
-      const result = await originalExecute.apply(db, args);
+      // Pass parameters as they are to the original function
+      // @ts-ignore - Ignore type checking for parameter forwarding
+      const result = await originalExecute(...args);
       
       const duration = Math.round(performance.now() - startTime);
       logDbQuery(queryText, params || [], duration);

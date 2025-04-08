@@ -1,13 +1,19 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic } from "./vite";
-import { logInfo, logError, logRequest } from "./utils/logger";
+import { logger, logInfo, logError, logRequest } from "./utils/logger";
 import { errorHandler, setupUncaughtExceptionHandling } from "./utils/errorHandler";
 import { db } from "./db";
 import { enhanceDbClient } from "./utils/dbMiddleware";
+import { config, initializeConfig } from "./config";
+import { apiKeyManager } from "./utils/apiKeyManager";
+import { dbBackupManager } from "./utils/dbBackup";
 
 // Setup global error handlers for unhandled exceptions
 setupUncaughtExceptionHandling();
+
+// Initialize configuration
+initializeConfig();
 
 // Enhance database client with logging and error handling
 enhanceDbClient(db);
@@ -86,15 +92,20 @@ app.post('/api/log-client-error', (req, res) => {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
+  // Get port from configuration or use default 5000
+  // This serves both the API and the client
+  const port = config.PORT || 5000;
   server.listen({
     port,
-    host: "0.0.0.0",
+    host: config.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost',
     reusePort: true,
   }, () => {
-    logInfo(`Server started and listening on port ${port}`);
+    logInfo(`Server started in ${config.NODE_ENV} mode and listening on port ${port}`);
+    
+    // Start database backup scheduler in production mode
+    if (config.NODE_ENV === 'production' && config.BACKUP_FREQUENCY !== 'none') {
+      dbBackupManager.startScheduledBackups();
+      logInfo(`Database backups scheduled (${config.BACKUP_FREQUENCY})`);
+    }
   });
 })();

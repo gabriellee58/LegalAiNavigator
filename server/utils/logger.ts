@@ -140,3 +140,23 @@ export const logError = (message: string, source?: string) => log(LogLevel.ERROR
 export const logWarn = (message: string, source?: string) => log(LogLevel.WARN, message, source);
 export const logInfo = (message: string, source?: string) => log(LogLevel.INFO, message, source);
 export const logDebug = (message: string, source?: string) => log(LogLevel.DEBUG, message, source);
+
+/**
+ * Logger interface for more structured logging
+ */
+export interface Logger {
+  error(message: string, source?: string): void;
+  warn(message: string, source?: string): void;
+  info(message: string, source?: string): void;
+  debug(message: string, source?: string): void;
+}
+
+/**
+ * Create a logger object
+ */
+export const logger: Logger = {
+  error: logError,
+  warn: logWarn,
+  info: logInfo,
+  debug: logDebug,
+};
