@@ -110,6 +110,39 @@ export const translations: Translations = {
     contact_support: "Contact Support",
     visit_website: "Visit Website",
     
+    // Help & Resources
+    help_resources_description: "Find answers to your questions and helpful guides",
+    search_help: "Search for help topics",
+    faq: "FAQ",
+    guides: "Guides",
+    tutorial_videos: "Tutorial Videos",
+    legal_resources: "Legal Resources",
+    frequently_asked_questions: "Frequently Asked Questions",
+    faq_description: "Common questions about using our platform",
+    
+    // Compliance Checker
+    compliance_checker_description: "Verify your business compliance with Canadian regulations",
+    check_compliance: "Check Compliance",
+    compliance_history: "Compliance History", 
+    business_compliance_check: "Business Compliance Check",
+    compliance_form_description: "Fill out the form below to check your business compliance",
+    business_type: "Business Type",
+    select_business_type: "Select business type",
+    jurisdiction: "Jurisdiction",
+    select_jurisdiction: "Select jurisdiction",
+    business_description: "Business Description",
+    business_description_placeholder: "Briefly describe your business activities...",
+    supporting_documents: "Supporting Documents",
+    drag_drop_files: "Drag and drop files here",
+    browse_files: "Browse Files",
+    
+    // Document Generator
+    document_gen_title: "Document Generator",
+    document_gen_subtitle: "Create customized legal documents for your needs",
+    my_templates: "My Templates",
+    external_templates: "External Templates",
+    all_templates: "All Templates",
+    
     // Legal Domains
     family_law: "Family Law",
     estate_planning: "Estate Planning",
@@ -212,6 +245,39 @@ export const translations: Translations = {
     still_need_help: "Besoin d'aide supplémentaire ?",
     contact_support: "Contacter le Support",
     visit_website: "Visiter le Site",
+    
+    // Help & Resources
+    help_resources_description: "Trouvez des réponses à vos questions et des guides utiles",
+    search_help: "Rechercher des sujets d'aide",
+    faq: "FAQ",
+    guides: "Guides",
+    tutorial_videos: "Vidéos Tutorielles",
+    legal_resources: "Ressources Juridiques",
+    frequently_asked_questions: "Questions Fréquemment Posées",
+    faq_description: "Questions courantes sur l'utilisation de notre plateforme",
+    
+    // Compliance Checker
+    compliance_checker_description: "Vérifiez la conformité de votre entreprise aux réglementations canadiennes",
+    check_compliance: "Vérifier la Conformité",
+    compliance_history: "Historique de Conformité", 
+    business_compliance_check: "Vérification de Conformité d'Entreprise",
+    compliance_form_description: "Remplissez le formulaire ci-dessous pour vérifier la conformité de votre entreprise",
+    business_type: "Type d'Entreprise",
+    select_business_type: "Sélectionner le type d'entreprise",
+    jurisdiction: "Juridiction",
+    select_jurisdiction: "Sélectionner la juridiction",
+    business_description: "Description de l'Entreprise",
+    business_description_placeholder: "Décrivez brièvement les activités de votre entreprise...",
+    supporting_documents: "Documents Justificatifs",
+    drag_drop_files: "Glisser et déposer les fichiers ici",
+    browse_files: "Parcourir les Fichiers",
+    
+    // Document Generator
+    document_gen_title: "Générateur de Documents",
+    document_gen_subtitle: "Créez des documents juridiques personnalisés pour vos besoins",
+    my_templates: "Mes Modèles",
+    external_templates: "Modèles Externes",
+    all_templates: "Tous les Modèles",
     
     // Legal Domains
     family_law: "Droit de la Famille",
