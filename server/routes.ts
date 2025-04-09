@@ -13,23 +13,29 @@ import {
   insertUserFeedbackSchema
 } from "@shared/schema";
 import { z } from "zod";
-// Replace OpenAI with DeepSeek implementation
+
+// AI services
 import { 
-  generateAIResponse, 
-  performLegalResearch,
+  generateAIResponse as generateDeepSeekResponse, 
+  performLegalResearch as performDeepSeekResearch,
   analyzeContract,
   compareContracts,
   extractTextFromPdf
 } from "./lib/deepseek";
-import { setupAuth } from "./auth";
+import { setupAuth, isAuthenticated, isAdmin } from "./auth";
 import multer from "multer";
 import path from "path";
 import { templateSources, importAndSaveTemplate } from "./lib/templateSources";
 import { 
   generateEnhancedDocument, 
-  analyzeLegalDocument,
-  generateAIResponseClaude
+  analyzeLegalDocument
 } from "./lib/anthropic";
+
+// Enhanced AI services
+import { generateChatResponse } from "./lib/aiService";
+import { streamAIResponse } from "./lib/aiStreamService";
+import { enhancedLegalResearch } from "./lib/researchService";
+import { registerAdminRoutes } from "./lib/adminRoutes";
 
 // Set up multer for file uploads
 const storage_config = multer.memoryStorage();
@@ -62,25 +68,87 @@ const googleAuthSchema = z.object({
   uid: z.string()
 });
 
-// Middleware to check if user is authenticated
-const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
-  if (req.isAuthenticated() && req.user) {
-    return next();
-  }
-  res.status(401).json({ message: "Not authenticated" });
-};
-
-// Middleware to check if user is an admin
-const isAdmin = (req: Request, res: Response, next: NextFunction) => {
-  if (req.isAuthenticated() && req.user && (req.user as any).isAdmin) {
-    return next();
-  }
-  res.status(403).json({ message: "Admin access required" });
-};
+// Middleware is now imported from auth.ts, no need for duplicates
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
+
+  // Register admin routes for AI service management
+  registerAdminRoutes(app);
+  
+  // Health check endpoint
+  app.get("/api/health", (req: Request, res: Response) => {
+    res.json({
+      status: "ok", 
+      services: {
+        ai: true,
+        database: true,
+        streaming: true
+      },
+      timestamp: new Date().toISOString()
+    });
+  });
+  
+  // Basic test endpoint - access via direct port to bypass Vite proxy
+  app.get("/api/test-direct", (req: Request, res: Response) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(JSON.stringify({
+      message: "This is a direct test response from the Express server",
+      timestamp: new Date().toISOString(),
+      services: {
+        available: ["ai", "streaming", "database"]
+      }
+    }, null, 2));
+  });
+  
+  // AI service test endpoint - does not require authentication
+  app.post("/api/ai/test", async (req: Request, res: Response) => {
+    try {
+      const prompt = req.body.prompt || "Test the AI service by generating a brief response about Canadian law.";
+      
+      // More detailed logging of test request
+      console.log("\n=== AI SERVICE TEST REQUEST ===");
+      console.log(`Prompt: "${prompt}"`);
+      
+      // Attempt to get basic response from AI service
+      const response = await generateChatResponse(prompt, {
+        system: "You are a test assistant. Keep responses brief (1-2 sentences).",
+        cacheKey: `test-${Date.now()}`, // Prevent caching for test endpoint
+        logPrefix: "AI Test" 
+      });
+      
+      // Log the full response for debugging
+      console.log("\n=== AI SERVICE TEST RESPONSE ===");
+      console.log(`Full response: "${response}"`);
+      console.log("=====================================\n");
+      
+      // Send the response to client
+      const result = {
+        success: true,
+        prompt,
+        response,
+        timestamp: new Date().toISOString()
+      };
+      
+      res.json(result);
+      
+      return result;
+    } catch (error) {
+      console.error("\n=== AI SERVICE TEST ERROR ===");
+      console.error(error);
+      console.error("=====================================\n");
+      
+      const errorResult = {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        timestamp: new Date().toISOString()
+      };
+      
+      res.status(500).json(errorResult);
+      return errorResult;
+    }
+  });
 
   // Google Authentication
   app.post("/api/google-auth", async (req: Request, res: Response) => {
@@ -162,16 +230,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: req.user!.id
       });
       
-      // Generate AI response with DeepSeek, fallback to Claude if DeepSeek fails
-      let aiResponse: string;
-      try {
-        // First try with DeepSeek
-        aiResponse = await generateAIResponse(parsed.data.content);
-      } catch (aiError) {
-        console.error("DeepSeek API error, falling back to Claude:", aiError);
-        // Fall back to Claude if DeepSeek fails
-        aiResponse = await generateAIResponseClaude(parsed.data.content);
-      }
+      // Generate AI response using enhanced AI service with built-in fallback
+      const aiResponse = await generateChatResponse(parsed.data.content, {
+        system: `You are an AI legal assistant specialized in Canadian law. 
+        Provide helpful, accurate information about Canadian legal topics. 
+        Always clarify that you are not providing legal advice and recommend consulting a qualified lawyer for specific legal issues.
+        Focus on Canadian legal frameworks, regulations, and precedents.
+        Be respectful, concise, and easy to understand.
+        Avoid excessive legalese, but maintain accuracy in legal concepts.`,
+        cacheKey: `chat-${parsed.data.content.substring(0, 100)}`,
+        logPrefix: "Chat API"
+      });
       
       // Save the AI message
       const aiMessage = await storage.createChatMessage({
@@ -183,6 +252,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json({ userMessage, aiMessage });
     } catch (error) {
       res.status(500).json({ message: "Error creating chat message" });
+    }
+  });
+  
+  // Stream chat responses (for real-time UI updates)
+  app.post("/api/chat/stream", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Validate message data
+      const messageSchema = z.object({
+        content: z.string().min(1),
+      });
+      
+      const parsed = messageSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid message data" });
+      }
+      
+      // Save the user message
+      await storage.createChatMessage({
+        userId: req.user!.id,
+        role: "user",
+        content: parsed.data.content
+      });
+      
+      // Set headers for streaming
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      
+      // Start streaming the AI response
+      await streamAIResponse(req, res);
+      
+    } catch (error) {
+      console.error("Streaming chat error:", error);
+      // If headers haven't been sent yet, send error response
+      if (!res.headersSent) {
+        res.status(500).json({ message: "Error streaming chat response" });
+      } else {
+        // Otherwise, end the response with an error event
+        res.write(`event: error\ndata: ${JSON.stringify({ message: "Error occurred during streaming" })}\n\n`);
+        res.end();
+      }
     }
   });
 
@@ -500,24 +610,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         practiceArea = "all" 
       } = parsed.data;
       
-      // Perform research with DeepSeek using all parameters, fallback to Claude if needed
-      let results;
-      try {
-        // First try with DeepSeek
-        results = await performLegalResearch(
-          query,
-          jurisdiction,
-          practiceArea
-        );
-      } catch (aiError) {
-        console.error("DeepSeek research error, falling back to Claude:", aiError);
-        // Fall back to Claude if DeepSeek fails
-        results = await performLegalResearch(
-          query,
-          jurisdiction,
-          practiceArea
-        );
-      }
+      // Perform research using enhanced AI service with built-in fallback
+      const results = await enhancedLegalResearch(
+        query,
+        jurisdiction,
+        practiceArea
+      );
       
       // Save the research query with user ID and results
       const savedQuery = await storage.createResearchQuery({
@@ -535,6 +633,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Research error:", error);
       res.status(500).json({ message: "Error performing legal research" });
+    }
+  });
+  
+  // Streaming research for real-time UI updates
+  app.post("/api/research/stream", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Create enhanced schema with jurisdiction and practiceArea
+      const researchSchema = z.object({
+        query: z.string().min(1),
+        jurisdiction: z.string().optional(),
+        practiceArea: z.string().optional(),
+      });
+      
+      const parsed = researchSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid research query" });
+      }
+      
+      // Extract parameters with defaults
+      const { 
+        query, 
+        jurisdiction = "canada", 
+        practiceArea = "all" 
+      } = parsed.data;
+      
+      // Set headers for streaming
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      
+      // Set up initial context for the AI request
+      req.body.system = `You are a legal research assistant specialized in ${jurisdiction} law with expertise in ${practiceArea}. 
+      Provide accurate legal information including relevant cases, statutes, and analysis.
+      Your response should be scholarly, well-structured, and focused on legal accuracy.`;
+      req.body.content = query;
+      req.body.cacheKey = `research-${jurisdiction}-${practiceArea}-${query.substring(0, 50)}`;
+      
+      // Stream research results
+      await streamAIResponse(req, res);
+      
+      // After streaming, save the research query (we don't have the full response here)
+      await storage.createResearchQuery({
+        query,
+        userId: req.user!.id,
+        results: JSON.stringify({ status: "streamed", query, jurisdiction, practiceArea }),
+        jurisdiction,
+        practiceArea
+      });
+      
+    } catch (error) {
+      console.error("Streaming research error:", error);
+      // If headers haven't been sent yet, send error response
+      if (!res.headersSent) {
+        res.status(500).json({ message: "Error streaming research response" });
+      } else {
+        // Otherwise, end the response with an error event
+        res.write(`event: error\ndata: ${JSON.stringify({ message: "Error occurred during streaming" })}\n\n`);
+        res.end();
+      }
     }
   });
 
