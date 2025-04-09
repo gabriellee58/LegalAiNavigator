@@ -330,7 +330,9 @@ export default function DisputeDetailPage() {
               <Badge variant={getStatusBadgeVariant(dispute.status)}>
                 {dispute.status === "mediation" ? 
                   t("in_mediation") || "In Mediation" : 
-                  t(dispute.status) || dispute.status.charAt(0).toUpperCase() + dispute.status.slice(1)}
+                  (dispute.status && typeof dispute.status === 'string') ? 
+                  (t(dispute.status) || `${dispute.status.charAt(0).toUpperCase()}${dispute.status.slice(1)}`) : 
+                  "Unknown"}
               </Badge>
             </div>
             <h1 className="text-3xl font-bold mb-1">{dispute.title}</h1>
@@ -446,7 +448,9 @@ export default function DisputeDetailPage() {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{t("status")}</span>
                       <Badge variant={getStatusBadgeVariant(dispute.status)}>
-                        {t(dispute.status) || dispute.status}
+                        {(dispute.status && typeof dispute.status === 'string') ? 
+                        (t(dispute.status) || dispute.status) : 
+                        "Unknown"}
                       </Badge>
                     </div>
                     <div className="flex justify-between">
@@ -464,7 +468,11 @@ export default function DisputeDetailPage() {
                     <CardContent className="space-y-4">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">{t("session_status")}</span>
-                        <Badge variant="outline">{t(primarySession.status) || primarySession.status}</Badge>
+                        <Badge variant="outline">
+                          {(primarySession.status && typeof primarySession.status === 'string') ? 
+                          (t(primarySession.status) || primarySession.status) : 
+                          "Unknown"}
+                        </Badge>
                       </div>
                       {primarySession.scheduledAt && (
                         <div className="flex justify-between">
@@ -641,13 +649,19 @@ export default function DisputeDetailPage() {
                           onChange={(e) => setNewMessage(e.target.value)}
                           placeholder={t("type_message") || "Type your message..."}
                           className="flex-grow min-h-[80px]"
-                          disabled={primarySession.status !== "in_progress" && primarySession.status !== "scheduled"}
+                          disabled={
+                            !primarySession.status || 
+                            typeof primarySession.status !== 'string' || 
+                            (primarySession.status !== "in_progress" && primarySession.status !== "scheduled")
+                          }
                         />
                         <Button 
                           type="submit" 
                           disabled={
                             !newMessage.trim() || 
                             sendMessageMutation.isPending || 
+                            !primarySession.status ||
+                            typeof primarySession.status !== 'string' ||
                             (primarySession.status !== "in_progress" && primarySession.status !== "scheduled")
                           }
                           className="self-end"
@@ -668,7 +682,9 @@ export default function DisputeDetailPage() {
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">{t("status")}</span>
                         <Badge variant="outline">
-                          {t(primarySession.status) || primarySession.status}
+                          {(primarySession.status && typeof primarySession.status === 'string') ? 
+                          (t(primarySession.status) || primarySession.status) : 
+                          "Unknown"}
                         </Badge>
                       </div>
                       <div className="flex justify-between">
@@ -695,7 +711,7 @@ export default function DisputeDetailPage() {
                         </Badge>
                       </div>
                       
-                      {primarySession.status === "in_progress" && (
+                      {(primarySession.status && typeof primarySession.status === 'string' && primarySession.status === "in_progress") && (
                         <Button 
                           variant="outline"
                           className="w-full mt-2"
@@ -706,7 +722,7 @@ export default function DisputeDetailPage() {
                         </Button>
                       )}
                       
-                      {primarySession.status === "completed" && !primarySession.summary && (
+                      {(primarySession.status && typeof primarySession.status === 'string' && primarySession.status === "completed") && !primarySession.summary && (
                         <Button 
                           variant="outline"
                           className="w-full mt-2"

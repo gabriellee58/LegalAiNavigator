@@ -58,10 +58,12 @@ export default function DisputeResolutionPage() {
   
   // Filter disputes by status
   const activeDisputes = Array.isArray(disputes) ? disputes.filter((dispute: Dispute) => 
+    dispute.status && typeof dispute.status === 'string' && 
     ['pending', 'active', 'mediation'].includes(dispute.status)
   ) : [];
   
   const resolvedDisputes = Array.isArray(disputes) ? disputes.filter((dispute: Dispute) => 
+    dispute.status && typeof dispute.status === 'string' && 
     ['resolved', 'closed'].includes(dispute.status)
   ) : [];
   
@@ -170,6 +172,13 @@ export default function DisputeResolutionPage() {
                         <SelectItem value="family">{t("family_dispute")}</SelectItem>
                         <SelectItem value="employment">{t("employment_dispute")}</SelectItem>
                         <SelectItem value="consumer">{t("consumer_dispute")}</SelectItem>
+                        <SelectItem value="landlord_tenant">{t("landlord_tenant_dispute")}</SelectItem>
+                        <SelectItem value="small_claims">{t("small_claims_dispute")}</SelectItem>
+                        <SelectItem value="civil">{t("civil_dispute")}</SelectItem>
+                        <SelectItem value="neighbour">{t("neighbour_dispute")}</SelectItem>
+                        <SelectItem value="business">{t("business_dispute")}</SelectItem>
+                        <SelectItem value="insurance">{t("insurance_dispute")}</SelectItem>
+                        <SelectItem value="intellectual_property">{t("intellectual_property_dispute")}</SelectItem>
                         <SelectItem value="other">{t("other_dispute")}</SelectItem>
                       </SelectContent>
                     </Select>
@@ -261,32 +270,37 @@ export default function DisputeResolutionPage() {
                     {activeDisputes.map((dispute: Dispute) => (
                       <div key={dispute.id} className="border rounded-lg p-4 transition-all hover:border-primary">
                         <div className="flex justify-between items-start mb-2">
-                          <h3 className="font-medium text-lg">{dispute.title}</h3>
+                          <h3 className="font-medium text-lg">{dispute.title || "Untitled Dispute"}</h3>
                           <Badge variant={
+                            !dispute.status || typeof dispute.status !== 'string' ? "outline" :
                             dispute.status === "pending" ? "outline" : 
                             dispute.status === "active" ? "secondary" : 
                             dispute.status === "mediation" ? "default" : "outline"
                           }>
                             {dispute.status === "mediation" ? 
                               t("in_mediation") : 
-                              dispute.status.charAt(0).toUpperCase() + dispute.status.slice(1)}
+                              (dispute.status && typeof dispute.status === 'string') ? 
+                              `${dispute.status.charAt(0).toUpperCase()}${dispute.status.slice(1)}` : 
+                              "Unknown"}
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                          {dispute.description}
+                          {dispute.description || t("no_description_available")}
                         </p>
                         <div className="flex items-center text-xs text-muted-foreground gap-4 mb-3">
                           <span className="flex items-center gap-1">
                             <FileText className="h-3 w-3" />
-                            {t(dispute.disputeType)}
+                            {dispute.disputeType && typeof dispute.disputeType === 'string' ? 
+                             t(dispute.disputeType) : t("other_dispute")}
                           </span>
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            {new Date(dispute.createdAt).toLocaleDateString()}
+                            {dispute.createdAt ? new Date(dispute.createdAt).toLocaleDateString() : "—"}
                           </span>
                           <span className="flex items-center gap-1">
                             <Users className="h-3 w-3" />
-                            {dispute.parties.split(',').length} {t("parties")}
+                            {dispute.parties && typeof dispute.parties === 'string' ? 
+                             `${dispute.parties.split(',').length} ${t("parties")}` : "—"}
                           </span>
                         </div>
                         <div className="flex gap-2 mt-2">
@@ -295,7 +309,7 @@ export default function DisputeResolutionPage() {
                               {t("view_details")}
                             </Link>
                           </Button>
-                          {dispute.status === "pending" && (
+                          {dispute.status && typeof dispute.status === 'string' && dispute.status === "pending" && (
                             <Button size="sm" asChild>
                               <Link href={`/dispute/${dispute.id}`}>
                                 {t("start_mediation")}
@@ -350,24 +364,26 @@ export default function DisputeResolutionPage() {
                     {resolvedDisputes.map((dispute: Dispute) => (
                       <div key={dispute.id} className="border rounded-lg p-4">
                         <div className="flex justify-between items-start mb-2">
-                          <h3 className="font-medium text-lg">{dispute.title}</h3>
+                          <h3 className="font-medium text-lg">{dispute.title || "Untitled Dispute"}</h3>
                           <Badge variant="secondary">
-                            {dispute.status === "resolved" ? 
-                              t("resolved") : 
-                              t("closed")}
+                            {(dispute.status && typeof dispute.status === 'string') ? 
+                              (dispute.status === "resolved" ? t("resolved") : t("closed")) : 
+                              "Unknown"}
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                          {dispute.description}
+                          {dispute.description || t("no_description_available")}
                         </p>
                         <div className="flex items-center text-xs text-muted-foreground gap-4 mb-1">
                           <span className="flex items-center gap-1">
                             <FileText className="h-3 w-3" />
-                            {t(dispute.disputeType)}
+                            {dispute.disputeType && typeof dispute.disputeType === 'string' ? 
+                             t(dispute.disputeType) : t("other_dispute")}
                           </span>
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            {new Date(dispute.resolvedAt || dispute.updatedAt).toLocaleDateString()}
+                            {(dispute.resolvedAt || dispute.updatedAt) ? 
+                             new Date(dispute.resolvedAt || dispute.updatedAt).toLocaleDateString() : "—"}
                           </span>
                         </div>
                         <Button size="sm" variant="outline" className="mt-2" asChild>
