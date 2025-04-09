@@ -23,6 +23,7 @@ import {
   compareContracts,
   extractTextFromPdf
 } from "./lib/deepseek";
+import { mediationHandlers, generateWelcomeMessage, generateMediatorResponse, generateMediationSummary } from "./lib/mediationAI";
 import { setupAuth, isAuthenticated, isAdmin } from "./auth";
 import multer from "multer";
 import path from "path";
@@ -1224,6 +1225,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate a unique session code
       const sessionCode = Math.random().toString(36).substring(2, 10).toUpperCase();
       
+      // Check if AI assistance is requested
+      const aiAssistance = parsed.data.aiAssistance || false;
+      let aiWelcomeMessage = null;
+      
+      // If AI assistance is enabled, generate a welcome message
+      if (aiAssistance) {
+        try {
+          // Prepare the mediator configuration
+          const mediatorConfig = {
+            disputeType: dispute.disputeType || 'general',
+            disputeDescription: dispute.description || dispute.title,
+            parties: dispute.parties,
+            legalJurisdiction: 'Canada',
+            language: req.user?.preferredLanguage || 'English',
+            mediationStyle: parsed.data.mediationStyle || 'facilitative',
+            requiresConfidentiality: true
+          };
+          
+          // Generate AI welcome message
+          aiWelcomeMessage = await generateWelcomeMessage(mediatorConfig);
+        } catch (aiError) {
+          console.error("Error generating AI welcome message:", aiError);
+          // Continue without AI welcome message
+        }
+      }
+      
       // Create the session
       const session = await storage.createMediationSession({
         ...parsed.data,
@@ -1237,6 +1264,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         mediationId: session.id,
         updatedAt: new Date()
       });
+      
+      // If AI assistance is enabled and we have a welcome message, create the first AI message
+      if (aiAssistance && aiWelcomeMessage) {
+        try {
+          await storage.createMediationMessage({
+            sessionId: session.id,
+            role: "ai",
+            content: aiWelcomeMessage,
+            userId: null // AI messages don't have a user ID
+          });
+        } catch (msgError) {
+          console.error("Error creating AI welcome message:", msgError);
+          // Continue without creating welcome message
+        }
+      }
       
       res.status(201).json(session);
     } catch (error) {
@@ -1349,25 +1391,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const previousMessages = await storage.getMediationMessagesBySessionId(sessionId);
           
           // Import and use the AI mediator helper
-          const { generateMediatorResponse, analyzeSentiment } = await import('./lib/mediationAI');
+          const { generateMediatorResponse } = await import('./lib/mediationAI');
           
           // Generate AI response based on dispute context and message history
+          const mediatorConfig = {
+            disputeType: dispute.disputeType || 'general',
+            disputeDescription: dispute.description || dispute.title,
+            parties: dispute.parties,
+            legalJurisdiction: 'Canada',
+            language: 'English',
+            mediationStyle: session.mediationStyle || 'facilitative',
+            requiresConfidentiality: true
+          };
+          
           const aiResponse = await generateMediatorResponse(
-            dispute,
+            mediatorConfig,
             previousMessages,
             message
           );
-          
-          // Analyze sentiment of the message (optional)
-          const sentimentAnalysis = await analyzeSentiment(message.content);
           
           // Create the AI mediator message
           await storage.createMediationMessage({
             sessionId,
             userId: undefined, // AI doesn't have a user ID
             role: "ai",
-            content: aiResponse,
-            sentiment: sentimentAnalysis.sentiment
+            content: aiResponse
           });
         } catch (error) {
           console.error("AI mediator response generation error:", error);
@@ -1376,8 +1424,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             sessionId,
             userId: undefined,
             role: "ai",
-            content: "I'm processing your message. Let's continue our discussion to find a resolution.",
-            sentiment: undefined
+            content: "I'm processing your message. Let's continue our discussion to find a resolution."
           });
         }
       }
@@ -1489,10 +1536,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const messages = await storage.getMediationMessagesBySessionId(sessionId);
       
       // Import and use the AI mediator helper
-      const { generateSessionSummary } = await import('./lib/mediationAI');
+      const { generateMediationSummary } = await import('./lib/mediationAI');
+      
+      // Prepare mediator config
+      const mediatorConfig = {
+        disputeType: dispute.disputeType || 'general',
+        disputeDescription: dispute.description || dispute.title,
+        parties: dispute.parties,
+        legalJurisdiction: 'Canada',
+        language: 'English',
+        mediationStyle: session.mediationStyle || 'facilitative',
+        requiresConfidentiality: true
+      };
       
       // Generate the session summary
-      const summary = await generateSessionSummary(dispute, messages);
+      const summary = await generateMediationSummary(mediatorConfig, messages);
       
       // Update the session with the summary and complete it
       await storage.updateMediationSession(sessionId, {
