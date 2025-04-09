@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useToast, toast } from "@/hooks/use-toast";
 import { t } from "@/lib/i18n";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -89,16 +90,35 @@ const performResearch = async (
   jurisdiction: string = "canada",
   practiceArea: string = "all"
 ) => {
-  const response = await apiRequest("POST", "/api/research", {
-    userId,
-    query,
-    jurisdiction,
-    practiceArea
-  });
-  return response;
+  try {
+    const response = await fetch("/api/research", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query,
+        jurisdiction,
+        practiceArea
+      }),
+      credentials: "include"
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Research request failed");
+    }
+    
+    return response;
+  } catch (error) {
+    console.error("Error in performResearch:", error);
+    throw error;
+  }
 };
 
 function SearchInterface() {
+  // Using both imported toast function and useToast hook for flexibility
+  const { toast: hookToast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [jurisdiction, setJurisdiction] = useState("canada");
   const [practiceArea, setPracticeArea] = useState("all");
@@ -109,9 +129,13 @@ function SearchInterface() {
   // Search mutation
   const { mutate: search, isPending } = useMutation({
     mutationFn: async (query: string) => {
-      return await performResearch(DEMO_USER_ID, query, jurisdiction, practiceArea);
+      console.log("Performing research with query:", query, "jurisdiction:", jurisdiction, "practice area:", practiceArea);
+      const response = await performResearch(DEMO_USER_ID, query, jurisdiction, practiceArea);
+      console.log("Research response:", response);
+      return response.json();
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data: ResearchResults) => {
+      console.log("Research success, results:", data);
       setSearchResults(data);
       if (!searchHistory.includes(searchQuery)) {
         setSearchHistory(prev => [searchQuery, ...prev].slice(0, 5));
@@ -119,7 +143,18 @@ function SearchInterface() {
     },
     onError: (error: any) => {
       console.error("Research error:", error);
-      setSearchResults(null);
+      // Create a fallback result when research fails
+      setSearchResults({
+        relevantLaws: [],
+        relevantCases: [],
+        summary: "There was an error performing your legal research. Please try again later.",
+        legalConcepts: []
+      });
+      toast({
+        title: "Research Failed",
+        description: "There was an error performing your research. Please try again.",
+        variant: "destructive"
+      });
     },
   });
   
