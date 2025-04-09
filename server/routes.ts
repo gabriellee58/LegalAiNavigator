@@ -817,6 +817,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error creating dispute" });
     }
   });
+  
+  // Handle dispute file uploads
+  app.post("/api/disputes/:id/documents", isAuthenticated, upload.array('documents', 5), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid dispute ID format" });
+      }
+      
+      // Verify the dispute exists and belongs to this user
+      const dispute = await storage.getDispute(id);
+      if (!dispute) {
+        return res.status(404).json({ message: "Dispute not found" });
+      }
+      
+      if (dispute.userId !== req.user!.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      // Process uploaded files
+      const files = req.files as Express.Multer.File[];
+      if (!files || files.length === 0) {
+        return res.status(400).json({ message: "No files were uploaded" });
+      }
+      
+      // Build document metadata
+      const documentMetadata = files.map(file => ({
+        originalName: file.originalname,
+        mimeType: file.mimetype,
+        size: file.size,
+        content: file.buffer.toString('base64'),
+        uploadedAt: new Date()
+      }));
+      
+      // Update dispute's supporting documents
+      const currentDocs = dispute.supportingDocuments || [];
+      const updatedDispute = await storage.updateDispute(id, {
+        supportingDocuments: [...currentDocs, ...documentMetadata],
+        updatedAt: new Date()
+      });
+      
+      res.status(201).json({ 
+        message: "Documents uploaded successfully", 
+        count: files.length,
+        supportingDocuments: updatedDispute.supportingDocuments
+      });
+      
+    } catch (error) {
+      console.error("Document upload error:", error);
+      if (error.message?.includes("file type")) {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Error uploading documents" });
+    }
+  });
 
   app.patch("/api/disputes/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
