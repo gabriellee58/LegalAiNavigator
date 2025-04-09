@@ -311,168 +311,166 @@ export default function DisputeResolutionPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="title"
-                      render={({ field }) => (
-                        <FormItem className="space-y-2">
-                          <FormLabel>{t("dispute_title")}</FormLabel>
-                          <FormControl>
-                            <Input 
-                              {...field}
-                              placeholder={t("dispute_title_placeholder")}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="disputeType"
-                      render={({ field }) => (
-                        <FormItem className="space-y-2">
-                          <FormLabel>{t("dispute_type")}</FormLabel>
-                          <Select 
-                            onValueChange={field.onChange} 
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder={t("select_dispute_type")} />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="contract">{t("contract_dispute")}</SelectItem>
-                              <SelectItem value="property">{t("property_dispute")}</SelectItem>
-                              <SelectItem value="family">{t("family_dispute")}</SelectItem>
-                              <SelectItem value="employment">{t("employment_dispute")}</SelectItem>
-                              <SelectItem value="consumer">{t("consumer_dispute")}</SelectItem>
-                              <SelectItem value="landlord_tenant">{t("landlord_tenant_dispute")}</SelectItem>
-                              <SelectItem value="small_claims">{t("small_claims_dispute")}</SelectItem>
-                              <SelectItem value="civil">{t("civil_dispute")}</SelectItem>
-                              <SelectItem value="neighbour">{t("neighbour_dispute")}</SelectItem>
-                              <SelectItem value="business">{t("business_dispute")}</SelectItem>
-                              <SelectItem value="insurance">{t("insurance_dispute")}</SelectItem>
-                              <SelectItem value="intellectual_property">{t("intellectual_property_dispute")}</SelectItem>
-                              <SelectItem value="other">{t("other_dispute")}</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem className="space-y-2">
-                          <FormLabel>{t("dispute_description")}</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              {...field}
-                              placeholder={t("dispute_description_placeholder")}
-                              className="min-h-[150px]"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="parties"
-                      render={({ field }) => (
-                        <FormItem className="space-y-2">
-                          <FormLabel>{t("involved_parties")}</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              {...field}
-                              placeholder={t("parties_placeholder")}
-                              className="min-h-[100px]"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">{t("dispute_supporting_documents")}</label>
-                      <div className="border border-dashed rounded-md p-6 text-center">
-                        <p className="text-sm text-neutral-500 mb-2">{t("drag_drop_files")}</p>
-                        <input 
-                          type="file" 
-                          id="document-upload" 
-                          multiple
-                          ref={fileInputRef} 
-                          onChange={handleFileSelect}
-                          className="hidden"
-                          accept=".pdf,.doc,.docx,.txt"
-                        />
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
+                <Form {...form} onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel>{t("dispute_title")}</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field}
+                            placeholder={t("dispute_title_placeholder")}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="disputeType"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel>{t("dispute_type")}</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
                         >
-                          <Paperclip className="h-4 w-4 mr-2" />
-                          {t("dispute_browse_files")}
-                        </Button>
-                        
-                        {/* Display selected files */}
-                        {selectedFiles.length > 0 && (
-                          <div className="mt-4 space-y-2">
-                            <p className="text-sm font-medium">{t("selected_files")}</p>
-                            <div className="space-y-2">
-                              {selectedFiles.map((file, index) => (
-                                <div 
-                                  key={index} 
-                                  className="flex items-center justify-between bg-muted p-2 rounded-md text-sm"
-                                >
-                                  <div className="flex items-center space-x-2">
-                                    <FileText className="h-4 w-4 text-muted-foreground" />
-                                    <span className="truncate max-w-[200px]">{file.name}</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      ({Math.round(file.size / 1024)} KB)
-                                    </span>
-                                  </div>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    onClick={() => removeFile(index)}
-                                    className="h-6 w-6 p-0"
-                                  >
-                                    <X className="h-4 w-4" />
-                                    <span className="sr-only">{t("remove_file")}</span>
-                                  </Button>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {t("max_file_size_note")}
-                      </p>
-                    </div>
-                    
-                    <div className="pt-4">
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder={t("select_dispute_type")} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="contract">{t("contract_dispute")}</SelectItem>
+                            <SelectItem value="property">{t("property_dispute")}</SelectItem>
+                            <SelectItem value="family">{t("family_dispute")}</SelectItem>
+                            <SelectItem value="employment">{t("employment_dispute")}</SelectItem>
+                            <SelectItem value="consumer">{t("consumer_dispute")}</SelectItem>
+                            <SelectItem value="landlord_tenant">{t("landlord_tenant_dispute")}</SelectItem>
+                            <SelectItem value="small_claims">{t("small_claims_dispute")}</SelectItem>
+                            <SelectItem value="civil">{t("civil_dispute")}</SelectItem>
+                            <SelectItem value="neighbour">{t("neighbour_dispute")}</SelectItem>
+                            <SelectItem value="business">{t("business_dispute")}</SelectItem>
+                            <SelectItem value="insurance">{t("insurance_dispute")}</SelectItem>
+                            <SelectItem value="intellectual_property">{t("intellectual_property_dispute")}</SelectItem>
+                            <SelectItem value="other">{t("other_dispute")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel>{t("dispute_description")}</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            {...field}
+                            placeholder={t("dispute_description_placeholder")}
+                            className="min-h-[150px]"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="parties"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel>{t("involved_parties")}</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            {...field}
+                            placeholder={t("parties_placeholder")}
+                            className="min-h-[100px]"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">{t("dispute_supporting_documents")}</label>
+                    <div className="border border-dashed rounded-md p-6 text-center">
+                      <p className="text-sm text-neutral-500 mb-2">{t("drag_drop_files")}</p>
+                      <input 
+                        type="file" 
+                        id="document-upload" 
+                        multiple
+                        ref={fileInputRef} 
+                        onChange={handleFileSelect}
+                        className="hidden"
+                        accept=".pdf,.doc,.docx,.txt"
+                      />
                       <Button 
-                        type="submit" 
-                        disabled={createDisputeMutation.isPending}
+                        variant="outline" 
+                        size="sm" 
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
                       >
-                        {createDisputeMutation.isPending ? 
-                          t("submitting") : 
-                          t("submit_dispute")}
+                        <Paperclip className="h-4 w-4 mr-2" />
+                        {t("dispute_browse_files")}
                       </Button>
+                      
+                      {/* Display selected files */}
+                      {selectedFiles.length > 0 && (
+                        <div className="mt-4 space-y-2">
+                          <p className="text-sm font-medium">{t("selected_files")}</p>
+                          <div className="space-y-2">
+                            {selectedFiles.map((file, index) => (
+                              <div 
+                                key={index} 
+                                className="flex items-center justify-between bg-muted p-2 rounded-md text-sm"
+                              >
+                                <div className="flex items-center space-x-2">
+                                  <FileText className="h-4 w-4 text-muted-foreground" />
+                                  <span className="truncate max-w-[200px]">{file.name}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    ({Math.round(file.size / 1024)} KB)
+                                  </span>
+                                </div>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  onClick={() => removeFile(index)}
+                                  className="h-6 w-6 p-0"
+                                >
+                                  <X className="h-4 w-4" />
+                                  <span className="sr-only">{t("remove_file")}</span>
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </form>
+                    <p className="text-xs text-muted-foreground">
+                      {t("max_file_size_note")}
+                    </p>
+                  </div>
+                  
+                  <div className="pt-4">
+                    <Button 
+                      type="submit" 
+                      disabled={createDisputeMutation.isPending}
+                    >
+                      {createDisputeMutation.isPending ? 
+                        t("submitting") : 
+                        t("submit_dispute")}
+                    </Button>
+                  </div>
                 </Form>
               </CardContent>
             </Card>
