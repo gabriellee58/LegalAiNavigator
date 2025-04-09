@@ -327,7 +327,8 @@ export default function ExternalTemplateLoader() {
                     template={template}
                     onImport={() => {
                       // Use formatted template ID helper to ensure proper format
-                      const formattedId = `${template.source}-${template.category}-${template.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`;
+                      const title = template.title ? template.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') : 'template';
+                      const formattedId = `${template.source}-${template.category}-${title}`;
                       importTemplate(formattedId);
                     }}
                     isImporting={isImporting}
@@ -358,7 +359,7 @@ function TemplateCard({ template, onImport, isImporting }: TemplateCardProps) {
     }
     
     // Otherwise, construct a valid ID from template properties
-    const name = template.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const name = template.title ? template.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') : 'template';
     return `${template.source}-${template.category}-${name}`;
   };
   
