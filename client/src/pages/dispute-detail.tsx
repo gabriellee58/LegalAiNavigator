@@ -18,6 +18,11 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 
+// Import our new components
+import DisputePartyManager from "@/components/dispute/DisputePartyManager";
+import SettlementProposalManager from "@/components/dispute/SettlementProposalManager";
+import DisputeActivityTimeline from "@/components/dispute/DisputeActivityTimeline";
+
 // Define interfaces
 interface Dispute {
   id: number;
@@ -513,9 +518,11 @@ export default function DisputeDetailPage() {
         </div>
         
         <Tabs value={currentTab} onValueChange={setCurrentTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5 lg:w-auto lg:inline-grid">
             <TabsTrigger value="overview">{t("overview")}</TabsTrigger>
+            <TabsTrigger value="parties">{t("parties")}</TabsTrigger>
             <TabsTrigger value="documents">{t("documents")}</TabsTrigger>
+            <TabsTrigger value="settlements">{t("settlements")}</TabsTrigger>
             <TabsTrigger 
               value="mediation" 
               disabled={!primarySession}
@@ -653,6 +660,29 @@ export default function DisputeDetailPage() {
             </div>
           </TabsContent>
           
+          <TabsContent value="parties" className="space-y-6">
+            {disputeId && user?.id && (
+              <DisputePartyManager 
+                disputeId={disputeId} 
+                currentUserId={user.id} 
+              />
+            )}
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("activity_log")}</CardTitle>
+                <CardDescription>
+                  {t("party_activity_description")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {disputeId && (
+                  <DisputeActivityTimeline disputeId={disputeId} />
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
           <TabsContent value="documents" className="space-y-6">
             <Card>
               <CardHeader>
@@ -743,6 +773,15 @@ export default function DisputeDetailPage() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="settlements" className="space-y-6">
+            {disputeId && user?.id && (
+              <SettlementProposalManager 
+                disputeId={disputeId} 
+                currentUserId={user.id} 
+              />
+            )}
           </TabsContent>
           
           <TabsContent value="mediation" className="space-y-6">
