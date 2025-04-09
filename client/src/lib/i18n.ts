@@ -263,6 +263,15 @@ export const translations: Translations = {
     search_strategies_description: "Effective approaches for finding relevant legal information",
     ready_to_research_description: "Ready to start searching Canadian legal information",
     
+    // Research results
+    relevant_laws: "Relevant Laws",
+    relevant_cases: "Relevant Cases",
+    legal_concepts: "Legal Concepts",
+    no_results: "No results found",
+    no_legal_concepts: "No legal concepts found",
+    searching: "Searching...",
+    relevance: "Relevance",
+    
     // Dispute Resolution
     dispute_resolution_description: "Submit and manage legal disputes for resolution",
     new_dispute: "New Dispute",
@@ -553,6 +562,15 @@ export const translations: Translations = {
     research_process_description: "Suivez ces étapes pour une recherche juridique efficace",
     search_strategies_description: "Approches efficaces pour trouver des informations juridiques pertinentes",
     ready_to_research_description: "Prêt à commencer à rechercher des informations juridiques canadiennes",
+    
+    // Research results
+    relevant_laws: "Lois Pertinentes",
+    relevant_cases: "Cas Pertinents",
+    legal_concepts: "Concepts Juridiques",
+    no_results: "Aucun résultat trouvé",
+    no_legal_concepts: "Aucun concept juridique trouvé",
+    searching: "Recherche en cours...",
+    relevance: "Pertinence",
     
     // Dispute Resolution
     dispute_resolution_description: "Soumettez et gérez des litiges juridiques pour résolution",

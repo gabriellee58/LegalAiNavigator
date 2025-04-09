@@ -367,7 +367,7 @@ function SearchInterface() {
               ) : (
                 <Card>
                   <CardContent className="p-4 text-center text-neutral-500">
-                    {t("no_results")}
+                    <p>No relevant laws found</p>
                   </CardContent>
                 </Card>
               )}
@@ -429,7 +429,7 @@ function SearchInterface() {
               ) : (
                 <Card>
                   <CardContent className="p-4 text-center text-neutral-500">
-                    {t("no_results")}
+                    <p>No relevant cases found</p>
                   </CardContent>
                 </Card>
               )}
@@ -453,7 +453,7 @@ function SearchInterface() {
               ) : (
                 <Card>
                   <CardContent className="p-4 text-center text-neutral-500">
-                    {t("no_legal_concepts")}
+                    <p>No legal concepts found</p>
                   </CardContent>
                 </Card>
               )}
