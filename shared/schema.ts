@@ -289,6 +289,8 @@ export const mediationMessages = pgTable("mediation_messages", {
   role: text("role").notNull(), // 'user', 'mediator', 'ai'
   content: text("content").notNull(),
   sentiment: text("sentiment"), // Optional AI analysis of message sentiment
+  attachments: jsonb("attachments"), // Optional file attachments
+  readBy: jsonb("read_by"), // Array of userIds who have read the message
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -297,6 +299,8 @@ export const insertMediationMessageSchema = createInsertSchema(mediationMessages
   .extend({
     userId: z.number().optional(),
     sentiment: z.string().optional(),
+    attachments: z.any().optional(),
+    readBy: z.any().optional(),
   });
 
 export type InsertMediationMessage = z.infer<typeof insertMediationMessageSchema>;
@@ -366,6 +370,12 @@ export const usersRelations = relations(users, ({ many }) => ({
   mediationMessages: many(mediationMessages),
   savedCitations: many(savedCitations),
   researchVisualizations: many(researchVisualizations),
+  // New collaborative features relations
+  uploadedDocuments: many(sharedDocuments, { relationName: "uploader" }),
+  documentComments: many(documentComments),
+  settlementProposals: many(settlementProposals, { relationName: "proposer" }),
+  digitalSignatures: many(digitalSignatures, { relationName: "user" }),
+  disputeActivities: many(disputeActivities),
 }));
 
 export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
@@ -437,6 +447,10 @@ export const disputesRelations = relations(disputes, ({ one, many }) => ({
   }),
   mediationSessions: many(mediationSessions),
   parties: many(disputeParties),
+  // New collaborative features relations
+  sharedDocuments: many(sharedDocuments),
+  settlementProposals: many(settlementProposals),
+  activities: many(disputeActivities),
 }));
 
 export const disputePartiesRelations = relations(disputeParties, ({ one }) => ({
@@ -738,6 +752,128 @@ export const caseOutcomePredictionsRelations = relations(caseOutcomePredictions,
   }),
 }));
 
+// Shared documents for dispute resolution
+export const sharedDocuments = pgTable("shared_documents", {
+  id: serial("id").primaryKey(),
+  disputeId: integer("dispute_id").references(() => disputes.id, { onDelete: 'cascade' }),
+  title: text("title").notNull(),
+  description: text("description"),
+  fileUrl: text("file_url").notNull(),
+  fileType: text("file_type").notNull(),
+  fileSize: integer("file_size").notNull(),
+  uploadedBy: integer("uploaded_by").references(() => users.id),
+  isPublic: boolean("is_public").default(false),
+  accessPermissions: jsonb("access_permissions"), // Array of party IDs who can access
+  versionNumber: integer("version_number").default(1),
+  previousVersionId: integer("previous_version_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const insertSharedDocumentSchema = createInsertSchema(sharedDocuments)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    accessPermissions: z.any().optional(),
+    previousVersionId: z.number().optional(),
+    updatedAt: z.date().optional(),
+  });
+  
+export type InsertSharedDocument = z.infer<typeof insertSharedDocumentSchema>;
+export type SharedDocument = typeof sharedDocuments.$inferSelect;
+
+// Document comments for collaborative editing
+export const documentComments = pgTable("document_comments", {
+  id: serial("id").primaryKey(),
+  documentId: integer("document_id").references(() => sharedDocuments.id, { onDelete: 'cascade' }),
+  userId: integer("user_id").references(() => users.id),
+  content: text("content").notNull(),
+  position: jsonb("position"), // Reference position in document (page, coordinates)
+  resolved: boolean("resolved").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const insertDocumentCommentSchema = createInsertSchema(documentComments)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    position: z.any().optional(),
+    updatedAt: z.date().optional(),
+  });
+  
+export type InsertDocumentComment = z.infer<typeof insertDocumentCommentSchema>;
+export type DocumentComment = typeof documentComments.$inferSelect;
+
+// Settlement proposals for dispute resolution
+export const settlementProposals = pgTable("settlement_proposals", {
+  id: serial("id").primaryKey(),
+  disputeId: integer("dispute_id").references(() => disputes.id, { onDelete: 'cascade' }),
+  proposedBy: integer("proposed_by").references(() => users.id),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  status: text("status").notNull().default("draft"), // 'draft', 'proposed', 'countered', 'accepted', 'rejected'
+  documentId: integer("document_id").references(() => sharedDocuments.id),
+  termsAndConditions: jsonb("terms_and_conditions"),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const insertSettlementProposalSchema = createInsertSchema(settlementProposals)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    documentId: z.number().optional(),
+    termsAndConditions: z.any().optional(),
+    expiresAt: z.date().optional(),
+    updatedAt: z.date().optional(),
+  });
+  
+export type InsertSettlementProposal = z.infer<typeof insertSettlementProposalSchema>;
+export type SettlementProposal = typeof settlementProposals.$inferSelect;
+
+// Digital signatures for settlement agreements
+export const digitalSignatures = pgTable("digital_signatures", {
+  id: serial("id").primaryKey(),
+  proposalId: integer("proposal_id").references(() => settlementProposals.id, { onDelete: 'cascade' }),
+  partyId: integer("party_id").references(() => disputeParties.id),
+  signedBy: integer("signed_by").references(() => users.id),
+  signatureData: jsonb("signature_data").notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  verificationCode: text("verification_code"),
+  verifiedAt: timestamp("verified_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertDigitalSignatureSchema = createInsertSchema(digitalSignatures)
+  .omit({ id: true, createdAt: true, verifiedAt: true })
+  .extend({
+    ipAddress: z.string().optional(),
+    userAgent: z.string().optional(),
+    verificationCode: z.string().optional(),
+  });
+  
+export type InsertDigitalSignature = z.infer<typeof insertDigitalSignatureSchema>;
+export type DigitalSignature = typeof digitalSignatures.$inferSelect;
+
+// Activity tracking for engagement analytics
+export const disputeActivities = pgTable("dispute_activities", {
+  id: serial("id").primaryKey(),
+  disputeId: integer("dispute_id").references(() => disputes.id, { onDelete: 'cascade' }),
+  userId: integer("user_id").references(() => users.id),
+  activityType: text("activity_type").notNull(), // 'login', 'message', 'document_view', 'document_upload', 'proposal_view', etc.
+  details: jsonb("details"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertDisputeActivitySchema = createInsertSchema(disputeActivities)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    details: z.any().optional(),
+  });
+  
+export type InsertDisputeActivity = z.infer<typeof insertDisputeActivitySchema>;
+export type DisputeActivity = typeof disputeActivities.$inferSelect;
+
 // User feedback table for collecting ratings, suggestions, and questions
 export const userFeedback = pgTable("user_feedback", {
   id: serial("id").primaryKey(),
@@ -775,6 +911,73 @@ export type UserFeedback = typeof userFeedback.$inferSelect;
 export const userFeedbackRelations = relations(userFeedback, ({ one }) => ({
   user: one(users, {
     fields: [userFeedback.userId],
+    references: [users.id],
+  }),
+}));
+
+// Relations for collaborative features
+export const sharedDocumentsRelations = relations(sharedDocuments, ({ one, many }) => ({
+  dispute: one(disputes, {
+    fields: [sharedDocuments.disputeId],
+    references: [disputes.id],
+  }),
+  uploader: one(users, {
+    fields: [sharedDocuments.uploadedBy],
+    references: [users.id],
+  }),
+  comments: many(documentComments),
+  settlementProposals: many(settlementProposals),
+}));
+
+export const documentCommentsRelations = relations(documentComments, ({ one }) => ({
+  document: one(sharedDocuments, {
+    fields: [documentComments.documentId],
+    references: [sharedDocuments.id],
+  }),
+  user: one(users, {
+    fields: [documentComments.userId],
+    references: [users.id],
+  }),
+}));
+
+export const settlementProposalsRelations = relations(settlementProposals, ({ one, many }) => ({
+  dispute: one(disputes, {
+    fields: [settlementProposals.disputeId],
+    references: [disputes.id],
+  }),
+  proposer: one(users, {
+    fields: [settlementProposals.proposedBy],
+    references: [users.id],
+  }),
+  document: one(sharedDocuments, {
+    fields: [settlementProposals.documentId],
+    references: [sharedDocuments.id],
+  }),
+  signatures: many(digitalSignatures),
+}));
+
+export const digitalSignaturesRelations = relations(digitalSignatures, ({ one }) => ({
+  proposal: one(settlementProposals, {
+    fields: [digitalSignatures.proposalId],
+    references: [settlementProposals.id],
+  }),
+  party: one(disputeParties, {
+    fields: [digitalSignatures.partyId],
+    references: [disputeParties.id],
+  }),
+  user: one(users, {
+    fields: [digitalSignatures.signedBy],
+    references: [users.id],
+  }),
+}));
+
+export const disputeActivitiesRelations = relations(disputeActivities, ({ one }) => ({
+  dispute: one(disputes, {
+    fields: [disputeActivities.disputeId],
+    references: [disputes.id],
+  }),
+  user: one(users, {
+    fields: [disputeActivities.userId],
     references: [users.id],
   }),
 }));

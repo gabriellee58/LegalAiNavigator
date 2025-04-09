@@ -19,7 +19,12 @@ import {
   escalatedQuestions, type EscalatedQuestion, type InsertEscalatedQuestion,
   conversationContexts, type ConversationContext, type InsertConversationContext,
   caseOutcomePredictions, type CaseOutcomePrediction, type InsertCaseOutcomePrediction,
-  userFeedback, type UserFeedback, type InsertUserFeedback
+  userFeedback, type UserFeedback, type InsertUserFeedback,
+  sharedDocuments, type SharedDocument, type InsertSharedDocument,
+  documentComments, type DocumentComment, type InsertDocumentComment,
+  settlementProposals, type SettlementProposal, type InsertSettlementProposal,
+  digitalSignatures, type DigitalSignature, type InsertDigitalSignature,
+  disputeActivities, type DisputeActivity, type InsertDisputeActivity
 } from "@shared/schema";
 import { db } from './db';
 import { eq, and, desc, inArray, sql } from 'drizzle-orm';
@@ -38,6 +43,42 @@ export interface IStorage {
   getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, userData: Partial<Omit<User, "id" | "password">>): Promise<User | undefined>;
+  
+  // Collaborative features
+  // Shared Documents
+  getSharedDocuments(disputeId: number): Promise<SharedDocument[]>;
+  getSharedDocumentById(documentId: number): Promise<SharedDocument | undefined>;
+  createSharedDocument(document: InsertSharedDocument): Promise<SharedDocument>;
+  updateSharedDocument(id: number, documentData: Partial<SharedDocument>): Promise<SharedDocument | undefined>;
+  saveDocumentFile(fileBuffer: Buffer, fileType: string): Promise<string>;
+  userHasDocumentAccess(userId: number, document: SharedDocument): Promise<boolean>;
+  
+  // Document Comments
+  getDocumentComments(documentId: number): Promise<DocumentComment[]>;
+  createDocumentComment(comment: InsertDocumentComment): Promise<DocumentComment>;
+  updateDocumentComment(id: number, commentData: Partial<DocumentComment>): Promise<DocumentComment | undefined>;
+  
+  // Settlement Proposals
+  getSettlementProposals(disputeId: number): Promise<SettlementProposal[]>;
+  getSettlementProposalById(proposalId: number): Promise<SettlementProposal | undefined>;
+  createSettlementProposal(proposal: InsertSettlementProposal): Promise<SettlementProposal>;
+  updateSettlementProposal(id: number, proposalData: Partial<SettlementProposal>): Promise<SettlementProposal | undefined>;
+  
+  // Digital Signatures
+  getDigitalSignatures(proposalId: number): Promise<DigitalSignature[]>;
+  createDigitalSignature(signature: InsertDigitalSignature): Promise<DigitalSignature>;
+  verifyDigitalSignature(id: number, verificationCode: string): Promise<DigitalSignature | undefined>;
+  
+  // Activity Tracking
+  createDisputeActivity(activity: InsertDisputeActivity): Promise<DisputeActivity>;
+  getDisputeActivities(disputeId: number): Promise<DisputeActivity[]>;
+  generateActivityReport(disputeId: number): Promise<any>;
+  
+  // Dispute Party Access Control
+  isDisputeParty(userId: number, disputeId: number): Promise<boolean>;
+  isDisputeMediator(userId: number, disputeId: number): Promise<boolean>;
+  isDisputeOwner(userId: number, disputeId: number): Promise<boolean>;
+  getDisputePartyByUserId(disputeId: number, userId: number): Promise<DisputeParty | undefined>;
   
   // Chat message operations
   getChatMessagesByUserId(userId: number): Promise<ChatMessage[]>;
@@ -1259,17 +1300,22 @@ export class DatabaseStorage implements IStorage {
   
   // Provincial info operations
   async getProvincialInfo(domainId: number, province?: string, language: string = 'en'): Promise<ProvincialInfo[]> {
-    let query = db
+    // Create base query with initial condition
+    const baseQuery = db
       .select()
       .from(provincialInfo)
-      .where(eq(provincialInfo.domainId, domainId))
-      .where(eq(provincialInfo.language, language));
+      .where(and(
+        eq(provincialInfo.domainId, domainId),
+        eq(provincialInfo.language, language)
+      ));
     
+    // If province is provided, add it to the conditions
     if (province) {
-      query = query.where(eq(provincialInfo.province, province));
+      return await baseQuery.where(eq(provincialInfo.province, province));
     }
     
-    return await query;
+    // Return base query results
+    return await baseQuery;
   }
   
   async getProvincialInfoById(id: number): Promise<ProvincialInfo | undefined> {
@@ -1335,6 +1381,287 @@ export class DatabaseStorage implements IStorage {
       .where(eq(userFeedback.id, id))
       .returning();
     return updatedFeedback;
+  }
+
+  // ===== Collaborative Features Implementation =====
+
+  // Shared Documents
+  async getSharedDocuments(disputeId: number): Promise<SharedDocument[]> {
+    return await db
+      .select()
+      .from(sharedDocuments)
+      .where(eq(sharedDocuments.disputeId, disputeId))
+      .orderBy(desc(sharedDocuments.updatedAt));
+  }
+  
+  async getSharedDocumentById(documentId: number): Promise<SharedDocument | undefined> {
+    const [document] = await db
+      .select()
+      .from(sharedDocuments)
+      .where(eq(sharedDocuments.id, documentId));
+    return document;
+  }
+  
+  async createSharedDocument(document: InsertSharedDocument): Promise<SharedDocument> {
+    const [newDocument] = await db
+      .insert(sharedDocuments)
+      .values(document)
+      .returning();
+    return newDocument;
+  }
+  
+  async updateSharedDocument(id: number, documentData: Partial<SharedDocument>): Promise<SharedDocument | undefined> {
+    const [updatedDocument] = await db
+      .update(sharedDocuments)
+      .set(documentData)
+      .where(eq(sharedDocuments.id, id))
+      .returning();
+    return updatedDocument;
+  }
+  
+  async saveDocumentFile(fileBuffer: Buffer, fileType: string): Promise<string> {
+    // In a production environment, this would upload to cloud storage
+    // For now, we'll just create a unique identifier and pretend we saved it
+    const fileId = `file_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    return `https://storage.example.com/documents/${fileId}`;
+  }
+  
+  async userHasDocumentAccess(userId: number, document: SharedDocument): Promise<boolean> {
+    // Public documents are accessible to anyone associated with the dispute
+    if (document.isPublic) {
+      if (document.disputeId === null) return false;
+      
+      try {
+        const isParty = await this.isDisputeParty(userId, document.disputeId);
+        if (isParty) return true;
+        
+        const isMediator = await this.isDisputeMediator(userId, document.disputeId);
+        if (isMediator) return true;
+        
+        const isOwner = await this.isDisputeOwner(userId, document.disputeId);
+        return isOwner;
+      } catch (error) {
+        console.error("Error checking document access:", error);
+        return false;
+      }
+    }
+    
+    // Otherwise, check specific permissions
+    const accessPermissions = document.accessPermissions as { userIds: number[] } | null;
+    
+    if (!accessPermissions || !accessPermissions.userIds) {
+      // If no specific permissions, only the uploader can access
+      return document.uploadedBy !== null && document.uploadedBy === userId;
+    }
+    
+    return accessPermissions.userIds.includes(userId) || 
+           (document.uploadedBy !== null && document.uploadedBy === userId);
+  }
+  
+  // Document Comments
+  async getDocumentComments(documentId: number): Promise<DocumentComment[]> {
+    return await db
+      .select()
+      .from(documentComments)
+      .where(eq(documentComments.documentId, documentId))
+      .orderBy(desc(documentComments.createdAt));
+  }
+  
+  async createDocumentComment(comment: InsertDocumentComment): Promise<DocumentComment> {
+    const [newComment] = await db
+      .insert(documentComments)
+      .values(comment)
+      .returning();
+    return newComment;
+  }
+  
+  async updateDocumentComment(id: number, commentData: Partial<DocumentComment>): Promise<DocumentComment | undefined> {
+    const [updatedComment] = await db
+      .update(documentComments)
+      .set(commentData)
+      .where(eq(documentComments.id, id))
+      .returning();
+    return updatedComment;
+  }
+  
+  // Settlement Proposals
+  async getSettlementProposals(disputeId: number): Promise<SettlementProposal[]> {
+    return await db
+      .select()
+      .from(settlementProposals)
+      .where(eq(settlementProposals.disputeId, disputeId))
+      .orderBy(desc(settlementProposals.updatedAt));
+  }
+  
+  async getSettlementProposalById(proposalId: number): Promise<SettlementProposal | undefined> {
+    const [proposal] = await db
+      .select()
+      .from(settlementProposals)
+      .where(eq(settlementProposals.id, proposalId));
+    return proposal;
+  }
+  
+  async createSettlementProposal(proposal: InsertSettlementProposal): Promise<SettlementProposal> {
+    const [newProposal] = await db
+      .insert(settlementProposals)
+      .values(proposal)
+      .returning();
+    return newProposal;
+  }
+  
+  async updateSettlementProposal(id: number, proposalData: Partial<SettlementProposal>): Promise<SettlementProposal | undefined> {
+    const [updatedProposal] = await db
+      .update(settlementProposals)
+      .set(proposalData)
+      .where(eq(settlementProposals.id, id))
+      .returning();
+    return updatedProposal;
+  }
+  
+  // Digital Signatures
+  async getDigitalSignatures(proposalId: number): Promise<DigitalSignature[]> {
+    return await db
+      .select()
+      .from(digitalSignatures)
+      .where(eq(digitalSignatures.proposalId, proposalId))
+      .orderBy(digitalSignatures.createdAt);
+  }
+  
+  async createDigitalSignature(signature: InsertDigitalSignature): Promise<DigitalSignature> {
+    const [newSignature] = await db
+      .insert(digitalSignatures)
+      .values(signature)
+      .returning();
+    return newSignature;
+  }
+  
+  async verifyDigitalSignature(id: number, verificationCode: string): Promise<DigitalSignature | undefined> {
+    const [signature] = await db
+      .select()
+      .from(digitalSignatures)
+      .where(eq(digitalSignatures.id, id));
+    
+    if (!signature || signature.verificationCode !== verificationCode) {
+      return undefined;
+    }
+    
+    // Update verification status
+    const [verifiedSignature] = await db
+      .update(digitalSignatures)
+      .set({ 
+        verifiedAt: new Date()
+      })
+      .where(eq(digitalSignatures.id, id))
+      .returning();
+      
+    return verifiedSignature;
+  }
+  
+  // Activity Tracking
+  async createDisputeActivity(activity: InsertDisputeActivity): Promise<DisputeActivity> {
+    const [newActivity] = await db
+      .insert(disputeActivities)
+      .values(activity)
+      .returning();
+    return newActivity;
+  }
+  
+  async getDisputeActivities(disputeId: number): Promise<DisputeActivity[]> {
+    return await db
+      .select()
+      .from(disputeActivities)
+      .where(eq(disputeActivities.disputeId, disputeId))
+      .orderBy(desc(disputeActivities.createdAt));
+  }
+  
+  async generateActivityReport(disputeId: number): Promise<any> {
+    // Get all activities
+    const activities = await this.getDisputeActivities(disputeId);
+    
+    // Count activities by type
+    const activityCounts: Record<string, number> = {};
+    activities.forEach(activity => {
+      const type = activity.activityType;
+      activityCounts[type] = (activityCounts[type] || 0) + 1;
+    });
+    
+    // Count activities by user
+    const userActivities: Record<number, number> = {};
+    activities.forEach(activity => {
+      const userId = activity.userId;
+      if (userId !== null) {
+        userActivities[userId] = (userActivities[userId] || 0) + 1;
+      }
+    });
+    
+    // Get the most active users (top 5)
+    const topUsers = Object.entries(userActivities)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([userId, count]) => ({ userId: parseInt(userId), count }));
+    
+    // Calculate timeline activity (activities per day)
+    const timeline: Record<string, number> = {};
+    activities.forEach(activity => {
+      const date = new Date(activity.createdAt || Date.now()).toISOString().split('T')[0];
+      timeline[date] = (timeline[date] || 0) + 1;
+    });
+    
+    // Get most recent activities (last 10)
+    const recentActivities = activities.slice(0, 10);
+    
+    return {
+      totalActivities: activities.length,
+      activityCounts,
+      topUsers,
+      timeline,
+      recentActivities
+    };
+  }
+  
+  // Dispute Party Access Control
+  async isDisputeParty(userId: number, disputeId: number): Promise<boolean> {
+    const party = await this.getDisputePartyByUserId(disputeId, userId);
+    return !!party;
+  }
+  
+  async isDisputeMediator(userId: number, disputeId: number): Promise<boolean> {
+    const [mediationSession] = await db
+      .select()
+      .from(mediationSessions)
+      .where(
+        and(
+          eq(mediationSessions.disputeId, disputeId),
+          eq(mediationSessions.mediatorId, userId)
+        )
+      );
+    return !!mediationSession;
+  }
+  
+  async isDisputeOwner(userId: number, disputeId: number): Promise<boolean> {
+    const [dispute] = await db
+      .select()
+      .from(disputes)
+      .where(
+        and(
+          eq(disputes.id, disputeId),
+          eq(disputes.userId, userId)
+        )
+      );
+    return !!dispute;
+  }
+  
+  async getDisputePartyByUserId(disputeId: number, userId: number): Promise<DisputeParty | undefined> {
+    const [party] = await db
+      .select()
+      .from(disputeParties)
+      .where(
+        and(
+          eq(disputeParties.disputeId, disputeId),
+          eq(disputeParties.userId, userId)
+        )
+      );
+    return party;
   }
 }
 

@@ -2422,6 +2422,365 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== Collaborative features API routes =====
+
+  // Shared Documents API routes
+  app.get("/api/disputes/:disputeId/documents/shared", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const disputeId = parseInt(req.params.disputeId);
+      if (isNaN(disputeId)) {
+        return res.status(400).json({ message: "Invalid dispute ID format" });
+      }
+      
+      const sharedDocuments = await storage.getSharedDocuments(disputeId);
+      res.json(sharedDocuments);
+    } catch (error) {
+      console.error("Error fetching shared documents:", error);
+      res.status(500).json({ message: "Error fetching shared documents" });
+    }
+  });
+
+  app.post("/api/disputes/:disputeId/documents/shared", isAuthenticated, upload.single('document'), async (req: Request, res: Response) => {
+    try {
+      const disputeId = parseInt(req.params.disputeId);
+      if (isNaN(disputeId)) {
+        return res.status(400).json({ message: "Invalid dispute ID format" });
+      }
+      
+      if (!req.file) {
+        return res.status(400).json({ message: "No document file uploaded" });
+      }
+      
+      const { title, description, isPublic, accessPermissions } = req.body;
+      const fileType = req.file.mimetype;
+      const fileSize = req.file.size;
+      const fileBuffer = req.file.buffer;
+      
+      // Save file to storage system (could be cloud storage in production)
+      const fileUrl = await storage.saveDocumentFile(fileBuffer, fileType);
+      
+      const sharedDocument = await storage.createSharedDocument({
+        disputeId,
+        title,
+        description,
+        fileUrl,
+        fileType,
+        fileSize,
+        uploadedBy: req.user.id,
+        isPublic: isPublic === 'true',
+        accessPermissions: accessPermissions ? JSON.parse(accessPermissions) : undefined,
+        updatedAt: new Date()
+      });
+
+      // Track activity
+      await storage.createDisputeActivity({
+        disputeId,
+        userId: req.user.id,
+        activityType: 'document_upload',
+        details: { documentId: sharedDocument.id, documentTitle: title }
+      });
+      
+      res.status(201).json(sharedDocument);
+    } catch (error) {
+      console.error("Error uploading shared document:", error);
+      res.status(500).json({ message: "Error uploading shared document" });
+    }
+  });
+
+  app.get("/api/shared-documents/:documentId", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const documentId = parseInt(req.params.documentId);
+      if (isNaN(documentId)) {
+        return res.status(400).json({ message: "Invalid document ID format" });
+      }
+      
+      const document = await storage.getSharedDocumentById(documentId);
+      if (!document) {
+        return res.status(404).json({ message: "Document not found" });
+      }
+      
+      // Check if user has access
+      const hasAccess = await storage.userHasDocumentAccess(req.user.id, document);
+      if (!hasAccess) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      // Track activity
+      await storage.createDisputeActivity({
+        disputeId: document.disputeId,
+        userId: req.user.id,
+        activityType: 'document_view',
+        details: { documentId, documentTitle: document.title }
+      });
+      
+      res.json(document);
+    } catch (error) {
+      console.error("Error fetching document:", error);
+      res.status(500).json({ message: "Error fetching document" });
+    }
+  });
+
+  // Document comments
+  app.get("/api/shared-documents/:documentId/comments", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const documentId = parseInt(req.params.documentId);
+      if (isNaN(documentId)) {
+        return res.status(400).json({ message: "Invalid document ID format" });
+      }
+      
+      const document = await storage.getSharedDocumentById(documentId);
+      if (!document) {
+        return res.status(404).json({ message: "Document not found" });
+      }
+      
+      // Check if user has access
+      const hasAccess = await storage.userHasDocumentAccess(req.user.id, document);
+      if (!hasAccess) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const comments = await storage.getDocumentComments(documentId);
+      res.json(comments);
+    } catch (error) {
+      console.error("Error fetching document comments:", error);
+      res.status(500).json({ message: "Error fetching document comments" });
+    }
+  });
+
+  app.post("/api/shared-documents/:documentId/comments", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const documentId = parseInt(req.params.documentId);
+      if (isNaN(documentId)) {
+        return res.status(400).json({ message: "Invalid document ID format" });
+      }
+      
+      const document = await storage.getSharedDocumentById(documentId);
+      if (!document) {
+        return res.status(404).json({ message: "Document not found" });
+      }
+      
+      // Check if user has access
+      const hasAccess = await storage.userHasDocumentAccess(req.user.id, document);
+      if (!hasAccess) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const { content, position } = req.body;
+      const comment = await storage.createDocumentComment({
+        documentId,
+        userId: req.user.id,
+        content,
+        position: position ? JSON.parse(position) : undefined,
+        updatedAt: new Date()
+      });
+      
+      res.status(201).json(comment);
+    } catch (error) {
+      console.error("Error creating document comment:", error);
+      res.status(500).json({ message: "Error creating document comment" });
+    }
+  });
+
+  // Settlement Proposals
+  app.get("/api/disputes/:disputeId/settlement-proposals", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const disputeId = parseInt(req.params.disputeId);
+      if (isNaN(disputeId)) {
+        return res.status(400).json({ message: "Invalid dispute ID format" });
+      }
+      
+      const proposals = await storage.getSettlementProposals(disputeId);
+      res.json(proposals);
+    } catch (error) {
+      console.error("Error fetching settlement proposals:", error);
+      res.status(500).json({ message: "Error fetching settlement proposals" });
+    }
+  });
+
+  app.post("/api/disputes/:disputeId/settlement-proposals", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const disputeId = parseInt(req.params.disputeId);
+      if (isNaN(disputeId)) {
+        return res.status(400).json({ message: "Invalid dispute ID format" });
+      }
+      
+      const { title, content, documentId, termsAndConditions, expiresAt } = req.body;
+      const proposal = await storage.createSettlementProposal({
+        disputeId,
+        proposedBy: req.user.id,
+        title,
+        content,
+        documentId: documentId ? parseInt(documentId) : undefined,
+        termsAndConditions: termsAndConditions ? JSON.parse(termsAndConditions) : undefined,
+        expiresAt: expiresAt ? new Date(expiresAt) : undefined,
+        updatedAt: new Date()
+      });
+
+      // Track activity
+      await storage.createDisputeActivity({
+        disputeId,
+        userId: req.user.id,
+        activityType: 'proposal_create',
+        details: { proposalId: proposal.id, proposalTitle: title }
+      });
+      
+      res.status(201).json(proposal);
+    } catch (error) {
+      console.error("Error creating settlement proposal:", error);
+      res.status(500).json({ message: "Error creating settlement proposal" });
+    }
+  });
+
+  app.patch("/api/settlement-proposals/:proposalId", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const proposalId = parseInt(req.params.proposalId);
+      if (isNaN(proposalId)) {
+        return res.status(400).json({ message: "Invalid proposal ID format" });
+      }
+      
+      const proposal = await storage.getSettlementProposalById(proposalId);
+      if (!proposal) {
+        return res.status(404).json({ message: "Proposal not found" });
+      }
+      
+      // Only the proposer or a mediator can update a proposal
+      const isProposer = proposal.proposedBy === req.user.id;
+      const isMediator = await storage.isDisputeMediator(req.user.id, proposal.disputeId);
+      
+      if (!isProposer && !isMediator) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const { title, content, status, documentId, termsAndConditions, expiresAt } = req.body;
+      const updateData = {
+        ...(title && { title }),
+        ...(content && { content }),
+        ...(status && { status }),
+        ...(documentId && { documentId: parseInt(documentId) }),
+        ...(termsAndConditions && { termsAndConditions: JSON.parse(termsAndConditions) }),
+        ...(expiresAt && { expiresAt: new Date(expiresAt) }),
+        updatedAt: new Date()
+      };
+      
+      const updatedProposal = await storage.updateSettlementProposal(proposalId, updateData);
+
+      // Track activity
+      await storage.createDisputeActivity({
+        disputeId: proposal.disputeId,
+        userId: req.user.id,
+        activityType: 'proposal_update',
+        details: { 
+          proposalId, 
+          proposalTitle: updatedProposal.title,
+          statusChange: status ? `${proposal.status} -> ${status}` : undefined
+        }
+      });
+      
+      res.json(updatedProposal);
+    } catch (error) {
+      console.error("Error updating settlement proposal:", error);
+      res.status(500).json({ message: "Error updating settlement proposal" });
+    }
+  });
+
+  // Digital Signatures
+  app.post("/api/settlement-proposals/:proposalId/signatures", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const proposalId = parseInt(req.params.proposalId);
+      if (isNaN(proposalId)) {
+        return res.status(400).json({ message: "Invalid proposal ID format" });
+      }
+      
+      const proposal = await storage.getSettlementProposalById(proposalId);
+      if (!proposal) {
+        return res.status(404).json({ message: "Proposal not found" });
+      }
+      
+      // Check if the user is a party in the dispute
+      const party = await storage.getDisputePartyByUserId(proposal.disputeId, req.user.id);
+      if (!party) {
+        return res.status(403).json({ message: "Only dispute parties can sign proposals" });
+      }
+      
+      const { signatureData, ipAddress, userAgent } = req.body;
+      
+      // Generate a verification code
+      const verificationCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+      
+      const signature = await storage.createDigitalSignature({
+        proposalId,
+        partyId: party.id,
+        signedBy: req.user.id,
+        signatureData: JSON.parse(signatureData),
+        ipAddress,
+        userAgent,
+        verificationCode
+      });
+
+      // Track activity
+      await storage.createDisputeActivity({
+        disputeId: proposal.disputeId,
+        userId: req.user.id,
+        activityType: 'proposal_sign',
+        details: { proposalId, proposalTitle: proposal.title }
+      });
+      
+      res.status(201).json(signature);
+    } catch (error) {
+      console.error("Error creating digital signature:", error);
+      res.status(500).json({ message: "Error creating digital signature" });
+    }
+  });
+
+  // Activity Analytics
+  app.get("/api/disputes/:disputeId/activities", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const disputeId = parseInt(req.params.disputeId);
+      if (isNaN(disputeId)) {
+        return res.status(400).json({ message: "Invalid dispute ID format" });
+      }
+      
+      // Check if user has access to the dispute
+      const isParty = await storage.isDisputeParty(req.user.id, disputeId);
+      const isMediator = await storage.isDisputeMediator(req.user.id, disputeId);
+      const isOwner = await storage.isDisputeOwner(req.user.id, disputeId);
+      
+      if (!isParty && !isMediator && !isOwner) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const activities = await storage.getDisputeActivities(disputeId);
+      res.json(activities);
+    } catch (error) {
+      console.error("Error fetching dispute activities:", error);
+      res.status(500).json({ message: "Error fetching dispute activities" });
+    }
+  });
+
+  app.get("/api/disputes/:disputeId/activity-report", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const disputeId = parseInt(req.params.disputeId);
+      if (isNaN(disputeId)) {
+        return res.status(400).json({ message: "Invalid dispute ID format" });
+      }
+      
+      // Check if user has access to the dispute
+      const isParty = await storage.isDisputeParty(req.user.id, disputeId);
+      const isMediator = await storage.isDisputeMediator(req.user.id, disputeId);
+      const isOwner = await storage.isDisputeOwner(req.user.id, disputeId);
+      
+      if (!isParty && !isMediator && !isOwner) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const report = await storage.generateActivityReport(disputeId);
+      res.json(report);
+    } catch (error) {
+      console.error("Error generating activity report:", error);
+      res.status(500).json({ message: "Error generating activity report" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
