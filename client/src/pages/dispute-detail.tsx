@@ -2,8 +2,8 @@ import { t } from "@/lib/i18n";
 import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
-import { AlertCircle, CheckCircle, Clock, FileText, MessageSquare, Users, Calendar, ArrowRight, ArrowLeft, PenSquare, Paperclip, FilePlus } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { AlertCircle, CheckCircle, Clock, FileText, MessageSquare, Users, Calendar, ArrowRight, ArrowLeft, PenSquare, Paperclip, FilePlus, Loader2, Eye, Download } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -71,6 +71,10 @@ export default function DisputeDetailPage() {
   const [currentTab, setCurrentTab] = useState("overview");
   const [isStartMediationDialogOpen, setIsStartMediationDialogOpen] = useState(false);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [viewingDocument, setViewingDocument] = useState<any>(null);
+  const [isDocumentDialogOpen, setIsDocumentDialogOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Redirect if dispute ID is invalid
   useEffect(() => {
@@ -247,6 +251,138 @@ export default function DisputeDetailPage() {
   const handleGenerateSummary = () => {
     setIsGeneratingSummary(true);
     generateSummaryMutation.mutate();
+  };
+
+  // File upload mutation
+  const uploadDocumentsMutation = useMutation({
+    mutationFn: async (files: File[]) => {
+      if (!disputeId) throw new Error("Dispute ID is missing");
+      
+      const formData = new FormData();
+      files.forEach(file => {
+        formData.append('documents', file);
+      });
+      
+      const res = await fetch(`/api/disputes/${disputeId}/documents`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+      
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to upload documents");
+      }
+      
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/disputes', disputeId] });
+      toast({
+        title: t("documents_uploaded"),
+        description: t("documents_upload_success"),
+        variant: "default",
+      });
+      setIsUploading(false);
+    },
+    onError: (error) => {
+      toast({
+        title: t("upload_error"),
+        description: error.message || t("document_upload_error"),
+        variant: "destructive",
+      });
+      setIsUploading(false);
+    },
+  });
+  
+  // Format file size (bytes to KB/MB)
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / 1048576).toFixed(1)} MB`;
+  };
+  
+  // Handle file selection
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files);
+      
+      // Check file sizes and types
+      const validFileTypes = ['application/pdf', 'text/plain', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      const maxFileSize = 10 * 1024 * 1024; // 10MB
+      
+      const invalidFiles = newFiles.filter(file => {
+        if (!validFileTypes.includes(file.type)) {
+          toast({
+            title: t("invalid_file_type"),
+            description: `${file.name}: ${t("only_pdf_doc_txt_allowed")}`,
+            variant: "destructive",
+          });
+          return true;
+        }
+        
+        if (file.size > maxFileSize) {
+          toast({
+            title: t("file_too_large"),
+            description: `${file.name}: ${t("max_file_size_10mb")}`,
+            variant: "destructive",
+          });
+          return true;
+        }
+        
+        return false;
+      });
+      
+      if (invalidFiles.length > 0) {
+        return;
+      }
+      
+      // Upload files
+      setIsUploading(true);
+      uploadDocumentsMutation.mutate(newFiles);
+    }
+  };
+  
+  // Handle view document
+  const handleViewDocument = (doc: any) => {
+    setViewingDocument(doc);
+    setIsDocumentDialogOpen(true);
+  };
+  
+  // Handle download document
+  const handleDownloadDocument = (doc: any) => {
+    // Create a download from base64 content
+    if (doc.content) {
+      try {
+        const byteCharacters = atob(doc.content);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: doc.mimeType || 'application/octet-stream' });
+        
+        // Create download link
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = doc.originalName || `document-${Date.now()}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (error) {
+        toast({
+          title: t("download_error"),
+          description: t("document_download_error"),
+          variant: "destructive",
+        });
+      }
+    } else {
+      toast({
+        title: t("download_error"),
+        description: t("document_content_missing"),
+        variant: "destructive",
+      });
+    }
   };
   
   const isLoading = isDisputeLoading || isAuthLoading;
@@ -522,42 +658,84 @@ export default function DisputeDetailPage() {
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>{t("supporting_documents")}</span>
-                  <Button size="sm" variant="outline">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    aria-label={t("upload_document")}
+                  >
                     <Paperclip className="h-4 w-4 mr-2" />
                     {t("upload_document")}
                   </Button>
+                  <input 
+                    type="file" 
+                    id="document-upload" 
+                    multiple
+                    ref={fileInputRef} 
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    accept=".pdf,.doc,.docx,.txt"
+                    aria-hidden="true"
+                  />
                 </CardTitle>
                 <CardDescription>
                   {t("documents_description")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {dispute.supportingDocuments && dispute.supportingDocuments.length > 0 ? (
+                {isUploading && (
+                  <div className="flex items-center justify-center py-6 space-x-2">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                    <span>{t("uploading")}</span>
+                  </div>
+                )}
+                {!isUploading && dispute.supportingDocuments && dispute.supportingDocuments.length > 0 ? (
                   <div className="space-y-4">
                     {dispute.supportingDocuments.map((doc: any, i: number) => (
                       <div key={i} className="flex items-center justify-between p-3 border rounded-md">
                         <div className="flex items-center">
-                          <FileText className="h-5 w-5 mr-3 text-muted-foreground" />
+                          <FileText className="h-5 w-5 mr-3 text-muted-foreground" aria-hidden="true" />
                           <div>
-                            <p className="font-medium">{doc.name}</p>
+                            <p className="font-medium">{doc.originalName || `Document ${i+1}`}</p>
                             <p className="text-xs text-muted-foreground">
                               {doc.uploadedAt ? format(new Date(doc.uploadedAt), 'PPp') : ''}
+                              {doc.size && <span className="ml-2">{formatFileSize(doc.size)}</span>}
                             </p>
                           </div>
                         </div>
-                        <Button size="sm" variant="ghost">
-                          {t("view")}
-                        </Button>
+                        <div className="flex space-x-2">
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => handleViewDocument(doc)}
+                            aria-label={`${t("view")} ${doc.originalName || `Document ${i+1}`}`}
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            {t("view")}
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => handleDownloadDocument(doc)}
+                            aria-label={`${t("download")} ${doc.originalName || `Document ${i+1}`}`}
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            {t("download")}
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
                 ) : (
                   <div className="text-center py-12 border border-dashed rounded-md">
-                    <Paperclip className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                    <Paperclip className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" aria-hidden="true" />
                     <p className="text-muted-foreground mb-4">
                       {t("no_documents_uploaded")}
                     </p>
-                    <Button>
+                    <Button 
+                      onClick={() => fileInputRef.current?.click()}
+                      aria-label={t("upload_document")}
+                    >
                       <Paperclip className="h-4 w-4 mr-2" />
                       {t("upload_document")}
                     </Button>
@@ -819,6 +997,60 @@ export default function DisputeDetailPage() {
               disabled={startMediationMutation.isPending}
             >
               {startMediationMutation.isPending ? t("creating") : t("create_session")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Document View Dialog */}
+      <Dialog open={isDocumentDialogOpen} onOpenChange={setIsDocumentDialogOpen}>
+        <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              {viewingDocument?.originalName || t("document_view")}
+            </DialogTitle>
+            <DialogDescription>
+              {viewingDocument?.mimeType} • {viewingDocument?.size ? formatFileSize(viewingDocument.size) : ''}
+              {viewingDocument?.uploadedAt && (
+                <span className="ml-2">
+                  • {t("uploaded")}: {format(new Date(viewingDocument.uploadedAt), 'PPp')}
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex-grow overflow-auto border rounded-md p-4 my-4">
+            {viewingDocument?.mimeType && viewingDocument.mimeType.includes('pdf') ? (
+              <div className="text-center p-6">
+                <p className="mb-4">{t("pdf_preview_unavailable")}</p>
+                <Button onClick={() => handleDownloadDocument(viewingDocument)}>
+                  <Download className="h-4 w-4 mr-2" />
+                  {t("download_to_view")}
+                </Button>
+              </div>
+            ) : viewingDocument?.content ? (
+              <pre className="whitespace-pre-wrap font-mono text-sm">
+                {atob(viewingDocument.content)}
+              </pre>
+            ) : (
+              <div className="text-center p-6">
+                <p>{t("document_content_unavailable")}</p>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsDocumentDialogOpen(false)}
+            >
+              {t("close")}
+            </Button>
+            <Button 
+              onClick={() => handleDownloadDocument(viewingDocument)}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              {t("download")}
             </Button>
           </DialogFooter>
         </DialogContent>
