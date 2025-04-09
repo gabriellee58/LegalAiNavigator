@@ -6,6 +6,7 @@ import {
   insertResearchQuerySchema,
   insertGeneratedDocumentSchema,
   insertDisputeSchema,
+  insertDisputePartySchema,
   insertMediationSessionSchema,
   insertMediationMessageSchema,
   insertSavedCitationSchema,
@@ -730,9 +731,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Dispute not found" });
       }
       
-      // Ensure the dispute belongs to the requesting user
+      // Ensure the user has permission to view this dispute
+      // Users can view if they're the creator or an involved party
       if (dispute.userId !== req.user!.id) {
-        return res.status(403).json({ message: "Access denied" });
+        // Check if the current user is a party in this dispute
+        const parties = await storage.getDisputePartiesByDisputeId(id);
+        const userIsParty = parties.some(party => 
+          party.userId === req.user!.id || 
+          party.email === req.user!.username
+        );
+        
+        if (!userIsParty) {
+          return res.status(403).json({ message: "Access denied" });
+        }
       }
       
       res.json(dispute);
@@ -815,6 +826,224 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Dispute creation error:", error);
       res.status(500).json({ message: "Error creating dispute" });
+    }
+  });
+  
+  // Dispute parties routes
+  app.get("/api/disputes/:disputeId/parties", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const disputeId = parseInt(req.params.disputeId);
+      if (isNaN(disputeId)) {
+        return res.status(400).json({ message: "Invalid dispute ID format" });
+      }
+      
+      // Verify the dispute exists and belongs to this user or user is a party
+      const dispute = await storage.getDispute(disputeId);
+      if (!dispute) {
+        return res.status(404).json({ message: "Dispute not found" });
+      }
+      
+      // Check permissions: user must be dispute owner or an invited party
+      if (dispute.userId !== req.user!.id) {
+        const parties = await storage.getDisputePartiesByDisputeId(disputeId);
+        const userIsParty = parties.some(party => 
+          party.userId === req.user!.id || 
+          party.email === req.user!.username
+        );
+        
+        if (!userIsParty) {
+          return res.status(403).json({ message: "Access denied" });
+        }
+      }
+      
+      const parties = await storage.getDisputePartiesByDisputeId(disputeId);
+      res.json(parties);
+    } catch (error) {
+      console.error("Party retrieval error:", error);
+      res.status(500).json({ message: "Error retrieving dispute parties" });
+    }
+  });
+  
+  app.post("/api/disputes/:disputeId/parties", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const disputeId = parseInt(req.params.disputeId);
+      if (isNaN(disputeId)) {
+        return res.status(400).json({ message: "Invalid dispute ID format" });
+      }
+      
+      // Verify the dispute exists and belongs to this user
+      const dispute = await storage.getDispute(disputeId);
+      if (!dispute) {
+        return res.status(404).json({ message: "Dispute not found" });
+      }
+      
+      if (dispute.userId !== req.user!.id) {
+        return res.status(403).json({ message: "Only the dispute creator can add parties" });
+      }
+      
+      // Validate party data
+      const partySchema = insertDisputePartySchema.omit({ disputeId: true, invitationCode: true });
+      
+      const parsed = partySchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ 
+          message: "Invalid party data",
+          errors: parsed.error.format()
+        });
+      }
+      
+      // Check if the email is already used for this dispute
+      const existingParty = await storage.getDisputePartyByEmail(parsed.data.email, disputeId);
+      if (existingParty) {
+        return res.status(400).json({ message: "A party with this email already exists in this dispute" });
+      }
+      
+      // Generate a unique invitation code
+      const invitationCode = Math.random().toString(36).substring(2, 15) + 
+                             Math.random().toString(36).substring(2, 15);
+      
+      // Create the party
+      const party = await storage.createDisputeParty({
+        ...parsed.data,
+        disputeId,
+        invitationCode,
+        verificationStatus: "pending",
+        updatedAt: new Date()
+      });
+      
+      // In a real app, you would send an email to the party with the invitation code
+      // For now, we just return the invitation code in the response
+      
+      res.status(201).json(party);
+    } catch (error) {
+      console.error("Party creation error:", error);
+      res.status(500).json({ message: "Error adding dispute party" });
+    }
+  });
+  
+  app.get("/api/dispute-party/verify/:code", async (req: Request, res: Response) => {
+    try {
+      const code = req.params.code;
+      
+      // Get party by invitation code
+      const party = await storage.getDisputePartyByInvitationCode(code);
+      if (!party) {
+        return res.status(404).json({ message: "Invalid invitation code" });
+      }
+      
+      // Update verification status
+      const updatedParty = await storage.updateDisputeParty(party.id, {
+        verificationStatus: "verified",
+        updatedAt: new Date()
+      });
+      
+      res.json({ 
+        message: "Party verification successful",
+        party: updatedParty
+      });
+    } catch (error) {
+      console.error("Party verification error:", error);
+      res.status(500).json({ message: "Error verifying dispute party" });
+    }
+  });
+  
+  app.patch("/api/disputes/:disputeId/parties/:partyId", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const disputeId = parseInt(req.params.disputeId);
+      const partyId = parseInt(req.params.partyId);
+      
+      if (isNaN(disputeId) || isNaN(partyId)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      // Verify the dispute exists and user has permission
+      const dispute = await storage.getDispute(disputeId);
+      if (!dispute) {
+        return res.status(404).json({ message: "Dispute not found" });
+      }
+      
+      if (dispute.userId !== req.user!.id) {
+        return res.status(403).json({ message: "Only the dispute creator can update parties" });
+      }
+      
+      // Verify the party exists and belongs to this dispute
+      const party = await storage.getDisputeParty(partyId);
+      if (!party || party.disputeId !== disputeId) {
+        return res.status(404).json({ message: "Party not found in this dispute" });
+      }
+      
+      // Validate update data
+      const updateSchema = z.object({
+        fullName: z.string().optional(),
+        email: z.string().email().optional(),
+        role: z.string().optional(),
+        phone: z.string().optional(),
+        permissions: z.record(z.string(), z.boolean()).optional(),
+        notes: z.string().optional(),
+        verificationStatus: z.enum(['pending', 'verified', 'rejected']).optional()
+      });
+      
+      const parsed = updateSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ 
+          message: "Invalid update data",
+          errors: parsed.error.format()
+        });
+      }
+      
+      // If email is being updated, check it's not already in use
+      if (parsed.data.email && parsed.data.email !== party.email) {
+        const existingParty = await storage.getDisputePartyByEmail(parsed.data.email, disputeId);
+        if (existingParty) {
+          return res.status(400).json({ message: "A party with this email already exists in this dispute" });
+        }
+      }
+      
+      // Update the party
+      const updatedParty = await storage.updateDisputeParty(partyId, {
+        ...parsed.data,
+        updatedAt: new Date()
+      });
+      
+      res.json(updatedParty);
+    } catch (error) {
+      console.error("Party update error:", error);
+      res.status(500).json({ message: "Error updating dispute party" });
+    }
+  });
+  
+  app.delete("/api/disputes/:disputeId/parties/:partyId", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const disputeId = parseInt(req.params.disputeId);
+      const partyId = parseInt(req.params.partyId);
+      
+      if (isNaN(disputeId) || isNaN(partyId)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      // Verify the dispute exists and user has permission
+      const dispute = await storage.getDispute(disputeId);
+      if (!dispute) {
+        return res.status(404).json({ message: "Dispute not found" });
+      }
+      
+      if (dispute.userId !== req.user!.id) {
+        return res.status(403).json({ message: "Only the dispute creator can remove parties" });
+      }
+      
+      // Verify the party exists and belongs to this dispute
+      const party = await storage.getDisputeParty(partyId);
+      if (!party || party.disputeId !== disputeId) {
+        return res.status(404).json({ message: "Party not found in this dispute" });
+      }
+      
+      // Delete the party
+      await storage.deleteDisputeParty(partyId);
+      
+      res.json({ message: "Party removed successfully" });
+    } catch (error) {
+      console.error("Party deletion error:", error);
+      res.status(500).json({ message: "Error removing dispute party" });
     }
   });
   
@@ -931,14 +1160,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid dispute ID format" });
       }
       
-      // First verify that the dispute belongs to the user
+      // First verify that the dispute exists
       const dispute = await storage.getDispute(disputeId);
       if (!dispute) {
         return res.status(404).json({ message: "Dispute not found" });
       }
       
+      // Check if user is allowed to access
       if (dispute.userId !== req.user!.id) {
-        return res.status(403).json({ message: "Access denied" });
+        // Check if user is an involved party
+        const parties = await storage.getDisputePartiesByDisputeId(disputeId);
+        const userIsParty = parties.some(party => 
+          party.userId === req.user!.id || 
+          party.email === req.user!.username
+        );
+        
+        if (!userIsParty) {
+          return res.status(403).json({ message: "Access denied" });
+        }
       }
       
       const sessions = await storage.getMediationSessionsByDisputeId(disputeId);
@@ -956,14 +1195,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid dispute ID format" });
       }
       
-      // First verify that the dispute belongs to the user
+      // First verify that the dispute exists
       const dispute = await storage.getDispute(disputeId);
       if (!dispute) {
         return res.status(404).json({ message: "Dispute not found" });
       }
       
+      // Only the dispute creator can create mediation sessions
       if (dispute.userId !== req.user!.id) {
-        return res.status(403).json({ message: "Access denied" });
+        return res.status(403).json({ message: "Only the dispute creator can create mediation sessions" });
       }
       
       // Validate session data

@@ -179,7 +179,7 @@ export const disputes = pgTable("disputes", {
   userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }),
   title: text("title").notNull(),
   description: text("description").notNull(),
-  parties: text("parties").notNull(),
+  parties: text("parties").notNull(), // Legacy field, kept for backward compatibility
   status: text("status").notNull().default("pending"), // 'pending', 'active', 'mediation', 'resolved', 'closed'
   disputeType: text("dispute_type").notNull(), // 'landlord_tenant', 'employment', 'contract', 'family', 'business', 'other'
   supportingDocuments: jsonb("supporting_documents"),
@@ -189,6 +189,61 @@ export const disputes = pgTable("disputes", {
   resolvedAt: timestamp("resolved_at"),
   mediationId: integer("mediation_id"),
 });
+
+// Dispute parties schema
+export const disputeParties = pgTable("dispute_parties", {
+  id: serial("id").primaryKey(),
+  disputeId: integer("dispute_id").references(() => disputes.id, { onDelete: 'cascade' }),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone"),
+  role: text("role").notNull(), // 'claimant', 'respondent', 'mediator', 'witness', 'representative', etc.
+  userId: integer("user_id").references(() => users.id), // If the party has a user account
+  status: text("status").notNull().default("invited"), // 'invited', 'active', 'declined'
+  invitationCode: uuid("invitation_code").defaultRandom().notNull(),
+  verified: boolean("verified").default(false),
+  verificationStatus: text("verification_status").default("pending"),
+  verificationDocuments: jsonb("verification_documents"),
+  notificationPreferences: jsonb("notification_preferences").default({
+    email: true,
+    inApp: true,
+    textMessages: false
+  }),
+  contactAddress: text("contact_address"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  lastActiveAt: timestamp("last_active_at"),
+});
+
+export const insertDisputePartySchema = createInsertSchema(disputeParties).pick({
+  disputeId: true,
+  name: true,
+  email: true,
+  phone: true,
+  role: true,
+  userId: true,
+  status: true,
+  verificationStatus: true,
+  invitationCode: true,
+  verified: true,
+  contactAddress: true,
+  verificationDocuments: true,
+  notificationPreferences: true,
+}).extend({
+  userId: z.number().optional(),
+  phone: z.string().optional(),
+  status: z.string().optional(),
+  verificationStatus: z.string().optional(),
+  invitationCode: z.string().optional(),
+  verified: z.boolean().optional(),
+  contactAddress: z.string().optional(),
+  verificationDocuments: z.any().optional(),
+  notificationPreferences: z.any().optional(),
+  updatedAt: z.date().optional(),
+});
+
+export type InsertDisputeParty = z.infer<typeof insertDisputePartySchema>;
+export type DisputeParty = typeof disputeParties.$inferSelect;
 
 export const insertDisputeSchema = createInsertSchema(disputes).pick({
   userId: true,
@@ -381,6 +436,18 @@ export const disputesRelations = relations(disputes, ({ one, many }) => ({
     references: [users.id],
   }),
   mediationSessions: many(mediationSessions),
+  parties: many(disputeParties),
+}));
+
+export const disputePartiesRelations = relations(disputeParties, ({ one }) => ({
+  dispute: one(disputes, {
+    fields: [disputeParties.disputeId],
+    references: [disputes.id],
+  }),
+  user: one(users, {
+    fields: [disputeParties.userId],
+    references: [users.id],
+  }),
 }));
 
 export const mediationSessionsRelations = relations(mediationSessions, ({ one, many }) => ({

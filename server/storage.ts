@@ -7,6 +7,7 @@ import {
   contractAnalyses, type ContractAnalysis, type InsertContractAnalysis,
   complianceChecks, type ComplianceCheck, type InsertComplianceCheck,
   disputes, type Dispute, type InsertDispute,
+  disputeParties, type DisputeParty, type InsertDisputeParty,
   mediationSessions, type MediationSession, type InsertMediationSession,
   mediationMessages, type MediationMessage, type InsertMediationMessage,
   savedCitations, type SavedCitation, type InsertSavedCitation,
@@ -74,6 +75,15 @@ export interface IStorage {
   createDispute(dispute: InsertDispute): Promise<Dispute>;
   updateDispute(id: number, updates: Partial<Dispute>): Promise<Dispute | undefined>;
   getDisputesByStatus(statuses: string[]): Promise<Dispute[]>;
+  
+  // Dispute parties operations
+  getDisputePartiesByDisputeId(disputeId: number): Promise<DisputeParty[]>;
+  getDisputeParty(id: number): Promise<DisputeParty | undefined>;
+  getDisputePartyByEmail(email: string, disputeId: number): Promise<DisputeParty | undefined>;
+  getDisputePartyByInvitationCode(code: string): Promise<DisputeParty | undefined>;
+  createDisputeParty(party: InsertDisputeParty): Promise<DisputeParty>;
+  updateDisputeParty(id: number, updates: Partial<DisputeParty>): Promise<DisputeParty | undefined>;
+  deleteDisputeParty(id: number): Promise<void>;
   
   // Mediation session operations
   getMediationSessionsByDisputeId(disputeId: number): Promise<MediationSession[]>;
@@ -384,6 +394,67 @@ export class DatabaseStorage implements IStorage {
         sql`${disputes.status} = ANY(${statuses})`
       )
       .orderBy(desc(disputes.createdAt));
+  }
+
+  // Dispute parties operations
+  async getDisputePartiesByDisputeId(disputeId: number): Promise<DisputeParty[]> {
+    return await db
+      .select()
+      .from(disputeParties)
+      .where(eq(disputeParties.disputeId, disputeId))
+      .orderBy(disputeParties.role);
+  }
+
+  async getDisputeParty(id: number): Promise<DisputeParty | undefined> {
+    const [party] = await db
+      .select()
+      .from(disputeParties)
+      .where(eq(disputeParties.id, id));
+    return party;
+  }
+
+  async getDisputePartyByEmail(email: string, disputeId: number): Promise<DisputeParty | undefined> {
+    const [party] = await db
+      .select()
+      .from(disputeParties)
+      .where(
+        and(
+          eq(disputeParties.email, email),
+          eq(disputeParties.disputeId, disputeId)
+        )
+      );
+    return party;
+  }
+
+  async getDisputePartyByInvitationCode(code: string): Promise<DisputeParty | undefined> {
+    const [party] = await db
+      .select()
+      .from(disputeParties)
+      .where(eq(disputeParties.invitationCode, code));
+    return party;
+  }
+
+  async createDisputeParty(party: InsertDisputeParty): Promise<DisputeParty> {
+    const [newParty] = await db
+      .insert(disputeParties)
+      .values(party)
+      .returning();
+    return newParty;
+  }
+
+  async updateDisputeParty(id: number, updates: Partial<DisputeParty>): Promise<DisputeParty | undefined> {
+    const [updatedParty] = await db
+      .update(disputeParties)
+      .set(updates)
+      .where(eq(disputeParties.id, id))
+      .returning();
+    return updatedParty;
+  }
+
+  async deleteDisputeParty(id: number): Promise<void> {
+    await db
+      .delete(disputeParties)
+      .where(eq(disputeParties.id, id));
   }
 
   // Mediation session operations

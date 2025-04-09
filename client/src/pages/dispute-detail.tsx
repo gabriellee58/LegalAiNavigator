@@ -84,7 +84,7 @@ export default function DisputeDetailPage() {
     data: dispute,
     isLoading: isDisputeLoading,
     error: disputeError
-  } = useQuery({
+  } = useQuery<Dispute>({
     queryKey: ['/api/disputes', disputeId],
     enabled: !!disputeId && !!user,
   });
@@ -114,8 +114,19 @@ export default function DisputeDetailPage() {
     enabled: !!primarySession?.id && !!user,
   });
   
+  // Define session messages interface
+  interface MediationMessage {
+    id: number;
+    sessionId: number;
+    userId: number;
+    role: string;
+    content: string;
+    sentiment?: string;
+    createdAt: string;
+  }
+  
   // Extract messages from the combined session details
-  const mediationMessages = sessionDetails?.messages || [];
+  const mediationMessages: MediationMessage[] = sessionDetails && sessionDetails !== null && typeof sessionDetails === 'object' && 'messages' in sessionDetails ? sessionDetails.messages as MediationMessage[] : [];
   
   // Mutation to start a mediation session
   const startMediationMutation = useMutation({
