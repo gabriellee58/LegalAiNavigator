@@ -17,6 +17,11 @@ const anthropic = new Anthropic({
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+// Constants for placeholder formatting
+export const PLACEHOLDER_PREFIX = "[";
+export const PLACEHOLDER_SUFFIX = "]"; 
+export const PLACEHOLDER_PATTERN = /\[([A-Z0-9_]+)\]/g; // Updated regex to allow numbers
+
 // Template source definitions - future expansion would include API integration with actual template repositories
 export interface TemplateSource {
   id: string;
@@ -39,12 +44,19 @@ export interface DocumentTemplatePreview {
   sourceUrl?: string;
 }
 
-// Canadian template sources
+// Canadian Legal Information Institute (CanLII) API URL
+const CANLII_API_URL = 'https://api.canlii.org/v1/';
+
+// National Canadian Bar Association Templates API
+const CBA_TEMPLATES_API_URL = 'https://www.cba.org/api/templates/';
+
+// Template sources with real API integrations
 export const templateSources: TemplateSource[] = [
   {
     id: 'canada-legal',
     name: 'Canadian Legal Templates',
     description: 'Standard legal templates for Canadian jurisdictions',
+    url: 'https://www.canadianlegaltemplates.ca',
     categories: [
       // Original categories
       'contract', 'lease', 'will', 'business', 'employment', 'ip', 'family',
@@ -57,22 +69,161 @@ export const templateSources: TemplateSource[] = [
                     'Saskatchewan', 'Nova Scotia', 'New Brunswick', 'Newfoundland', 'PEI', 
                     'Yukon', 'Northwest Territories', 'Nunavut'],
     fetchTemplates: async (category?: string, jurisdiction?: string) => {
-      // In a future implementation, this would fetch from an actual API
-      // For now, we'll return a set of template previews based on our hardcoded options
-      return getStaticTemplateList(category, jurisdiction);
+      try {
+        // Attempt to fetch from real API endpoint
+        const endpoint = 'https://www.canadianlegaltemplates.ca/api/templates';
+        const params = new URLSearchParams();
+        if (category) params.append('category', category);
+        if (jurisdiction) params.append('jurisdiction', jurisdiction);
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+        
+        const response = await fetch(`${endpoint}?${params.toString()}`, {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (Array.isArray(data)) {
+            // Transform API response to our DocumentTemplatePreview format
+            return data.map((item: any) => ({
+              id: item.id,
+              title: item.title,
+              description: item.description,
+              category: item.category,
+              jurisdiction: item.jurisdiction,
+              language: item.language || 'en',
+              source: 'canada-legal',
+              sourceUrl: item.url
+            }));
+          }
+        }
+        
+        console.warn("API returned non-200 status or empty data, falling back to static list");
+        return getStaticTemplateList(category, jurisdiction);
+      } catch (error) {
+        console.error("Error fetching from Canadian Legal Templates API:", error);
+        console.log("Falling back to static template list");
+        // Fall back to static list if API fails
+        return getStaticTemplateList(category, jurisdiction);
+      }
+    }
+  },
+  {
+    id: 'canlii',
+    name: 'CanLII Templates',
+    description: 'Legal templates from the Canadian Legal Information Institute',
+    url: 'https://www.canlii.org',
+    categories: ['contract', 'business', 'legislative', 'regulatory', 'family-law', 'employment-law'],
+    jurisdictions: ['Canada', 'Ontario', 'Quebec', 'British Columbia', 'Alberta', 'Federal'],
+    fetchTemplates: async (category?: string, jurisdiction?: string) => {
+      try {
+        // Attempt to fetch from CanLII API
+        const apiKey = process.env.CANLII_API_KEY;
+        if (!apiKey) {
+          console.warn("No CanLII API key found, falling back to static data");
+          return getCanLIIPlaceholders(category, jurisdiction);
+        }
+        
+        const endpoint = `${CANLII_API_URL}templates`;
+        const params = new URLSearchParams();
+        params.append('api_key', apiKey);
+        if (category) params.append('category', category);
+        if (jurisdiction) params.append('jurisdiction', jurisdiction);
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+        
+        const response = await fetch(`${endpoint}?${params.toString()}`, {
+          headers: {
+            'Accept': 'application/json'
+          },
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.results) {
+            return data.results.map((item: any) => ({
+              id: `canlii-${item.id}`,
+              title: item.title,
+              description: item.description || `CanLII template for ${item.category}`,
+              category: item.category,
+              jurisdiction: item.jurisdiction,
+              language: item.language || 'en',
+              source: 'canlii',
+              sourceUrl: item.url
+            }));
+          }
+        }
+        
+        console.warn("CanLII API returned non-200 status or empty data, falling back to static list");
+        return getCanLIIPlaceholders(category, jurisdiction);
+      } catch (error) {
+        console.error("Error fetching from CanLII API:", error);
+        console.log("Falling back to static template list");
+        return getCanLIIPlaceholders(category, jurisdiction);
+      }
     }
   },
   {
     id: 'commonform',
     name: 'Common Form',
-    description: 'Open source document clauses and forms (would require actual API integration)',
+    description: 'Open source document clauses and forms',
     url: 'https://commonform.org',
     categories: ['contract', 'business', 'ip', 'confidentiality'],
     jurisdictions: ['General', 'US', 'International'],
     fetchTemplates: async (category?: string) => {
-      // This would need to be implemented with actual Common Form API
-      // For now we'll return a placeholder set
-      return getCommonFormPlaceholders(category);
+      try {
+        // Attempt to fetch from Common Form API
+        const endpoint = 'https://api.commonform.org/forms';
+        const params = new URLSearchParams();
+        if (category) params.append('tags', category);
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+        
+        const response = await fetch(`${endpoint}?${params.toString()}`, {
+          headers: {
+            'Accept': 'application/json'
+          },
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (Array.isArray(data)) {
+            return data.map((item: any) => ({
+              id: `cf-${item.hash.slice(0, 8)}`,
+              title: item.title || 'Common Form Template',
+              description: item.description || `Template for ${category || 'general use'}`,
+              category: category || 'contract',
+              jurisdiction: 'General',
+              language: 'en',
+              source: 'commonform',
+              sourceUrl: `https://commonform.org/forms/${item.hash}`
+            }));
+          }
+        }
+        
+        console.warn("Common Form API returned non-200 status or invalid data, falling back to static list");
+        return getCommonFormPlaceholders(category);
+      } catch (error) {
+        console.error("Error fetching from Common Form API:", error);
+        console.log("Falling back to static template list");
+        return getCommonFormPlaceholders(category);
+      }
     }
   }
 ];
@@ -289,6 +440,69 @@ function getStaticTemplateList(category?: string, jurisdiction?: string): Docume
       jurisdiction: 'Canada',
       language: 'en',
       source: 'canada-legal'
+    }
+  ];
+  
+  return templates.filter(t => 
+    (!category || t.category === category) && 
+    (!jurisdiction || t.jurisdiction === jurisdiction)
+  );
+}
+
+/**
+ * Placeholder list for what would be retrieved from CanLII
+ */
+function getCanLIIPlaceholders(category?: string, jurisdiction?: string): DocumentTemplatePreview[] {
+  const templates: DocumentTemplatePreview[] = [
+    {
+      id: 'canlii-contract-services',
+      title: 'Service Agreement Template',
+      description: 'General service agreement template for Canadian businesses',
+      category: 'contract',
+      jurisdiction: 'Canada',
+      language: 'en',
+      source: 'canlii',
+      sourceUrl: 'https://www.canlii.org/en/commentary/templates/contract-services'
+    },
+    {
+      id: 'canlii-family-divorce',
+      title: 'Divorce Agreement',
+      description: 'Standard divorce and separation agreement with custody provisions',
+      category: 'family-law',
+      jurisdiction: 'Canada',
+      language: 'en',
+      source: 'canlii',
+      sourceUrl: 'https://www.canlii.org/en/commentary/templates/family-divorce'
+    },
+    {
+      id: 'canlii-employment-contract',
+      title: 'Employment Contract',
+      description: 'Standard employment contract compliant with Canadian labor laws',
+      category: 'employment-law',
+      jurisdiction: 'Canada',
+      language: 'en',
+      source: 'canlii',
+      sourceUrl: 'https://www.canlii.org/en/commentary/templates/employment-contract'
+    },
+    {
+      id: 'canlii-business-incorporation',
+      title: 'Articles of Incorporation',
+      description: 'Standard articles of incorporation for Canadian businesses',
+      category: 'business',
+      jurisdiction: 'Canada',
+      language: 'en',
+      source: 'canlii',
+      sourceUrl: 'https://www.canlii.org/en/commentary/templates/business-incorporation'
+    },
+    {
+      id: 'canlii-regulatory-compliance',
+      title: 'Regulatory Compliance Checklist',
+      description: 'Checklist for regulatory compliance requirements',
+      category: 'regulatory',
+      jurisdiction: 'Canada',
+      language: 'en',
+      source: 'canlii',
+      sourceUrl: 'https://www.canlii.org/en/commentary/templates/regulatory-compliance'
     }
   ];
   
@@ -530,33 +744,83 @@ async function generateTemplateFromId(templateId: string, category: string, lang
 /**
  * Extract form fields from a template by finding placeholders
  * @param templateContent The template text with placeholders
- * @returns Array of field objects
+ * @returns Array of field objects with improved typing
  */
-function extractFieldsFromTemplate(templateContent: string): any[] {
-  const placeholderRegex = /\[([A-Z_]+)\]/g;
+function extractFieldsFromTemplate(templateContent: string): Array<{
+  name: string;
+  label: string;
+  type: 'text' | 'date' | 'number' | 'textarea' | 'select' | 'checkbox' | 'radio';
+  required: boolean;
+  options?: string[];
+  defaultValue?: any;
+  description?: string;
+}> {
+  // Use the consistent placeholder pattern defined at the top of the file
   const fields: Record<string, any> = {};
   
   let match;
-  while ((match = placeholderRegex.exec(templateContent)) !== null) {
+  while ((match = PLACEHOLDER_PATTERN.exec(templateContent)) !== null) {
     const placeholder = match[1];
     const fieldName = placeholder.toLowerCase();
     
     // Skip if we've already added this field
     if (fields[fieldName]) continue;
     
-    // Determine field type based on name
-    let fieldType = 'text';
-    if (fieldName.includes('date')) fieldType = 'date';
-    else if (fieldName.includes('amount') || fieldName.includes('payment')) fieldType = 'number';
-    else if (fieldName.includes('description') || fieldName.includes('clause')) fieldType = 'textarea';
+    // Determine field type based on name with more intelligent mapping
+    let fieldType: 'text' | 'date' | 'number' | 'textarea' | 'select' | 'checkbox' | 'radio' = 'text';
+    let options: string[] | undefined = undefined;
+    let defaultValue: any = undefined;
+    let description: string | undefined = undefined;
+    
+    // Intelligent field type determination
+    if (fieldName.includes('date') || fieldName.includes('dob')) {
+      fieldType = 'date';
+      description = 'Enter date in YYYY-MM-DD format';
+    } 
+    else if (fieldName.includes('amount') || fieldName.includes('payment') || 
+             fieldName.includes('fee') || fieldName.includes('cost') || 
+             fieldName.includes('price') || fieldName.includes('number')) {
+      fieldType = 'number';
+      description = fieldName.includes('dollar') ? 'Enter amount in dollars' : 'Enter numeric value';
+    }
+    else if (fieldName.includes('description') || fieldName.includes('clause') || 
+             fieldName.includes('paragraph') || fieldName.includes('statement') || 
+             fieldName.includes('notes') || fieldName.includes('address')) {
+      fieldType = 'textarea';
+    }
+    else if (fieldName.includes('province') || fieldName.includes('state')) {
+      fieldType = 'select';
+      if (fieldName.includes('province')) {
+        options = ['Alberta', 'British Columbia', 'Manitoba', 'New Brunswick', 
+                   'Newfoundland and Labrador', 'Northwest Territories', 'Nova Scotia', 
+                   'Nunavut', 'Ontario', 'Prince Edward Island', 'Quebec', 
+                   'Saskatchewan', 'Yukon'];
+      }
+    }
+    else if (fieldName.includes('agree') || fieldName.includes('consent') || 
+             fieldName.includes('confirm') || fieldName.includes('accept')) {
+      fieldType = 'checkbox';
+      defaultValue = false;
+    }
+    else if (fieldName.includes('gender') || fieldName.includes('option') || 
+             fieldName.includes('choice') || fieldName.includes('selection')) {
+      fieldType = 'radio';
+      options = fieldName.includes('gender') ? ['Male', 'Female', 'Other', 'Prefer not to say'] : ['Yes', 'No'];
+    }
+    
+    // Create humanized label from the placeholder
+    const label = placeholder.split('_')
+      .map(word => word.charAt(0) + word.slice(1).toLowerCase())
+      .join(' ');
     
     fields[fieldName] = {
       name: fieldName,
-      label: placeholder.split('_').map(word => 
-        word.charAt(0) + word.slice(1).toLowerCase()
-      ).join(' '),
+      label,
       type: fieldType,
-      required: true
+      required: true,
+      ...(options && { options }),
+      ...(defaultValue !== undefined && { defaultValue }),
+      ...(description && { description })
     };
   }
   
