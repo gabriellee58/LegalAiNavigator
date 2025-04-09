@@ -125,12 +125,29 @@ export default function EnhancedDocGenForm({ template }: EnhancedDocGenFormProps
       }
     },
     onSuccess: (documentContent: string) => {
-      setGeneratedDocument(documentContent);
-      setActiveTab("preview");
-      toast({
-        title: t("document_generated"),
-        description: t("document_enhanced_success"),
-      });
+      console.log("Enhanced document generated successfully, length:", documentContent?.length || 0);
+      
+      // Ensure we have document content
+      if (documentContent && documentContent.length > 0) {
+        setGeneratedDocument(documentContent);
+        
+        // Use setTimeout to ensure state is updated before tab switch
+        setTimeout(() => {
+          setActiveTab("preview");
+        }, 100);
+        
+        toast({
+          title: t("document_generated"),
+          description: t("document_enhanced_success"),
+        });
+      } else {
+        console.error("Enhanced document generation succeeded but returned empty content");
+        toast({
+          title: "Document Generation Issue",
+          description: "The enhanced document was generated but the content appears to be empty. Please try again.",
+          variant: "destructive",
+        });
+      }
     },
     onError: (error: Error) => {
       console.error("Document generation error:", error);
@@ -169,9 +186,20 @@ export default function EnhancedDocGenForm({ template }: EnhancedDocGenFormProps
   
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="mb-4">
-        <TabsTrigger value="form">{t("form")}</TabsTrigger>
-        <TabsTrigger value="preview">{t("preview")}</TabsTrigger>
+      <TabsList className="grid w-full grid-cols-2 mb-4">
+        <TabsTrigger value="form" className="flex items-center">
+          <span className="material-icons mr-2 text-sm">edit</span>
+          {t("form")}
+        </TabsTrigger>
+        <TabsTrigger 
+          value="preview" 
+          disabled={!generatedDocument}
+          className={`flex items-center ${!generatedDocument ? "opacity-50 cursor-not-allowed" : ""}`}
+        >
+          <span className="material-icons mr-2 text-sm">visibility</span>
+          {t("preview")}
+          {!generatedDocument && <span className="ml-2 text-xs text-muted-foreground">(Generate first)</span>}
+        </TabsTrigger>
       </TabsList>
       
       <TabsContent value="form">

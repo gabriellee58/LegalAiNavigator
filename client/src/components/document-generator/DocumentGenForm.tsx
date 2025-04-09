@@ -24,53 +24,12 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
   const [activeTab, setActiveTab] = useState("form");
   const [generatedDocument, setGeneratedDocument] = useState<string | null>(null);
   
-  // Initialize form with default values and validation
+  // Initialize form with default values
   const form = useForm({
     defaultValues: (template.fields as any[]).reduce((acc: Record<string, string>, field: any) => {
       acc[field.name] = "";
       return acc;
     }, {} as Record<string, string>),
-    // Add basic validation
-    validate: (values) => {
-      const errors: Record<string, string> = {};
-      
-      // Validate each field based on type and required status
-      for (const field of template.fields as any[]) {
-        // Skip validation for non-required empty fields
-        if (!field.required && (!values[field.name] || values[field.name].trim() === "")) {
-          continue;
-        }
-        
-        // Required field validation
-        if (field.required && (!values[field.name] || values[field.name].trim() === "")) {
-          errors[field.name] = `${field.label} is required`;
-          continue;
-        }
-        
-        // Type-specific validation
-        if (field.type === 'email' && values[field.name]) {
-          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-          if (!emailRegex.test(values[field.name])) {
-            errors[field.name] = "Please enter a valid email address";
-          }
-        }
-        
-        if (field.type === 'number' && values[field.name]) {
-          if (isNaN(Number(values[field.name]))) {
-            errors[field.name] = "Please enter a valid number";
-          }
-        }
-        
-        if (field.type === 'date' && values[field.name]) {
-          const dateValue = new Date(values[field.name]);
-          if (dateValue.toString() === 'Invalid Date') {
-            errors[field.name] = "Please enter a valid date";
-          }
-        }
-      }
-      
-      return Object.keys(errors).length > 0 ? errors : undefined;
-    }
   });
   
   // Generate document mutation
@@ -83,12 +42,29 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
         data
       ),
     onSuccess: (data: any) => {
-      setGeneratedDocument(data.documentContent);
-      setActiveTab("preview");
-      toast({
-        title: "Document Generated",
-        description: "Your document has been successfully generated.",
-      });
+      console.log("Document generation successful, response:", data);
+      
+      // Ensure we have document content
+      if (data && data.documentContent) {
+        setGeneratedDocument(data.documentContent);
+        
+        // Use setTimeout to ensure state is updated before tab switch
+        setTimeout(() => {
+          setActiveTab("preview");
+        }, 100);
+        
+        toast({
+          title: "Document Generated",
+          description: "Your document has been successfully generated. You can now preview and download it.",
+        });
+      } else {
+        console.error("Document generation succeeded but no content was returned:", data);
+        toast({
+          title: "Document Generation Issue",
+          description: "The document was generated but the content is missing. Please try again.",
+          variant: "destructive",
+        });
+      }
     },
     onError: (error: Error) => {
       console.error("Document generation error:", error);
@@ -126,9 +102,20 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
   
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="form">{t("fill_details")}</TabsTrigger>
-        <TabsTrigger value="preview" disabled={!generatedDocument}>{t("preview_document")}</TabsTrigger>
+      <TabsList className="grid w-full grid-cols-2 mb-4">
+        <TabsTrigger value="form" className="flex items-center">
+          <span className="material-icons mr-2 text-sm">edit</span>
+          {t("fill_details")}
+        </TabsTrigger>
+        <TabsTrigger 
+          value="preview" 
+          disabled={!generatedDocument}
+          className={`flex items-center ${!generatedDocument ? "opacity-50 cursor-not-allowed" : ""}`}
+        >
+          <span className="material-icons mr-2 text-sm">visibility</span>
+          {t("preview_document")}
+          {!generatedDocument && <span className="ml-2 text-xs text-muted-foreground">(Generate first)</span>}
+        </TabsTrigger>
       </TabsList>
       
       <TabsContent value="form" className="mt-4">

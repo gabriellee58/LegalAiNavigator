@@ -70,10 +70,26 @@ export const generateDocument = async (
   // Replace template variables with form data
   let documentContent = template.templateContent;
   
+  // Process placeholders with different formats: {{variable}}, [VARIABLE], and [Variable]
   for (const [key, value] of Object.entries(documentData)) {
-    const placeholder = new RegExp(`\\[${key.toUpperCase()}\\]`, 'g');
-    documentContent = documentContent.replace(placeholder, value.toString());
+    // Skip undefined or null values to prevent "undefined" or "null" strings in document
+    if (value === undefined || value === null) continue;
+    
+    // Handle {{variable}} format (common in templates)
+    const mustachePlaceholder = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'gi');
+    documentContent = documentContent.replace(mustachePlaceholder, value.toString());
+    
+    // Handle [VARIABLE] format (uppercase)
+    const uppercasePlaceholder = new RegExp(`\\[${key.toUpperCase()}\\]`, 'g');
+    documentContent = documentContent.replace(uppercasePlaceholder, value.toString());
+    
+    // Handle [Variable] format (capitalized)
+    const capitalizedKey = key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
+    const capitalizedPlaceholder = new RegExp(`\\[${capitalizedKey}\\]`, 'g');
+    documentContent = documentContent.replace(capitalizedPlaceholder, value.toString());
   }
+  
+  console.log("Generated document content length:", documentContent.length);
   
   // Save the generated document
   return await apiRequest("POST", "/api/documents", {
