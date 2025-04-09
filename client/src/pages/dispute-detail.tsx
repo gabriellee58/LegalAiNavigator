@@ -354,7 +354,7 @@ export default function DisputeDetailPage() {
               </span>
               <span className="flex items-center gap-1">
                 <Calendar className="h-3.5 w-3.5" />
-                {new Date(dispute.createdAt).toLocaleDateString()}
+                {dispute.createdAt ? new Date(dispute.createdAt).toLocaleDateString() : '-'}
               </span>
             </div>
           </div>
@@ -443,11 +443,11 @@ export default function DisputeDetailPage() {
                   <CardContent className="space-y-4">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{t("created")}</span>
-                      <span>{format(new Date(dispute.createdAt), 'PP')}</span>
+                      <span>{dispute.createdAt ? format(new Date(dispute.createdAt), 'PP') : '-'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{t("updated")}</span>
-                      <span>{format(new Date(dispute.updatedAt), 'PP')}</span>
+                      <span>{dispute.updatedAt ? format(new Date(dispute.updatedAt), 'PP') : '-'}</span>
                     </div>
                     {dispute.resolvedAt && (
                       <div className="flex justify-between">
@@ -488,7 +488,7 @@ export default function DisputeDetailPage() {
                       {primarySession.scheduledAt && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">{t("scheduled_for")}</span>
-                          <span>{format(new Date(primarySession.scheduledAt), 'PPp')}</span>
+                          <span>{primarySession.scheduledAt ? format(new Date(primarySession.scheduledAt), 'PPp') : '-'}</span>
                         </div>
                       )}
                       <div className="flex justify-between">
@@ -637,7 +637,7 @@ export default function DisputeDetailPage() {
                                    message.userId === user?.id ? t('you') : t('other_party')}
                                 </span>
                                 <span>•</span>
-                                <span>{format(new Date(message.createdAt), 'p')}</span>
+                                <span>{message.createdAt ? format(new Date(message.createdAt), 'p') : '-'}</span>
                               </div>
                               <div 
                                 className={`px-4 py-3 rounded-lg max-w-[80%] ${
@@ -700,18 +700,18 @@ export default function DisputeDetailPage() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">{t("created")}</span>
-                        <span>{format(new Date(primarySession.createdAt), 'PP')}</span>
+                        <span>{primarySession.createdAt ? format(new Date(primarySession.createdAt), 'PP') : '-'}</span>
                       </div>
                       {primarySession.scheduledAt && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">{t("scheduled")}</span>
-                          <span>{format(new Date(primarySession.scheduledAt), 'PPp')}</span>
+                          <span>{primarySession.scheduledAt ? format(new Date(primarySession.scheduledAt), 'PPp') : '-'}</span>
                         </div>
                       )}
                       {primarySession.completedAt && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">{t("completed")}</span>
-                          <span>{format(new Date(primarySession.completedAt), 'PP')}</span>
+                          <span>{primarySession.completedAt ? format(new Date(primarySession.completedAt), 'PP') : '-'}</span>
                         </div>
                       )}
                       <Separator />
