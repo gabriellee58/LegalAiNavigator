@@ -503,14 +503,14 @@ export default function DisputeResolutionPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <Select
-                        value={statusFilter || ""}
-                        onValueChange={(value) => setStatusFilter(value === "" ? null : value)}
+                        value={statusFilter || "all"}
+                        onValueChange={(value) => setStatusFilter(value === "all" ? null : value)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder={t("filter_status")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">{t("all_statuses")}</SelectItem>
+                          <SelectItem value="all">{t("all_statuses")}</SelectItem>
                           <SelectItem value="pending">{t("pending")}</SelectItem>
                           <SelectItem value="active">{t("active")}</SelectItem>
                           <SelectItem value="mediation">{t("in_mediation")}</SelectItem>
@@ -518,14 +518,14 @@ export default function DisputeResolutionPage() {
                       </Select>
                       
                       <Select
-                        value={typeFilter || ""}
-                        onValueChange={(value) => setTypeFilter(value === "" ? null : value)}
+                        value={typeFilter || "all"}
+                        onValueChange={(value) => setTypeFilter(value === "all" ? null : value)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder={t("filter_type")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">{t("all_types")}</SelectItem>
+                          <SelectItem value="all">{t("all_types")}</SelectItem>
                           <SelectItem value="contract">{t("contract_dispute")}</SelectItem>
                           <SelectItem value="property">{t("property_dispute")}</SelectItem>
                           <SelectItem value="family">{t("family_dispute")}</SelectItem>
