@@ -22,6 +22,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import AdvancedProcedureView from '@/components/court-procedures/AdvancedProcedureView';
 
 // Court Procedure Types
 interface ProcedureCategory {
@@ -992,14 +993,30 @@ const CourtProceduresPage: React.FC = () => {
                   </div>
                 )}
 
+                {/* Divider before the Advanced Features section */}
+                <div className="my-10">
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                        Advanced Features
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Phase 3: Advanced Features */}
+                <AdvancedProcedureView 
+                  procedureDetail={procedureDetail}
+                  userProcedureDetail={userProcedureDetail}
+                  userId={user?.id}
+                />
+
                 {user && (
-                  <div className="flex justify-center pt-4">
-                    <Button size="lg" onClick={() => {
-                      toast({
-                        title: "Feature Coming Soon",
-                        description: "Starting your own procedure will be available soon.",
-                      });
-                    }}>
+                  <div className="flex justify-center pt-8">
+                    <Button size="lg" onClick={() => handleStartProcedureClick(procedureDetail.id)}>
                       Start This Procedure
                     </Button>
                   </div>

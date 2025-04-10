@@ -1,34 +1,53 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  StickyNote, Bell, CheckSquare, Plus, Edit2, Trash2, 
-  Save, Calendar, AlertCircle, Clock, CircleCheck, 
-  Circle, CheckCircle, MoreVertical
-} from 'lucide-react';
-import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { 
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
+import {
+  Tabs, TabsContent, TabsList, TabsTrigger
+} from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { 
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
-} from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
-import { toast } from '@/hooks/use-toast';
-import { ProcedureStep } from '@/types/court-procedures';
+import { 
+  StickyNote, Plus, Bell, Calendar as CalendarIcon, CheckSquare, Save, FileText as FileIcon,
+  Trash2, Clock, Edit, Check, X, AlertCircle, Info
+} from 'lucide-react';
+
+// Temporary interfaces until we properly migrate them
+interface ProcedureStep {
+  id: number;
+  procedureId: number;
+  title: string;
+  description: string;
+  stepOrder: number;
+  estimatedTime?: string;
+  requiredDocuments?: string[];
+  instructions?: string;
+  tips?: string[];
+  warnings?: string[];
+  fees?: Record<string, string>;
+  isOptional: boolean;
+  nextStepIds?: number[];
+  alternatePathInfo?: string | null;
+  sourceReferences?: { name: string; url: string }[];
+}
 
 interface PersonalizationProps {
   procedureId: number;
@@ -36,33 +55,7 @@ interface PersonalizationProps {
   userProcedureId?: number;
 }
 
-interface Note {
-  id: number;
-  stepId: number;
-  content: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-interface Reminder {
-  id: number;
-  title: string;
-  description?: string;
-  dueDate: Date;
-  notifyBefore: number; // days
-  isCompleted: boolean;
-  stepId?: number;
-}
-
-interface ChecklistItem {
-  id: number;
-  text: string;
-  isCompleted: boolean;
-  stepId?: number;
-  category?: string;
-}
-
-export const Personalization: React.FC<PersonalizationProps> = ({
+const Personalization: React.FC<PersonalizationProps> = ({
   procedureId,
   steps,
   userProcedureId
@@ -70,637 +63,682 @@ export const Personalization: React.FC<PersonalizationProps> = ({
   const [activeTab, setActiveTab] = useState<string>('notes');
   
   // Notes state
-  const [notes, setNotes] = useState<Note[]>([]);
+  const [notes, setNotes] = useState<any[]>([
+    {
+      id: 1,
+      stepId: 1,
+      content: "Need to gather all supporting documents before filing the Notice of Civil Claim",
+      createdAt: "2025-04-01T10:30:00Z"
+    },
+    {
+      id: 2,
+      stepId: null,
+      content: "Schedule appointment with legal counsel to discuss strategy for the case",
+      createdAt: "2025-04-03T14:15:00Z"
+    }
+  ]);
   const [newNote, setNewNote] = useState<string>('');
+  const [selectedStepId, setSelectedStepId] = useState<number | null>(null);
   const [editingNoteId, setEditingNoteId] = useState<number | null>(null);
-  const [selectedStepForNote, setSelectedStepForNote] = useState<number | null>(null);
+  const [editingNoteContent, setEditingNoteContent] = useState<string>('');
   
   // Reminders state
-  const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [reminders, setReminders] = useState<any[]>([
+    {
+      id: 1,
+      title: "File Notice of Civil Claim",
+      stepId: 1,
+      dueDate: new Date("2025-05-15"),
+      notifyBefore: 3,
+      notifyMethod: "email",
+      isCompleted: false,
+      createdAt: "2025-04-02T09:00:00Z"
+    },
+    {
+      id: 2,
+      title: "Serve documents to other party",
+      stepId: 2,
+      dueDate: new Date("2025-05-20"),
+      notifyBefore: 2,
+      notifyMethod: "app",
+      isCompleted: false,
+      createdAt: "2025-04-03T11:30:00Z"
+    }
+  ]);
   const [newReminderTitle, setNewReminderTitle] = useState<string>('');
-  const [newReminderDescription, setNewReminderDescription] = useState<string>('');
   const [newReminderDate, setNewReminderDate] = useState<Date | undefined>(undefined);
   const [newReminderDays, setNewReminderDays] = useState<number>(1);
-  const [newReminderStep, setNewReminderStep] = useState<number | undefined>(undefined);
+  const [addReminderDialogOpen, setAddReminderDialogOpen] = useState<boolean>(false);
   
   // Checklist state
-  const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
+  const [checklist, setChecklist] = useState<any[]>([
+    {
+      id: 1,
+      stepId: 1,
+      text: "Collect all required documents",
+      isCompleted: true,
+      category: "preparation",
+      createdAt: "2025-04-01T10:00:00Z"
+    },
+    {
+      id: 2,
+      stepId: 1,
+      text: "Fill out Notice of Civil Claim form",
+      isCompleted: false,
+      category: "preparation",
+      createdAt: "2025-04-01T10:05:00Z"
+    },
+    {
+      id: 3,
+      stepId: 2,
+      text: "Make copies of all documents",
+      isCompleted: false,
+      category: "preparation",
+      createdAt: "2025-04-03T14:30:00Z"
+    }
+  ]);
   const [newChecklistItem, setNewChecklistItem] = useState<string>('');
-  const [newItemCategory, setNewItemCategory] = useState<string>('general');
-  const [newItemStep, setNewItemStep] = useState<number | undefined>(undefined);
+  const [selectedChecklistCategory, setSelectedChecklistCategory] = useState<string>("preparation");
   
-  // Add new note
+  // Handle add note
   const handleAddNote = () => {
     if (!newNote.trim()) return;
     
-    const newNoteObj: Note = {
-      id: Date.now(), // Temporary ID, would be replaced by server
-      stepId: selectedStepForNote || 0,
+    const newNoteObj = {
+      id: notes.length + 1,
+      stepId: selectedStepId,
       content: newNote,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      createdAt: new Date().toISOString()
     };
     
     setNotes([...notes, newNoteObj]);
     setNewNote('');
-    setSelectedStepForNote(null);
-    
-    toast({
-      title: "Note Added",
-      description: "Your note has been saved successfully."
-    });
+    setSelectedStepId(null);
   };
   
-  // Update existing note
-  const handleUpdateNote = (noteId: number, content: string) => {
+  // Handle edit note
+  const handleEditNote = (note: any) => {
+    setEditingNoteId(note.id);
+    setEditingNoteContent(note.content);
+  };
+  
+  // Handle save note edit
+  const handleSaveNoteEdit = (noteId: number) => {
+    if (!editingNoteContent.trim()) return;
+    
     setNotes(notes.map(note => 
       note.id === noteId 
-        ? { ...note, content, updatedAt: new Date() } 
+        ? {...note, content: editingNoteContent } 
         : note
     ));
     
     setEditingNoteId(null);
-    
-    toast({
-      title: "Note Updated",
-      description: "Your note has been updated successfully."
-    });
+    setEditingNoteContent('');
   };
   
-  // Delete note
+  // Handle delete note
   const handleDeleteNote = (noteId: number) => {
     setNotes(notes.filter(note => note.id !== noteId));
-    
-    toast({
-      title: "Note Deleted",
-      description: "Your note has been deleted."
-    });
   };
   
-  // Add new reminder
+  // Handle add reminder
   const handleAddReminder = () => {
     if (!newReminderTitle.trim() || !newReminderDate) return;
     
-    const newReminderObj: Reminder = {
-      id: Date.now(), // Temporary ID
+    const newReminderObj = {
+      id: reminders.length + 1,
       title: newReminderTitle,
-      description: newReminderDescription,
+      stepId: selectedStepId,
       dueDate: newReminderDate,
       notifyBefore: newReminderDays,
+      notifyMethod: "app",
       isCompleted: false,
-      stepId: newReminderStep
+      createdAt: new Date().toISOString()
     };
     
     setReminders([...reminders, newReminderObj]);
     setNewReminderTitle('');
-    setNewReminderDescription('');
     setNewReminderDate(undefined);
     setNewReminderDays(1);
-    setNewReminderStep(undefined);
-    
-    toast({
-      title: "Reminder Added",
-      description: "Your reminder has been set successfully."
-    });
+    setSelectedStepId(null);
+    setAddReminderDialogOpen(false);
   };
   
-  // Toggle reminder completion
-  const toggleReminderCompletion = (reminderId: number) => {
+  // Handle toggle reminder completion
+  const handleToggleReminder = (reminderId: number) => {
     setReminders(reminders.map(reminder => 
       reminder.id === reminderId 
-        ? { ...reminder, isCompleted: !reminder.isCompleted } 
+        ? {...reminder, isCompleted: !reminder.isCompleted } 
         : reminder
     ));
   };
   
-  // Delete reminder
+  // Handle delete reminder
   const handleDeleteReminder = (reminderId: number) => {
     setReminders(reminders.filter(reminder => reminder.id !== reminderId));
-    
-    toast({
-      title: "Reminder Deleted",
-      description: "Your reminder has been deleted."
-    });
   };
   
-  // Add new checklist item
+  // Handle add checklist item
   const handleAddChecklistItem = () => {
     if (!newChecklistItem.trim()) return;
     
-    const newItem: ChecklistItem = {
-      id: Date.now(), // Temporary ID
+    const newItem = {
+      id: checklist.length + 1,
+      stepId: selectedStepId,
       text: newChecklistItem,
       isCompleted: false,
-      stepId: newItemStep,
-      category: newItemCategory
+      category: selectedChecklistCategory,
+      createdAt: new Date().toISOString()
     };
     
     setChecklist([...checklist, newItem]);
     setNewChecklistItem('');
-    setNewItemCategory('general');
-    setNewItemStep(undefined);
-    
-    toast({
-      title: "Checklist Item Added",
-      description: "Your checklist item has been added."
-    });
   };
   
-  // Toggle checklist item completion
-  const toggleChecklistItemCompletion = (itemId: number) => {
+  // Handle toggle checklist item
+  const handleToggleChecklistItem = (itemId: number) => {
     setChecklist(checklist.map(item => 
       item.id === itemId 
-        ? { ...item, isCompleted: !item.isCompleted } 
+        ? {...item, isCompleted: !item.isCompleted } 
         : item
     ));
   };
   
-  // Delete checklist item
+  // Handle delete checklist item
   const handleDeleteChecklistItem = (itemId: number) => {
     setChecklist(checklist.filter(item => item.id !== itemId));
-    
-    toast({
-      title: "Checklist Item Deleted",
-      description: "Your checklist item has been removed."
-    });
   };
   
-  // Group checklist items by category
-  const checklistByCategory = checklist.reduce<Record<string, ChecklistItem[]>>(
-    (acc, item) => {
-      const category = item.category || 'general';
-      if (!acc[category]) {
-        acc[category] = [];
-      }
-      acc[category].push(item);
-      return acc;
-    }, 
-    {}
-  );
-
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <StickyNote className="h-5 w-5 text-primary" />
-          Personalization
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <Tabs defaultValue="notes" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-3 mb-4">
-            <TabsTrigger value="notes" className="flex items-center gap-1">
-              <StickyNote className="h-4 w-4" />
-              Notes
-            </TabsTrigger>
-            <TabsTrigger value="reminders" className="flex items-center gap-1">
-              <Bell className="h-4 w-4" />
-              Reminders
-            </TabsTrigger>
-            <TabsTrigger value="checklist" className="flex items-center gap-1">
-              <CheckSquare className="h-4 w-4" />
-              Checklist
-            </TabsTrigger>
-          </TabsList>
-          
-          {/* Notes Tab */}
-          <TabsContent value="notes" className="space-y-4">
-            <div className="space-y-3">
-              <div className="flex flex-col gap-3">
-                <div>
-                  <Label htmlFor="new-note">Add a Note</Label>
-                  <div className="flex gap-2 mt-1 items-start">
-                    <Select 
-                      value={selectedStepForNote?.toString() || ''}
-                      onValueChange={(value) => setSelectedStepForNote(value ? parseInt(value) : null)}
-                    >
-                      <SelectTrigger className="max-w-[180px]">
-                        <SelectValue placeholder="Related Step (Optional)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">General Note</SelectItem>
-                        {steps.map(step => (
-                          <SelectItem key={step.id} value={step.id.toString()}>
-                            Step {step.stepOrder}: {step.title.substring(0, 20)}...
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <div className="flex-grow">
-                      <Textarea 
-                        id="new-note" 
-                        placeholder="Enter your note here..." 
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <StickyNote className="h-5 w-5 text-primary" />
+            Personalization Tools
+          </CardTitle>
+          <CardDescription>
+            Keep track of your own notes, reminders, and custom checklist items
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="notes" value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="notes" className="flex items-center gap-1">
+                <StickyNote className="h-4 w-4" />
+                Notes
+              </TabsTrigger>
+              <TabsTrigger value="reminders" className="flex items-center gap-1">
+                <Bell className="h-4 w-4" />
+                Reminders
+              </TabsTrigger>
+              <TabsTrigger value="checklist" className="flex items-center gap-1">
+                <CheckSquare className="h-4 w-4" />
+                Checklist
+              </TabsTrigger>
+            </TabsList>
+            
+            {/* Notes Tab */}
+            <TabsContent value="notes" className="space-y-4 mt-4">
+              <div className="space-y-4">
+                <div className="flex flex-col space-y-2">
+                  <Label htmlFor="new-note">Add a new note</Label>
+                  
+                  <div className="flex items-start gap-2">
+                    <div className="flex-1">
+                      <Textarea
+                        id="new-note"
+                        placeholder="Type your note here..."
                         value={newNote}
                         onChange={(e) => setNewNote(e.target.value)}
-                        rows={2}
+                        className="h-[80px]"
                       />
+                      <div className="mt-2">
+                        <Label htmlFor="note-step" className="text-xs text-muted-foreground mr-2">
+                          Related step (optional):
+                        </Label>
+                        <select
+                          id="note-step"
+                          value={selectedStepId !== null ? selectedStepId : ''}
+                          onChange={(e) => setSelectedStepId(e.target.value ? parseInt(e.target.value) : null)}
+                          className="text-xs bg-background border rounded px-2 py-1"
+                        >
+                          <option value="">General note</option>
+                          {steps.map(step => (
+                            <option key={step.id} value={step.id}>
+                              Step {step.stepOrder}: {step.title}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
+                    <Button 
+                      onClick={handleAddNote} 
+                      disabled={!newNote.trim()} 
+                      size="sm"
+                      className="mt-1"
+                    >
+                      Add Note
+                    </Button>
                   </div>
-                </div>
-                <div className="flex justify-end">
-                  <Button onClick={handleAddNote} size="sm" className="gap-1">
-                    <Plus className="h-4 w-4" />
-                    Add Note
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="space-y-4 pt-2">
-                {notes.length === 0 ? (
-                  <div className="text-center py-8">
-                    <StickyNote className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
-                    <h3 className="mt-4 text-lg font-medium">No notes yet</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Add notes related to your procedure steps or general information.
-                    </p>
-                  </div>
-                ) : (
-                  notes.map(note => (
-                    <div key={note.id} className="p-4 border rounded-lg space-y-2">
-                      {editingNoteId === note.id ? (
-                        <>
-                          <Textarea 
-                            defaultValue={note.content}
-                            onChange={(e) => setNewNote(e.target.value)}
-                            autoFocus
-                            rows={3}
-                            className="mb-2"
-                          />
-                          <div className="flex justify-end gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => setEditingNoteId(null)}
-                            >
-                              Cancel
-                            </Button>
-                            <Button 
-                              variant="default" 
-                              size="sm" 
-                              onClick={() => handleUpdateNote(note.id, newNote)}
-                              className="gap-1"
-                            >
-                              <Save className="h-3 w-3" />
-                              Save
-                            </Button>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="flex justify-between items-start">
-                            <div>
-                              {note.stepId > 0 && (
-                                <Badge variant="outline" className="mb-2">
-                                  {steps.find(s => s.id === note.stepId)?.title || `Step ${note.stepId}`}
-                                </Badge>
-                              )}
-                              <p className="whitespace-pre-wrap">{note.content}</p>
-                            </div>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => setEditingNoteId(note.id)}>
-                                  <Edit2 className="mr-2 h-4 w-4" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDeleteNote(note.id)}>
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            Last updated: {format(new Date(note.updatedAt), 'MMM d, yyyy HH:mm')}
-                          </p>
-                        </>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </TabsContent>
-          
-          {/* Reminders Tab */}
-          <TabsContent value="reminders" className="space-y-4">
-            <div className="border rounded-lg p-4 space-y-3">
-              <h3 className="font-medium">Add New Reminder</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <Label htmlFor="reminder-title">Title</Label>
-                  <Input 
-                    id="reminder-title" 
-                    placeholder="Reminder title" 
-                    value={newReminderTitle}
-                    onChange={(e) => setNewReminderTitle(e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-1">
-                  <Label htmlFor="reminder-date">Due Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal"
-                      >
-                        <Calendar className="mr-2 h-4 w-4" />
-                        {newReminderDate ? format(newReminderDate, 'PPP') : <span>Pick a date</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <CalendarComponent
-                        mode="single"
-                        selected={newReminderDate}
-                        onSelect={setNewReminderDate}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                
-                <div className="space-y-1">
-                  <Label htmlFor="reminder-description">Description (Optional)</Label>
-                  <Textarea 
-                    id="reminder-description" 
-                    placeholder="Add more details..." 
-                    rows={2}
-                    value={newReminderDescription}
-                    onChange={(e) => setNewReminderDescription(e.target.value)}
-                  />
                 </div>
                 
                 <div className="space-y-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="reminder-notify">Notify Before</Label>
-                    <Select 
-                      value={newReminderDays.toString()}
-                      onValueChange={(value) => setNewReminderDays(parseInt(value))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Days before" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="0">On the day</SelectItem>
-                        <SelectItem value="1">1 day before</SelectItem>
-                        <SelectItem value="2">2 days before</SelectItem>
-                        <SelectItem value="3">3 days before</SelectItem>
-                        <SelectItem value="7">1 week before</SelectItem>
-                        <SelectItem value="14">2 weeks before</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-1">
-                    <Label htmlFor="reminder-step">Related Step (Optional)</Label>
-                    <Select 
-                      value={newReminderStep?.toString() || ''}
-                      onValueChange={(value) => setNewReminderStep(value ? parseInt(value) : undefined)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a step" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">General</SelectItem>
-                        {steps.map(step => (
-                          <SelectItem key={step.id} value={step.id.toString()}>
-                            Step {step.stepOrder}: {step.title.substring(0, 20)}...
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {notes.length === 0 ? (
+                    <div className="text-center py-8">
+                      <StickyNote className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-lg font-medium">No notes yet</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Add notes to keep track of important information
+                      </p>
+                    </div>
+                  ) : (
+                    notes.map(note => (
+                      <div 
+                        key={note.id} 
+                        className={`border rounded-lg p-4 relative ${
+                          editingNoteId === note.id ? 'border-primary bg-primary/5' : ''
+                        }`}
+                      >
+                        {editingNoteId === note.id ? (
+                          <div className="space-y-3">
+                            <Textarea
+                              value={editingNoteContent}
+                              onChange={(e) => setEditingNoteContent(e.target.value)}
+                              className="w-full"
+                            />
+                            <div className="flex justify-end gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                onClick={() => {
+                                  setEditingNoteId(null);
+                                  setEditingNoteContent('');
+                                }}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                onClick={() => handleSaveNoteEdit(note.id)}
+                                disabled={!editingNoteContent.trim()}
+                              >
+                                <Save className="h-4 w-4 mr-1" />
+                                Save
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <p className="whitespace-pre-wrap">{note.content}</p>
+                                <div className="mt-2 flex items-center text-xs text-muted-foreground">
+                                  <span className="mr-3">
+                                    {new Date(note.createdAt).toLocaleDateString()}
+                                  </span>
+                                  {note.stepId && steps.find(s => s.id === note.stepId) && (
+                                    <Badge variant="outline" className="text-xs font-normal">
+                                      Step {steps.find(s => s.id === note.stepId)?.stepOrder}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex ml-2">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  onClick={() => handleEditNote(note)}
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleDeleteNote(note.id)}
+                                  className="h-8 w-8 p-0 text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
-              <div className="flex justify-end">
-                <Button onClick={handleAddReminder} className="gap-1">
-                  <Plus className="h-4 w-4" />
-                  Add Reminder
-                </Button>
-              </div>
-            </div>
+            </TabsContent>
             
-            <div className="space-y-4 pt-2">
-              {reminders.length === 0 ? (
-                <div className="text-center py-8">
-                  <Bell className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
-                  <h3 className="mt-4 text-lg font-medium">No reminders set</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Add reminders for important deadlines and events.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {reminders.map(reminder => (
+            {/* Reminders Tab */}
+            <TabsContent value="reminders" className="space-y-4 mt-4">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-sm font-medium">Your Reminders</h3>
+                <Dialog open={addReminderDialogOpen} onOpenChange={setAddReminderDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="gap-1">
+                      <Plus className="h-4 w-4" />
+                      Add Reminder
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add New Reminder</DialogTitle>
+                      <DialogDescription>
+                        Create a reminder with a due date for your procedure
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="reminder-title">Title</Label>
+                        <Input
+                          id="reminder-title"
+                          placeholder="E.g., File Notice of Civil Claim"
+                          value={newReminderTitle}
+                          onChange={(e) => setNewReminderTitle(e.target.value)}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Due Date</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className="w-full justify-start text-left font-normal"
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {newReminderDate ? (
+                                format(newReminderDate, "PPP")
+                              ) : (
+                                <span>Select a date</span>
+                              )}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                            <Calendar
+                              mode="single"
+                              selected={newReminderDate}
+                              onSelect={setNewReminderDate}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="notify-days">Notify Days Before</Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            id="notify-days"
+                            type="number"
+                            min={1}
+                            max={30}
+                            value={newReminderDays}
+                            onChange={(e) => setNewReminderDays(parseInt(e.target.value) || 1)}
+                            className="w-20"
+                          />
+                          <span className="text-sm">days before due date</span>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="reminder-step">Related step (optional)</Label>
+                        <select
+                          id="reminder-step"
+                          value={selectedStepId !== null ? selectedStepId : ''}
+                          onChange={(e) => setSelectedStepId(e.target.value ? parseInt(e.target.value) : null)}
+                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        >
+                          <option value="">General reminder</option>
+                          {steps.map(step => (
+                            <option key={step.id} value={step.id}>
+                              Step {step.stepOrder}: {step.title}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setAddReminderDialogOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        onClick={handleAddReminder}
+                        disabled={!newReminderTitle.trim() || !newReminderDate}
+                      >
+                        Add Reminder
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+              
+              <div className="space-y-3">
+                {reminders.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Bell className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-lg font-medium">No reminders yet</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Add reminders to stay on track with important deadlines
+                    </p>
+                  </div>
+                ) : (
+                  reminders.map(reminder => (
                     <div 
                       key={reminder.id} 
-                      className={`p-4 border rounded-lg ${
+                      className={`border rounded-lg p-4 ${
                         reminder.isCompleted ? 'bg-muted/30' : ''
+                      } ${
+                        new Date(reminder.dueDate) < new Date() && !reminder.isCompleted
+                          ? 'border-destructive/50'
+                          : ''
                       }`}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">
-                          <div className="mt-0.5">
-                            <Checkbox 
-                              checked={reminder.isCompleted}
-                              onCheckedChange={() => toggleReminderCompletion(reminder.id)}
-                              id={`reminder-${reminder.id}`}
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <Label 
-                              htmlFor={`reminder-${reminder.id}`} 
-                              className={`font-medium ${reminder.isCompleted ? 'line-through text-muted-foreground' : ''}`}
+                          <Checkbox
+                            id={`reminder-${reminder.id}`}
+                            checked={reminder.isCompleted}
+                            onCheckedChange={() => handleToggleReminder(reminder.id)}
+                            className="mt-1"
+                          />
+                          <div>
+                            <Label
+                              htmlFor={`reminder-${reminder.id}`}
+                              className={`font-medium ${
+                                reminder.isCompleted ? 'line-through text-muted-foreground' : ''
+                              }`}
                             >
                               {reminder.title}
                             </Label>
-                            
-                            {reminder.description && (
-                              <p className={`text-sm ${reminder.isCompleted ? 'text-muted-foreground/70' : ''}`}>
-                                {reminder.description}
-                              </p>
-                            )}
-                            
-                            <div className="flex flex-wrap gap-2 mt-1">
-                              <Badge variant="outline" className="gap-1 text-xs">
-                                <Calendar className="h-3 w-3" />
-                                {format(new Date(reminder.dueDate), 'MMM d, yyyy')}
-                              </Badge>
-                              
-                              {reminder.stepId && (
-                                <Badge variant="outline" className="text-xs">
-                                  {steps.find(s => s.id === reminder.stepId)?.title || `Step ${reminder.stepId}`}
-                                </Badge>
-                              )}
-                              
-                              <Badge 
-                                variant={
-                                  new Date(reminder.dueDate) < new Date() 
-                                    ? "destructive" 
-                                    : "outline"
-                                } 
-                                className="text-xs"
-                              >
-                                {new Date(reminder.dueDate) < new Date() 
-                                  ? "Overdue" 
-                                  : `${reminder.notifyBefore} day${reminder.notifyBefore !== 1 ? 's' : ''} before`
-                                }
-                              </Badge>
+                            <div className="text-sm text-muted-foreground mt-1">
+                              <div className="flex items-center flex-wrap gap-x-4 gap-y-1">
+                                <div className="flex items-center gap-1">
+                                  <CalendarIcon className="h-3 w-3" />
+                                  <span>
+                                    Due: {format(new Date(reminder.dueDate), "MMM d, yyyy")}
+                                  </span>
+                                </div>
+                                
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  <span>
+                                    Notify: {reminder.notifyBefore} {reminder.notifyBefore === 1 ? 'day' : 'days'} before
+                                  </span>
+                                </div>
+                                
+                                {reminder.stepId && steps.find(s => s.id === reminder.stepId) && (
+                                  <Badge variant="outline" className="font-normal text-xs">
+                                    Step {steps.find(s => s.id === reminder.stepId)?.stepOrder}
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
                         
                         <Button 
                           variant="ghost" 
-                          size="icon" 
+                          size="sm"
                           onClick={() => handleDeleteReminder(reminder.id)}
+                          className="h-8 w-8 p-0 text-destructive"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </TabsContent>
-          
-          {/* Checklist Tab */}
-          <TabsContent value="checklist" className="space-y-4">
-            <div className="space-y-3">
-              <div className="flex flex-col gap-3">
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                  <div className="sm:col-span-2">
-                    <Label htmlFor="checklist-item">Add Checklist Item</Label>
-                    <Input 
-                      id="checklist-item" 
-                      placeholder="Enter a task..."
-                      value={newChecklistItem}
-                      onChange={(e) => setNewChecklistItem(e.target.value)}
-                      className="mt-1"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="checklist-category">Category</Label>
-                    <Select 
-                      value={newItemCategory}
-                      onValueChange={setNewItemCategory}
-                    >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="general">General</SelectItem>
-                        <SelectItem value="documents">Documents</SelectItem>
-                        <SelectItem value="forms">Forms</SelectItem>
-                        <SelectItem value="appointments">Appointments</SelectItem>
-                        <SelectItem value="deadlines">Deadlines</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="checklist-step">Related Step</Label>
-                    <Select 
-                      value={newItemStep?.toString() || ''}
-                      onValueChange={(value) => setNewItemStep(value ? parseInt(value) : undefined)}
-                    >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Step" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">None</SelectItem>
-                        {steps.map(step => (
-                          <SelectItem key={step.id} value={step.id.toString()}>
-                            Step {step.stepOrder}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                <div className="flex justify-end">
-                  <Button onClick={handleAddChecklistItem} size="sm" className="gap-1">
-                    <Plus className="h-4 w-4" />
-                    Add Item
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="space-y-6 pt-2">
-                {Object.keys(checklistByCategory).length === 0 ? (
-                  <div className="text-center py-8">
-                    <CheckSquare className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
-                    <h3 className="mt-4 text-lg font-medium">No checklist items</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Create a personalized checklist for your procedure.
-                    </p>
-                  </div>
-                ) : (
-                  Object.entries(checklistByCategory).map(([category, items]) => (
-                    <div key={category} className="space-y-2">
-                      <h3 className="font-medium capitalize flex items-center gap-2">
-                        {category === 'general' && <CheckSquare className="h-4 w-4" />}
-                        {category === 'documents' && <FileText className="h-4 w-4" />}
-                        {category === 'forms' && <File className="h-4 w-4" />}
-                        {category === 'appointments' && <Calendar className="h-4 w-4" />}
-                        {category === 'deadlines' && <Clock className="h-4 w-4" />}
-                        {category}
-                      </h3>
                       
-                      <div className="space-y-2 ml-6">
-                        {items.map(item => (
-                          <div key={item.id} className="flex items-start justify-between">
-                            <div className="flex items-start gap-2">
-                              <Checkbox 
-                                checked={item.isCompleted}
-                                onCheckedChange={() => toggleChecklistItemCompletion(item.id)}
-                                id={`checklist-${item.id}`}
-                                className="mt-0.5"
-                              />
-                              <div>
-                                <Label 
-                                  htmlFor={`checklist-${item.id}`} 
-                                  className={item.isCompleted ? 'line-through text-muted-foreground' : ''}
-                                >
-                                  {item.text}
-                                </Label>
-                                {item.stepId && (
-                                  <p className="text-xs text-muted-foreground">
-                                    Related to: Step {
-                                      steps.find(s => s.id === item.stepId)?.stepOrder || item.stepId
-                                    }
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                            
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={() => handleDeleteChecklistItem(item.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
+                      {new Date(reminder.dueDate) < new Date() && !reminder.isCompleted && (
+                        <div className="mt-2 px-3 py-1.5 bg-destructive/10 text-destructive rounded text-xs flex items-center gap-1.5">
+                          <AlertCircle className="h-3.5 w-3.5" />
+                          This reminder is overdue
+                        </div>
+                      )}
                     </div>
                   ))
                 )}
               </div>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+            </TabsContent>
+            
+            {/* Checklist Tab */}
+            <TabsContent value="checklist" className="space-y-4 mt-4">
+              <div className="space-y-4">
+                <div className="flex flex-col space-y-2">
+                  <Label htmlFor="new-checklist">Add a new checklist item</Label>
+                  
+                  <div className="flex items-start gap-2">
+                    <div className="flex-1 space-y-2">
+                      <Input
+                        id="new-checklist"
+                        placeholder="E.g., Gather required documents"
+                        value={newChecklistItem}
+                        onChange={(e) => setNewChecklistItem(e.target.value)}
+                      />
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        <div className="flex items-center gap-1.5">
+                          <Label htmlFor="checklist-category" className="text-muted-foreground">
+                            Category:
+                          </Label>
+                          <select
+                            id="checklist-category"
+                            value={selectedChecklistCategory}
+                            onChange={(e) => setSelectedChecklistCategory(e.target.value)}
+                            className="bg-background border rounded px-2 py-1"
+                          >
+                            <option value="preparation">Preparation</option>
+                            <option value="documents">Documents</option>
+                            <option value="filing">Filing</option>
+                            <option value="other">Other</option>
+                          </select>
+                        </div>
+                        
+                        <div className="flex items-center gap-1.5">
+                          <Label htmlFor="checklist-step" className="text-muted-foreground">
+                            For step:
+                          </Label>
+                          <select
+                            id="checklist-step"
+                            value={selectedStepId !== null ? selectedStepId : ''}
+                            onChange={(e) => setSelectedStepId(e.target.value ? parseInt(e.target.value) : null)}
+                            className="bg-background border rounded px-2 py-1"
+                          >
+                            <option value="">General</option>
+                            {steps.map(step => (
+                              <option key={step.id} value={step.id}>
+                                Step {step.stepOrder}: {step.title}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={handleAddChecklistItem} 
+                      disabled={!newChecklistItem.trim()} 
+                      size="sm"
+                      className="mt-1"
+                    >
+                      Add Item
+                    </Button>
+                  </div>
+                </div>
+                
+                {checklist.length === 0 ? (
+                  <div className="text-center py-8">
+                    <CheckSquare className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-lg font-medium">No checklist items yet</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Add checklist items to track your progress
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Group checklist items by category */}
+                    {['preparation', 'documents', 'filing', 'other'].map(category => {
+                      const categoryItems = checklist.filter(item => item.category === category);
+                      if (categoryItems.length === 0) return null;
+                      
+                      return (
+                        <div key={category} className="space-y-2">
+                          <h3 className="text-sm font-medium capitalize">{category}</h3>
+                          <div className="space-y-2">
+                            {categoryItems.map(item => (
+                              <div 
+                                key={item.id} 
+                                className={`flex items-start justify-between border rounded-lg p-3 ${
+                                  item.isCompleted ? 'bg-muted/30' : ''
+                                }`}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <Checkbox
+                                    id={`checklist-${item.id}`}
+                                    checked={item.isCompleted}
+                                    onCheckedChange={() => handleToggleChecklistItem(item.id)}
+                                    className="mt-1"
+                                  />
+                                  <div>
+                                    <Label
+                                      htmlFor={`checklist-${item.id}`}
+                                      className={item.isCompleted ? 'line-through text-muted-foreground' : ''}
+                                    >
+                                      {item.text}
+                                    </Label>
+                                    {item.stepId && steps.find(s => s.id === item.stepId) && (
+                                      <div className="mt-1">
+                                        <Badge variant="outline" className="font-normal text-xs">
+                                          Step {steps.find(s => s.id === item.stepId)?.stepOrder}
+                                        </Badge>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleDeleteChecklistItem(item.id)}
+                                  className="h-8 w-8 p-0 text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

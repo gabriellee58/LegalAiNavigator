@@ -11,7 +11,33 @@ import {
 } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format } from 'date-fns';
-import { ProcedureStep, EstimatedTimeframe } from '@/types/court-procedures';
+
+// Temporary types until we properly migrate them
+interface ProcedureStep {
+  id: number;
+  procedureId: number;
+  title: string;
+  description: string;
+  stepOrder: number;
+  estimatedTime?: string;
+  requiredDocuments?: string[];
+  instructions?: string;
+  tips?: string[];
+  warnings?: string[];
+  fees?: Record<string, string>;
+  isOptional: boolean;
+  nextStepIds?: number[];
+  alternatePathInfo?: string | null;
+  sourceReferences?: { name: string; url: string }[];
+}
+
+interface EstimatedTimeframe {
+  stepId?: number;
+  phaseName?: string;
+  minDuration: string;
+  maxDuration: string;
+  factors?: { factor: string; impact: string }[];
+}
 
 interface TimelineVisualizationProps {
   steps: ProcedureStep[];

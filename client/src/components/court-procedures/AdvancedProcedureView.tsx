@@ -2,10 +2,89 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { CalendarDays, FileText, StickyNote, ChevronUp, ChevronDown } from 'lucide-react';
-import { ProcedureDetail, UserProcedureDetail } from '@/types/court-procedures';
 import TimelineVisualization from './TimelineVisualization';
 import DocumentManagement from './DocumentManagement';
 import Personalization from './Personalization';
+
+// Import types directly from court-procedures.tsx until we properly migrate them
+interface EstimatedTimeframe {
+  stepId?: number;
+  phaseName?: string;
+  minDuration: string;
+  maxDuration: string;
+  factors?: { factor: string; impact: string }[];
+}
+
+interface ProcedureStep {
+  id: number;
+  procedureId: number;
+  title: string;
+  description: string;
+  stepOrder: number;
+  estimatedTime?: string;
+  requiredDocuments?: string[];
+  instructions?: string;
+  tips?: string[];
+  warnings?: string[];
+  fees?: Record<string, string>;
+  isOptional: boolean;
+  nextStepIds?: number[];
+  alternatePathInfo?: string | null;
+  sourceReferences?: { name: string; url: string }[];
+}
+
+interface RelatedForm {
+  id: number;
+  name: string;
+  description?: string;
+  templateId?: number;
+  url?: string;
+}
+
+interface FlowchartData {
+  nodes: any[];
+  edges: any[];
+  layout?: 'vertical' | 'horizontal';
+  zoom?: number;
+  center?: { x: number, y: number };
+}
+
+interface ProcedureDetail {
+  id: number;
+  categoryId: number;
+  name: string;
+  description: string;
+  jurisdiction: string;
+  steps: ProcedureStep[];
+  flowchartData: FlowchartData;
+  estimatedTimeframes: EstimatedTimeframe[];
+  courtFees: any[];
+  requirements: any[];
+  sourceName?: string;
+  sourceUrl?: string;
+  relatedForms?: RelatedForm[];
+  isActive: boolean;
+}
+
+interface UserProcedureDetail {
+  id: number;
+  userId: number;
+  procedureId: number;
+  currentStepId: number;
+  title: string;
+  notes?: string | null;
+  status: string;
+  progress: number;
+  completedSteps: number[];
+  startedAt: string;
+  lastActivityAt: string;
+  expectedCompletionDate?: string | null;
+  completedAt?: string | null;
+  procedure: ProcedureDetail;
+  steps: ProcedureStep[];
+  currentStep: ProcedureStep;
+  caseSpecificData?: any;
+}
 
 interface AdvancedProcedureViewProps {
   procedureDetail: ProcedureDetail;
