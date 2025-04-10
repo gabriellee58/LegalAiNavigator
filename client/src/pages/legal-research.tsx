@@ -21,9 +21,21 @@ function LegalResearchPage() {
   const { mutate: analyzeContractMutation, isPending } = useMutation({
     mutationFn: () => analyzeContract(contractText),
     onSuccess: (data) => {
-      setAnalysis(data);
+      // Ensure we get a proper response with the expected structure
+      if (data && typeof data === 'object') {
+        const processedAnalysis = {
+          risks: Array.isArray(data.risks) ? data.risks : [],
+          suggestions: Array.isArray(data.suggestions) ? data.suggestions : [],
+          summary: typeof data.summary === 'string' ? data.summary : 'No summary available'
+        };
+        setAnalysis(processedAnalysis);
+      } else {
+        console.error("Invalid response format from contract analysis API", data);
+        setAnalysis(null);
+      }
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Error analyzing contract:", error);
       setAnalysis(null);
     },
   });
@@ -111,7 +123,7 @@ function LegalResearchPage() {
                       <CardTitle>{t("contract_summary")}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-neutral-700">{analysis.summary}</p>
+                      <p className="text-neutral-700">{analysis?.summary}</p>
                     </CardContent>
                   </Card>
                   
@@ -120,7 +132,7 @@ function LegalResearchPage() {
                       <CardTitle>{t("contract_risks")}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      {analysis.risks.length > 0 ? (
+                      {analysis?.risks && analysis.risks.length > 0 ? (
                         <div className="space-y-4">
                           {analysis.risks.map((risk, index) => (
                             <div key={index} className="p-3 border rounded-lg bg-white">
@@ -145,7 +157,7 @@ function LegalResearchPage() {
                       <CardTitle>{t("contract_suggestions")}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      {analysis.suggestions.length > 0 ? (
+                      {analysis?.suggestions && analysis.suggestions.length > 0 ? (
                         <div className="space-y-4">
                           {analysis.suggestions.map((suggestion, index) => (
                             <div key={index} className="p-3 border rounded-lg bg-white">

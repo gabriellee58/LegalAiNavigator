@@ -21,8 +21,25 @@ export const sendChatMessage = async (userId: number, content: string) => {
  * Analyze a contract for risks and suggestions
  * @param content The contract text
  */
-export const analyzeContract = async (content: string) => {
-  return await apiRequest("POST", "/api/analyze-contract", { content });
+export type ContractAnalysisResponse = {
+  risks: { description: string; severity: string; recommendation: string }[];
+  suggestions: { clause: string; improvement: string }[];
+  summary: string;
+};
+
+export const analyzeContract = async (content: string): Promise<ContractAnalysisResponse> => {
+  try {
+    // Since we updated apiRequest to handle JSON parsing, we can just call it directly
+    return await apiRequest<ContractAnalysisResponse>("POST", "/api/analyze-contract", { content });
+  } catch (error) {
+    console.error("Error analyzing contract:", error);
+    // Return a default response structure rather than throwing an error
+    return {
+      risks: [],
+      suggestions: [],
+      summary: "Failed to analyze contract. Please try again or contact support if the issue persists."
+    };
+  }
 };
 
 /**
@@ -244,11 +261,16 @@ export const generateDocument = async (
   console.log("Generated document content length:", documentContent.length);
   
   // Save the generated document
-  return await apiRequest("POST", "/api/documents", {
-    userId,
-    templateId,
-    documentTitle,
-    documentContent,
-    documentData,
-  });
+  try {
+    return await apiRequest("POST", "/api/documents", {
+      userId,
+      templateId,
+      documentTitle,
+      documentContent,
+      documentData,
+    });
+  } catch (error) {
+    console.error("Error saving generated document:", error);
+    throw new Error("Failed to save the generated document. Please try again.");
+  }
 };

@@ -76,7 +76,7 @@ export function getRetryAndCacheConfig(error: any) {
 }
 
 // Enhanced API request function
-export async function apiRequest(
+export async function apiRequest<T = any>(
   method: string,
   url: string,
   data?: unknown | undefined,
@@ -84,7 +84,7 @@ export async function apiRequest(
     retries?: number, 
     retryDelay?: number
   } = { retries: 1, retryDelay: 1000 },
-): Promise<Response> {
+): Promise<T> {
   const { retries = 1, retryDelay = 1000 } = options;
   let lastError: Error | null = null;
   
@@ -99,7 +99,9 @@ export async function apiRequest(
       });
       
       await throwIfResNotOk(res);
-      return res;
+      
+      // Parse the response as JSON
+      return await res.json() as T;
     } catch (error) {
       lastError = error as Error;
       
