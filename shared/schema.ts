@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, uuid, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -376,6 +376,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   settlementProposals: many(settlementProposals, { relationName: "proposer" }),
   digitalSignatures: many(digitalSignatures, { relationName: "user" }),
   disputeActivities: many(disputeActivities),
+  // Court procedures relations
+  userCourtProcedures: many(userCourtProcedures),
 }));
 
 export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
@@ -912,6 +914,172 @@ export const userFeedbackRelations = relations(userFeedback, ({ one }) => ({
   user: one(users, {
     fields: [userFeedback.userId],
     references: [users.id],
+  }),
+}));
+
+// =========== Court Procedures Module =========== 
+
+// Court procedure categories schema
+export const courtProcedureCategories = pgTable("court_procedure_categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  icon: text("icon"), // Icon identifier for UI
+  slug: text("slug").notNull().unique(), // For URL friendly access
+  order: integer("order").notNull().default(0), // For display ordering
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const insertCourtProcedureCategorySchema = createInsertSchema(courtProcedureCategories)
+  .omit({ id: true, createdAt: true, updatedAt: true })
+  .extend({
+    icon: z.string().optional(),
+    updatedAt: z.date().optional(),
+  });
+
+export type InsertCourtProcedureCategory = z.infer<typeof insertCourtProcedureCategorySchema>;
+export type CourtProcedureCategory = typeof courtProcedureCategories.$inferSelect;
+
+// Court procedures schema
+export const courtProcedures = pgTable("court_procedures", {
+  id: serial("id").primaryKey(),
+  categoryId: integer("category_id").references(() => courtProcedureCategories.id, { onDelete: 'cascade' }),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  jurisdiction: text("jurisdiction").notNull().default("Canada"), // Federal or province-specific
+  steps: jsonb("steps").notNull(), // Array of procedural steps
+  flowchartData: jsonb("flowchart_data").notNull(), // JSON structure for flowchart visualization
+  estimatedTimeframes: jsonb("estimated_timeframes"), // Time estimates for each step
+  courtFees: jsonb("court_fees"), // Fee structure
+  requirements: jsonb("requirements"), // Legal requirements for this procedure
+  sourceName: text("source_name"), // Name of authoritative source
+  sourceUrl: text("source_url"), // URL of source documentation
+  relatedForms: jsonb("related_forms"), // Related document templates
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const insertCourtProcedureSchema = createInsertSchema(courtProcedures)
+  .omit({ id: true, createdAt: true, updatedAt: true })
+  .extend({
+    estimatedTimeframes: z.any().optional(),
+    courtFees: z.any().optional(),
+    requirements: z.any().optional(),
+    sourceName: z.string().optional(),
+    sourceUrl: z.string().optional(),
+    relatedForms: z.any().optional(),
+    updatedAt: z.date().optional(),
+  });
+
+export type InsertCourtProcedure = z.infer<typeof insertCourtProcedureSchema>;
+export type CourtProcedure = typeof courtProcedures.$inferSelect;
+
+// Court procedure steps schema - for detailed step information
+export const courtProcedureSteps = pgTable("court_procedure_steps", {
+  id: serial("id").primaryKey(),
+  procedureId: integer("procedure_id").references(() => courtProcedures.id, { onDelete: 'cascade' }),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  stepOrder: integer("step_order").notNull(),
+  estimatedTime: text("estimated_time"), // Human-readable time estimate
+  requiredDocuments: jsonb("required_documents"), // Documents needed for this step
+  instructions: text("instructions"), // Detailed instructions
+  tips: jsonb("tips"), // Array of helpful tips
+  warnings: jsonb("warnings"), // Array of important warnings
+  fees: jsonb("fees"), // Fees specific to this step
+  isOptional: boolean("is_optional").default(false),
+  nextStepIds: jsonb("next_step_ids"), // Array of possible next steps
+  alternatePathInfo: text("alternate_path_info"), // Description of alternate paths
+  sourceReferences: jsonb("source_references"), // References to legal sources
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const insertCourtProcedureStepSchema = createInsertSchema(courtProcedureSteps)
+  .omit({ id: true, createdAt: true, updatedAt: true })
+  .extend({
+    estimatedTime: z.string().optional(),
+    requiredDocuments: z.any().optional(),
+    instructions: z.string().optional(),
+    tips: z.any().optional(),
+    warnings: z.any().optional(),
+    fees: z.any().optional(),
+    isOptional: z.boolean().optional(),
+    nextStepIds: z.any().optional(),
+    alternatePathInfo: z.string().optional(),
+    sourceReferences: z.any().optional(),
+    updatedAt: z.date().optional(),
+  });
+
+export type InsertCourtProcedureStep = z.infer<typeof insertCourtProcedureStepSchema>;
+export type CourtProcedureStep = typeof courtProcedureSteps.$inferSelect;
+
+// User court procedure tracking
+export const userCourtProcedures = pgTable("user_court_procedures", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }),
+  procedureId: integer("procedure_id").references(() => courtProcedures.id),
+  currentStepId: integer("current_step_id").references(() => courtProcedureSteps.id),
+  title: text("title").notNull(),
+  notes: text("notes"),
+  status: text("status").notNull().default("active"), // active, completed, abandoned
+  progress: integer("progress").notNull().default(0), // 0-100 percent
+  completedSteps: jsonb("completed_steps"), // Array of completed step IDs
+  startedAt: timestamp("started_at").defaultNow(),
+  lastActivityAt: timestamp("last_activity_at").defaultNow(),
+  expectedCompletionDate: timestamp("expected_completion_date"),
+  completedAt: timestamp("completed_at"),
+  caseSpecificData: jsonb("case_specific_data"), // Case-specific information
+});
+
+export const insertUserCourtProcedureSchema = createInsertSchema(userCourtProcedures)
+  .omit({ id: true, startedAt: true, lastActivityAt: true, completedAt: true })
+  .extend({
+    notes: z.string().optional(),
+    completedSteps: z.any().optional(),
+    expectedCompletionDate: z.date().optional(),
+    caseSpecificData: z.any().optional(),
+  });
+
+export type InsertUserCourtProcedure = z.infer<typeof insertUserCourtProcedureSchema>;
+export type UserCourtProcedure = typeof userCourtProcedures.$inferSelect;
+
+// Define relations for court procedures
+export const courtProcedureCategoriesRelations = relations(courtProcedureCategories, ({ many }) => ({
+  procedures: many(courtProcedures),
+}));
+
+export const courtProceduresRelations = relations(courtProcedures, ({ one, many }) => ({
+  category: one(courtProcedureCategories, {
+    fields: [courtProcedures.categoryId],
+    references: [courtProcedureCategories.id],
+  }),
+  steps: many(courtProcedureSteps),
+  userProcedures: many(userCourtProcedures),
+}));
+
+export const courtProcedureStepsRelations = relations(courtProcedureSteps, ({ one }) => ({
+  procedure: one(courtProcedures, {
+    fields: [courtProcedureSteps.procedureId],
+    references: [courtProcedures.id],
+  }),
+}));
+
+export const userCourtProceduresRelations = relations(userCourtProcedures, ({ one }) => ({
+  user: one(users, {
+    fields: [userCourtProcedures.userId],
+    references: [users.id],
+  }),
+  procedure: one(courtProcedures, {
+    fields: [userCourtProcedures.procedureId],
+    references: [courtProcedures.id],
+  }),
+  currentStep: one(courtProcedureSteps, {
+    fields: [userCourtProcedures.currentStepId],
+    references: [courtProcedureSteps.id],
   }),
 }));
 
