@@ -262,19 +262,30 @@ const CourtProceduresPage: React.FC = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="categories">Categories</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="categories">
+              <span className="flex items-center gap-2">
+                <List className="h-4 w-4" />
+                Categories
+              </span>
+            </TabsTrigger>
             <TabsTrigger value="browse" disabled={!selectedCategoryId}>
-              Browse Procedures
+              <span className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Procedures
+              </span>
             </TabsTrigger>
-            <TabsTrigger value="my-procedures">My Procedures</TabsTrigger>
-            <TabsTrigger value="procedure-detail" disabled={!selectedProcedureId}>
-              Procedure Details
-            </TabsTrigger>
-            <TabsTrigger value="user-procedure-detail" disabled={!selectedUserProcedureId}>
-              My Procedure Details
+            <TabsTrigger value="my-procedures">
+              <span className="flex items-center gap-2">
+                <CheckSquare className="h-4 w-4" />
+                My Procedures
+              </span>
             </TabsTrigger>
           </TabsList>
+          
+          {/* We'll hide these tabs from the user and use them programmatically */}
+          <input type="hidden" value={activeTab === "procedure-detail" ? "procedure-detail" : ""} />
+          <input type="hidden" value={activeTab === "user-procedure-detail" ? "user-procedure-detail" : ""} />
 
           {/* Categories Tab */}
           <TabsContent value="categories" className="space-y-4">
@@ -317,15 +328,36 @@ const CourtProceduresPage: React.FC = () => {
 
           {/* Browse Procedures Tab */}
           <TabsContent value="browse" className="space-y-4">
-            <div className="flex justify-between items-center mb-4">
-              <Button variant="outline" onClick={handleBackToCategories}>
-                ← Back to Categories
-              </Button>
-              {selectedCategoryId && categories?.find((c: ProcedureCategory) => c.id === selectedCategoryId) && (
-                <h2 className="text-2xl font-semibold">
-                  {categories.find((c: ProcedureCategory) => c.id === selectedCategoryId)?.name} Procedures
-                </h2>
-              )}
+            <div className="flex flex-col space-y-2 mb-4">
+              <div className="flex items-center text-sm text-muted-foreground mb-2">
+                <button 
+                  onClick={handleBackToCategories}
+                  className="hover:text-primary transition-colors"
+                >
+                  Categories
+                </button>
+                <span className="mx-2">/</span>
+                <span className="font-medium text-foreground">
+                  {selectedCategoryId && categories?.find((c: ProcedureCategory) => c.id === selectedCategoryId)?.name}
+                </span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <Button 
+                  variant="outline" 
+                  onClick={handleBackToCategories}
+                  size="sm"
+                  className="gap-2"
+                >
+                  <ArrowRight className="h-4 w-4 rotate-180" />
+                  Back to Categories
+                </Button>
+                {selectedCategoryId && categories?.find((c: ProcedureCategory) => c.id === selectedCategoryId) && (
+                  <h2 className="text-2xl font-semibold">
+                    {categories.find((c: ProcedureCategory) => c.id === selectedCategoryId)?.name} Procedures
+                  </h2>
+                )}
+              </div>
             </div>
 
             {proceduresLoading ? (
@@ -449,10 +481,38 @@ const CourtProceduresPage: React.FC = () => {
 
           {/* Procedure Detail Tab */}
           <TabsContent value="procedure-detail" className="space-y-6">
-            <Button variant="outline" onClick={handleBackToProcedures}>
-              ← Back to Procedures
-            </Button>
-
+            <div className="flex flex-col space-y-2 mb-4">
+              <div className="flex items-center text-sm text-muted-foreground mb-2">
+                <button 
+                  onClick={handleBackToCategories}
+                  className="hover:text-primary transition-colors"
+                >
+                  Categories
+                </button>
+                <span className="mx-2">/</span>
+                <button
+                  onClick={handleBackToProcedures}
+                  className="hover:text-primary transition-colors"
+                >
+                  {selectedCategoryId && categories?.find((c: ProcedureCategory) => c.id === selectedCategoryId)?.name}
+                </button>
+                <span className="mx-2">/</span>
+                <span className="font-medium text-foreground">
+                  {procedureDetail?.name || 'Procedure Details'}
+                </span>
+              </div>
+              
+              <Button 
+                variant="outline" 
+                onClick={handleBackToProcedures}
+                size="sm"
+                className="gap-2 w-fit"
+              >
+                <ArrowRight className="h-4 w-4 rotate-180" />
+                Back to Procedures
+              </Button>
+            </div>
+            
             {procedureDetailLoading ? (
               <div className="flex items-center justify-center min-h-[400px]">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
