@@ -70,23 +70,45 @@ export const generateDocument = async (
   // Replace template variables with form data
   let documentContent = template.templateContent;
   
+  // Debug logging to help diagnose replacement issues
+  console.log("Document template fields:", template.fields);
+  console.log("Form data submitted:", documentData);
+  
   // Process placeholders with different formats: {{variable}}, [VARIABLE], and [Variable]
   for (const [key, value] of Object.entries(documentData)) {
     // Skip undefined or null values to prevent "undefined" or "null" strings in document
-    if (value === undefined || value === null) continue;
+    if (value === undefined || value === null || value === "") continue;
+    
+    // Format fieldKey for different placeholder styles
+    // camelCase to UPPERCASE_WITH_SPACES conversion (landlordName -> LANDLORD NAME)
+    const upperWithSpaces = key.replace(/([A-Z])/g, ' $1').toUpperCase().trim();
     
     // Handle {{variable}} format (common in templates)
     const mustachePlaceholder = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'gi');
     documentContent = documentContent.replace(mustachePlaceholder, value.toString());
     
-    // Handle [VARIABLE] format (uppercase)
-    const uppercasePlaceholder = new RegExp(`\\[${key.toUpperCase()}\\]`, 'g');
+    // Handle [VARIABLE] format (uppercase with spaces) - [LANDLORD NAME]
+    const uppercasePlaceholder = new RegExp(`\\[${upperWithSpaces}\\]`, 'g');
     documentContent = documentContent.replace(uppercasePlaceholder, value.toString());
+    
+    // Handle direct field name uppercase - [LANDLORDNAME] 
+    const directUppercasePlaceholder = new RegExp(`\\[${key.toUpperCase()}\\]`, 'g');
+    documentContent = documentContent.replace(directUppercasePlaceholder, value.toString());
     
     // Handle [Variable] format (capitalized)
     const capitalizedKey = key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
     const capitalizedPlaceholder = new RegExp(`\\[${capitalizedKey}\\]`, 'g');
     documentContent = documentContent.replace(capitalizedPlaceholder, value.toString());
+    
+    // Handle fields with words separated - also check for [Land Lord Name]
+    const labelFromField = template.fields.find((f: any) => f.name === key)?.label || "";
+    if (labelFromField) {
+      const labelPlaceholder = new RegExp(`\\[${labelFromField}\\]`, 'gi');
+      documentContent = documentContent.replace(labelPlaceholder, value.toString());
+    }
+    
+    // Additional debug logging for troubleshooting
+    console.log(`Replacing for field "${key}" (${upperWithSpaces}):`, !!documentContent.match(uppercasePlaceholder));
   }
   
   console.log("Generated document content length:", documentContent.length);
