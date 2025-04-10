@@ -1,6 +1,5 @@
-require('dotenv').config();
-
-const { Pool } = require('pg');
+import pg from 'pg';
+const { Pool } = pg;
 
 // Create a connection pool
 const pool = new Pool({
@@ -499,13 +498,12 @@ async function seedCourtProcedures() {
 }
 
 // Run the seeding function
-seedCourtProcedures()
-  .then(() => {
-    console.log('Court procedures seeding script completed');
-    pool.end();
-  })
-  .catch(err => {
-    console.error('Seeding script failed:', err);
-    pool.end();
-    process.exit(1);
-  });
+try {
+  await seedCourtProcedures();
+  console.log('Court procedures seeding script completed');
+  pool.end();
+} catch (err) {
+  console.error('Seeding script failed:', err);
+  pool.end();
+  process.exit(1);
+}
