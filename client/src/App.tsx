@@ -109,7 +109,9 @@ function Router() {
       <ProtectedRoute path="/dispute-resolution" component={DisputeResolutionPage} />
       <ProtectedRoute path="/dispute/:id" component={DisputeDetailPage} />
       <ProtectedRoute path="/compliance-checker" component={ComplianceCheckerPage} />
-      <ProtectedRoute path="/court-procedures" component={CourtProceduresPage} />
+      <Route path="/court-procedures">
+        <ProtectedRoute component={() => <CourtProceduresPage />} />
+      </Route>
       
       {/* Document Templates */}
       <ProtectedRoute path="/documents/contracts" component={DocumentTemplatesPage} />

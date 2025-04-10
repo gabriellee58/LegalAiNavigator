@@ -39,20 +39,76 @@ interface ProcedureStep {
   sourceReferences?: { name: string; url: string }[];
 }
 
+// Timeline node for visualizing procedure flow
+interface TimelineNode {
+  id: string;
+  label: string;
+  description?: string;
+  status: 'pending' | 'active' | 'completed' | 'skipped';
+  children?: string[];
+  position?: { x: number; y: number };
+  duration?: string;
+  deadline?: string;
+}
+
+// Flowchart structure for visualizing procedure
+interface FlowchartData {
+  nodes: TimelineNode[];
+  edges: { source: string; target: string; label?: string }[];
+  layout?: 'vertical' | 'horizontal';
+}
+
+// Timeframe definitions
+interface EstimatedTimeframe {
+  stepId?: number;
+  phaseName?: string;
+  minDuration: string;
+  maxDuration: string;
+  factors?: { factor: string; impact: string }[];
+}
+
+// Court fee structure
+interface CourtFee {
+  name: string;
+  amount: string;
+  description?: string;
+  optional: boolean;
+  conditions?: string;
+  exemptionInfo?: string;
+}
+
+// Legal requirements
+interface Requirement {
+  type: string;
+  description: string;
+  mandatory: boolean;
+  jurisdictionSpecific?: boolean;
+  references?: { description: string; url?: string }[];
+}
+
+// Related forms
+interface RelatedForm {
+  id: number;
+  name: string;
+  description?: string;
+  templateId?: number; // Reference to document template if available
+  url?: string;
+}
+
 interface Procedure {
   id: number;
   categoryId: number;
   name: string;
   description: string;
   jurisdiction: string;
-  steps: any;
-  flowchartData: any;
-  estimatedTimeframes: any;
-  courtFees: any;
-  requirements: any;
+  steps: ProcedureStep[];
+  flowchartData: FlowchartData;
+  estimatedTimeframes: EstimatedTimeframe[];
+  courtFees: CourtFee[];
+  requirements: Requirement[];
   sourceName?: string;
   sourceUrl?: string;
-  relatedForms?: any;
+  relatedForms?: RelatedForm[];
   isActive: boolean;
 }
 
@@ -74,7 +130,15 @@ interface UserProcedure {
   lastActivityAt: string;
   expectedCompletionDate?: string | null;
   completedAt?: string | null;
-  caseSpecificData?: any;
+  caseSpecificData?: {
+    caseNumber?: string;
+    courtLocation?: string;
+    hearingDates?: string[];
+    parties?: { name: string; role: string }[];
+    filingDeadlines?: { name: string; date: string }[];
+    additionalNotes?: string;
+    customFields?: Record<string, string>;
+  };
 }
 
 interface UserProcedureDetail extends UserProcedure {
