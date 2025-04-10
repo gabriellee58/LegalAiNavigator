@@ -1,12 +1,27 @@
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState, useRef, useEffect } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useLocation, Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, ArrowRight, Info, FileText, GitPullRequest, List, CheckSquare } from 'lucide-react';
+import { Loader2, ArrowRight, Info, FileText, GitPullRequest, List, CheckSquare, Clock, Eye, Download, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
+import { 
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 // Court Procedure Types
 interface ProcedureCategory {
@@ -49,13 +64,30 @@ interface TimelineNode {
   position?: { x: number; y: number };
   duration?: string;
   deadline?: string;
+  stepId?: number; // Reference to the actual step ID for linking
+  isOptional?: boolean;
+  type?: 'start' | 'end' | 'step' | 'decision' | 'document';
+  requiredDocuments?: string[];
+}
+
+// Edge definition for flowchart connections
+interface FlowchartEdge {
+  id?: string;
+  source: string;
+  target: string;
+  label?: string;
+  type?: 'default' | 'alternative' | 'optional';
+  animated?: boolean;
+  style?: Record<string, string>;
 }
 
 // Flowchart structure for visualizing procedure
 interface FlowchartData {
   nodes: TimelineNode[];
-  edges: { source: string; target: string; label?: string }[];
+  edges: FlowchartEdge[];
   layout?: 'vertical' | 'horizontal';
+  zoom?: number;
+  center?: { x: number, y: number };
 }
 
 // Timeframe definitions
@@ -155,6 +187,14 @@ const CourtProceduresPage: React.FC = () => {
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [selectedProcedureId, setSelectedProcedureId] = useState<number | null>(null);
   const [selectedUserProcedureId, setSelectedUserProcedureId] = useState<number | null>(null);
+  
+  // New state variables for flowchart interaction
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [showNodeDetail, setShowNodeDetail] = useState<boolean>(false);
+  const [flowchartZoom, setFlowchartZoom] = useState<number>(1);
+  const [showFlowchart, setShowFlowchart] = useState<boolean>(false);
+  const [expandedSteps, setExpandedSteps] = useState<string[]>([]);
+  const [startProcedureDialogOpen, setStartProcedureDialogOpen] = useState<boolean>(false);
 
   // Fetch categories
   const { data: categories, isLoading: categoriesLoading, error: categoriesError } = useQuery<ProcedureCategory[]>({
@@ -221,6 +261,102 @@ const CourtProceduresPage: React.FC = () => {
     setSelectedUserProcedureId(null);
     setActiveTab("my-procedures");
   };
+  
+  // Handle flowchart node click
+  const handleNodeClick = (nodeId: string) => {
+    setSelectedNodeId(nodeId);
+    setShowNodeDetail(true);
+  };
+  
+  // Handle step toggle in accordions
+  const handleStepToggle = (stepId: string) => {
+    setExpandedSteps(prevExpanded => 
+      prevExpanded.includes(stepId)
+        ? prevExpanded.filter(id => id !== stepId)
+        : [...prevExpanded, stepId]
+    );
+  };
+  
+  // Handle start procedure dialog open
+  const handleStartProcedureClick = (procedureId: number) => {
+    setSelectedProcedureId(procedureId);
+    setStartProcedureDialogOpen(true);
+  };
+  
+  // Create a new user procedure
+  const startUserProcedureMutation = useMutation({
+    mutationFn: async (data: { procedureId: number, title: string }) => {
+      const response = await fetch('/api/court-procedures/user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to start procedure');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Procedure Started",
+        description: "Your procedure has been successfully created.",
+      });
+      setStartProcedureDialogOpen(false);
+      setSelectedUserProcedureId(data.id);
+      setActiveTab("user-procedure-detail");
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to start procedure. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Toggle flowchart visibility
+  const toggleFlowchart = () => {
+    setShowFlowchart(prev => !prev);
+  };
+
+  // Mark a step as completed
+  const markStepCompletedMutation = useMutation({
+    mutationFn: async ({ userProcedureId, stepId }: { userProcedureId: number, stepId: number }) => {
+      const response = await fetch(`/api/court-procedures/user/${userProcedureId}/steps/${stepId}/complete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to mark step as completed');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Step Completed",
+        description: "Your progress has been updated.",
+      });
+      // Refresh the user procedure detail data
+      if (selectedUserProcedureId) {
+        // Invalidate the query to refresh data
+      }
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update progress. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
 
   // Convert icon name to component
   const getIconComponent = (iconName: string) => {
