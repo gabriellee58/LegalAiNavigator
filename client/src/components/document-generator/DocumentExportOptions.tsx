@@ -48,11 +48,15 @@ const DocumentExportOptions: React.FC<DocumentExportOptionsProps> = ({
         const result = await generatePDF(documentContent, `${sanitizedTitle}.pdf`);
         if (result) {
           toast({
-            title: "Document Exported",
-            description: "Your document has been exported as a PDF file.",
+            title: "PDF Generation",
+            description: "Please select 'Save as PDF' in the print dialog to save your document.",
           });
         } else {
-          // The fallback message should already be shown from the generatePDF function
+          toast({
+            title: "PDF Generation Limited",
+            description: "Your browser doesn't fully support PDF generation. Document was exported as text instead.",
+            variant: "destructive",
+          });
         }
       }
     } catch (error) {
@@ -78,7 +82,16 @@ const DocumentExportOptions: React.FC<DocumentExportOptionsProps> = ({
     }
     
     try {
-      printDocument(documentContent, documentTitle);
+      // Show "preparing to print" message
+      toast({
+        title: "Preparing document for printing",
+        description: "The print dialog will open momentarily..."
+      });
+      
+      // Small delay to allow the toast to display before print dialog opens
+      setTimeout(() => {
+        printDocument(documentContent, documentTitle);
+      }, 500);
     } catch (error) {
       console.error("Error printing document:", error);
       toast({
