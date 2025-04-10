@@ -157,31 +157,31 @@ const CourtProceduresPage: React.FC = () => {
   const [selectedUserProcedureId, setSelectedUserProcedureId] = useState<number | null>(null);
 
   // Fetch categories
-  const { data: categories, isLoading: categoriesLoading, error: categoriesError } = useQuery({
+  const { data: categories, isLoading: categoriesLoading, error: categoriesError } = useQuery<ProcedureCategory[]>({
     queryKey: ['/api/court-procedures/categories'],
     enabled: activeTab === "categories" || activeTab === "browse",
   });
 
   // Fetch user's procedures
-  const { data: userProcedures, isLoading: userProceduresLoading, error: userProceduresError } = useQuery({
+  const { data: userProcedures, isLoading: userProceduresLoading, error: userProceduresError } = useQuery<UserProcedure[]>({
     queryKey: ['/api/court-procedures/user'],
     enabled: !!user && activeTab === "my-procedures",
   });
 
   // Fetch procedures for selected category
-  const { data: procedures, isLoading: proceduresLoading, error: proceduresError } = useQuery({
+  const { data: procedures, isLoading: proceduresLoading, error: proceduresError } = useQuery<Procedure[]>({
     queryKey: ['/api/court-procedures/categories', selectedCategoryId, 'procedures'],
     enabled: !!selectedCategoryId && activeTab === "browse",
   });
 
   // Fetch detailed procedure info
-  const { data: procedureDetail, isLoading: procedureDetailLoading, error: procedureDetailError } = useQuery({
+  const { data: procedureDetail, isLoading: procedureDetailLoading, error: procedureDetailError } = useQuery<ProcedureDetail>({
     queryKey: ['/api/court-procedures/procedures', selectedProcedureId],
     enabled: !!selectedProcedureId,
   });
 
   // Fetch user procedure detail
-  const { data: userProcedureDetail, isLoading: userProcedureDetailLoading, error: userProcedureDetailError } = useQuery({
+  const { data: userProcedureDetail, isLoading: userProcedureDetailLoading, error: userProcedureDetailError } = useQuery<UserProcedureDetail>({
     queryKey: ['/api/court-procedures/user', selectedUserProcedureId],
     enabled: !!selectedUserProcedureId,
   });
@@ -464,9 +464,13 @@ const CourtProceduresPage: React.FC = () => {
             ) : procedureDetail ? (
               <div className="space-y-8">
                 <div>
-                  <h2 className="text-2xl font-bold">{procedureDetail.name}</h2>
-                  <p className="text-muted-foreground">Jurisdiction: {procedureDetail.jurisdiction}</p>
-                  <p className="my-4">{procedureDetail.description}</p>
+                  <h2 className="text-2xl font-bold">{procedureDetail?.name || 'Procedure'}</h2>
+                  {procedureDetail?.jurisdiction && (
+                    <p className="text-muted-foreground">Jurisdiction: {procedureDetail.jurisdiction}</p>
+                  )}
+                  {procedureDetail?.description && (
+                    <p className="my-4">{procedureDetail.description}</p>
+                  )}
                 </div>
 
                 <Card>
@@ -476,27 +480,52 @@ const CourtProceduresPage: React.FC = () => {
                   <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <h3 className="font-semibold mb-2">Estimated Timeline</h3>
-                      <p className="text-muted-foreground mb-1">Total: {procedureDetail.estimatedTimeframes?.total || "Varies"}</p>
-                      {procedureDetail.estimatedTimeframes?.phases && (
+                      {procedureDetail.estimatedTimeframes && Array.isArray(procedureDetail.estimatedTimeframes) ? (
                         <div className="text-sm space-y-1">
-                          {Object.entries(procedureDetail.estimatedTimeframes.phases).map(([phase, time]) => (
-                            <p key={phase}>
-                              <span className="text-muted-foreground">{phase}:</span> {time}
+                          {procedureDetail.estimatedTimeframes.map((timeframe, index) => (
+                            <p key={index}>
+                              <span className="text-muted-foreground">{timeframe.phaseName || 'Phase'}:</span> {timeframe.minDuration} - {timeframe.maxDuration}
                             </p>
                           ))}
                         </div>
+                      ) : procedureDetail.estimatedTimeframes && typeof procedureDetail.estimatedTimeframes === 'object' ? (
+                        <>
+                          <p className="text-muted-foreground mb-1">Total: {(procedureDetail.estimatedTimeframes as any).total || "Varies"}</p>
+                          {(procedureDetail.estimatedTimeframes as any).phases && (
+                            <div className="text-sm space-y-1">
+                              {Object.entries((procedureDetail.estimatedTimeframes as any).phases).map(([phase, time]) => (
+                                <p key={phase}>
+                                  <span className="text-muted-foreground">{phase}:</span> {time}
+                                </p>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <p className="text-muted-foreground mb-1">Varies based on case complexity</p>
                       )}
                     </div>
                     <div>
                       <h3 className="font-semibold mb-2">Court Fees</h3>
-                      {procedureDetail.courtFees && (
+                      {procedureDetail.courtFees && Array.isArray(procedureDetail.courtFees) ? (
                         <div className="text-sm space-y-1">
-                          {Object.entries(procedureDetail.courtFees).map(([fee, amount]) => (
+                          {procedureDetail.courtFees.map((fee, index) => (
+                            <p key={index}>
+                              <span className="text-muted-foreground">{fee.name}:</span> {fee.amount}
+                              {fee.optional && <span className="ml-1 text-xs">(Optional)</span>}
+                            </p>
+                          ))}
+                        </div>
+                      ) : procedureDetail.courtFees && typeof procedureDetail.courtFees === 'object' ? (
+                        <div className="text-sm space-y-1">
+                          {Object.entries(procedureDetail.courtFees as Record<string, string>).map(([fee, amount]) => (
                             <p key={fee}>
                               <span className="text-muted-foreground">{fee}:</span> {amount}
                             </p>
                           ))}
                         </div>
+                      ) : (
+                        <p className="text-muted-foreground mb-1">Fee information unavailable</p>
                       )}
                     </div>
                   </CardContent>
@@ -571,16 +600,32 @@ const CourtProceduresPage: React.FC = () => {
                       <CardTitle>Related Forms</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {Object.entries(procedureDetail.relatedForms).map(([formId, formName]) => (
-                          <div key={formId} className="flex items-center">
-                            <FileText className="w-5 h-5 mr-2 text-primary" />
-                            <span>
-                              <strong>{formId}:</strong> {formName}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
+                      {Array.isArray(procedureDetail.relatedForms) ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {procedureDetail.relatedForms.map((form, index) => (
+                            <div key={index} className="flex items-center">
+                              <FileText className="w-5 h-5 mr-2 text-primary" />
+                              <span>
+                                <strong>{form.name}</strong>
+                                {form.description && <p className="text-sm text-muted-foreground">{form.description}</p>}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : typeof procedureDetail.relatedForms === 'object' ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {Object.entries(procedureDetail.relatedForms as Record<string, string>).map(([formId, formName]) => (
+                            <div key={formId} className="flex items-center">
+                              <FileText className="w-5 h-5 mr-2 text-primary" />
+                              <span>
+                                <strong>{formId}:</strong> {formName}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground">Form information unavailable</p>
+                      )}
                     </CardContent>
                   </Card>
                 )}
