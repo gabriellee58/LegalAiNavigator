@@ -4,7 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { format, parseISO, isToday, isYesterday, isThisWeek, isThisMonth } from "date-fns";
 import { 
   Clock, CalendarDays, UserPlus, MessageSquare, FileText, CheckCircle, ShieldAlert, 
-  RotateCw, Scale, FileUp, ArrowUpDown, MoreHorizontal, History, Loader2, AlertCircle 
+  RotateCw, Scale, FileUp, ArrowUpDown, MoreHorizontal, History, Loader2, AlertCircle,
+  CircleDot
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,10 +45,10 @@ export default function DisputeActivityTimeline({
   
   // Fetch activity timeline
   const {
-    data: activities = [],
+    data: activities = [] as ActivityItem[],
     isLoading,
     error
-  } = useQuery({
+  } = useQuery<ActivityItem[]>({
     queryKey: ['/api/disputes', disputeId, 'activities', { limit, filter }],
     enabled: !!disputeId,
   });
@@ -74,7 +75,12 @@ export default function DisputeActivityTimeline({
   };
   
   // Get icon for activity type
-  const getActivityIcon = (activityType: string) => {
+  const getActivityIcon = (activityType: string | undefined) => {
+    // Default icon if activityType is undefined
+    if (!activityType) {
+      return <CircleDot className="h-5 w-5" />;
+    }
+    
     switch (activityType.toLowerCase()) {
       case 'party_added':
         return <UserPlus className="h-5 w-5" />;
@@ -104,7 +110,12 @@ export default function DisputeActivityTimeline({
   };
   
   // Get color for activity type
-  const getActivityColor = (activityType: string): string => {
+  const getActivityColor = (activityType: string | undefined): string => {
+    // Default color if activityType is undefined
+    if (!activityType) {
+      return "bg-gray-100 text-gray-600 dark:bg-gray-900 dark:text-gray-200";
+    }
+    
     switch (activityType.toLowerCase()) {
       case 'party_added':
         return "bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-200";

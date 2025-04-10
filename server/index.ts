@@ -92,9 +92,9 @@ app.post('/api/log-client-error', (req, res) => {
     serveStatic(app);
   }
 
-  // Get port from configuration or use default 5000
+  // Get port from configuration or use default 5001
   // This serves both the API and the client
-  const port = config.PORT || 5000;
+  const port = config.PORT || 5001; // Changed to 5001 to avoid port conflict
   server.listen({
     port,
     host: config.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost',
