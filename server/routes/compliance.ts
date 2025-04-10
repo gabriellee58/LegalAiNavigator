@@ -1,8 +1,8 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import { z } from 'zod';
 import { asyncHandler } from '../utils/asyncHandler';
-import { getCurrentUser } from '../middleware/auth';
+import { isAuthenticated } from '../auth';
 import { analyzeComplianceWithAI } from '../lib/complianceService';
 
 const complianceRouter = Router();
@@ -21,7 +21,7 @@ const complianceCheckSchema = z.object({
 });
 
 // Endpoint to check business compliance
-complianceRouter.post('/check', getCurrentUser, asyncHandler(async (req, res) => {
+complianceRouter.post('/check', isAuthenticated, asyncHandler(async (req: Request, res: Response) => {
   // Validate request body
   const validationResult = complianceCheckSchema.safeParse(req.body);
   if (!validationResult.success) {
@@ -55,11 +55,11 @@ complianceRouter.post('/check', getCurrentUser, asyncHandler(async (req, res) =>
 }));
 
 // Get compliance history for the current user
-complianceRouter.get('/history', getCurrentUser, asyncHandler(async (req, res) => {
+complianceRouter.get('/history', isAuthenticated, asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?.id;
   
   // Get compliance check history from database (to be implemented)
-  const history = []; // Replace with actual database query
+  const history: { id: number; businessType: string; jurisdiction: string; score: number; status: string; createdAt: Date }[] = [];
   
   return res.json(history);
 }));

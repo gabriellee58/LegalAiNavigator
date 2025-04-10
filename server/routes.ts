@@ -38,6 +38,7 @@ import { generateChatResponse } from "./lib/aiService";
 import { streamAIResponse } from "./lib/aiStreamService";
 import { enhancedLegalResearch } from "./lib/researchService";
 import { registerAdminRoutes } from "./lib/adminRoutes";
+import complianceRouter from "./routes/compliance";
 
 // Set up multer for file uploads
 const storage_config = multer.memoryStorage();
@@ -2838,6 +2839,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error generating activity report" });
     }
   });
+  
+  // Register compliance routes
+  app.use('/api/compliance', complianceRouter);
 
   const httpServer = createServer(app);
   return httpServer;

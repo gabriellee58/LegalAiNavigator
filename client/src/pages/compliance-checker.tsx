@@ -141,35 +141,9 @@ export default function ComplianceCheckerPage() {
           variant: "destructive"
         });
         
-        // Fallback to use a sample response for demonstration
-        setComplianceResult({
-          score: 75,
-          status: "needs_attention",
-          issues: [
-            {
-              title: "Privacy Policy",
-              description: "Your privacy policy needs to be updated to comply with latest regulations",
-              severity: "medium",
-              recommendation: "Update your privacy policy to include data retention policies"
-            },
-            {
-              title: "Accessibility",
-              description: "Website does not fully meet accessibility standards",
-              severity: "high",
-              recommendation: "Implement WCAG 2.1 AA compliance updates"
-            }
-          ],
-          compliant: [
-            {
-              title: "Terms of Service",
-              description: "Your terms of service is compliant with current regulations"
-            },
-            {
-              title: "Business Registration",
-              description: "Your business registration is up to date"
-            }
-          ]
-        });
+        // Reset the form state to allow user to try again
+        setIsSubmitting(false);
+        setComplianceResult(null);
       } finally {
         setIsSubmitting(false);
       }

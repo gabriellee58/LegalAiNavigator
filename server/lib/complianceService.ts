@@ -1,13 +1,11 @@
-import { callDeepSeekAI } from './deepseekService';
-import { callAnthropicAI } from './anthropicService';
-import { callOpenAI } from './openaiService';
 import { DocumentInfo } from '../types/document';
 import { ComplianceCheckRequest, ComplianceResult } from '../types/compliance';
-import config from '../config';
+import { config } from '../config';
+import { generateChatResponse } from './aiService';
 
 /**
  * Analyze business compliance with AI
- * This function will try multiple AI providers in order of preference
+ * This function will use the central AI service with built-in fallbacks
  */
 export async function analyzeComplianceWithAI(
   request: ComplianceCheckRequest
@@ -26,68 +24,25 @@ export async function analyzeComplianceWithAI(
     // Generate the prompt
     const prompt = generateCompliancePrompt(businessType, jurisdiction, description, documentTexts);
     
-    // Try DeepSeek first (if configured)
-    if (config.AI_SERVICES.includes('deepseek')) {
-      try {
-        console.log('Attempting compliance analysis with DeepSeek AI');
-        const result = await callDeepSeekAI(prompt, 'compliance-check');
-        
-        // Parse the result
-        const complianceResult = parseComplianceResult(result);
-        
-        // Log success and return
-        const duration = Date.now() - startTime;
-        console.log(`Compliance check: DeepSeek request successful. Duration: ${duration}ms`);
-        
-        return complianceResult;
-      } catch (error) {
-        console.error('DeepSeek compliance check failed:', error);
-        // Continue to next provider
-      }
-    }
+    // Use the unified AI service for the request
+    console.log('Requesting compliance analysis with AI service');
+    const result = await generateChatResponse(prompt, {
+      system: `You are a compliance analysis assistant specializing in Canadian business regulations. 
+      You provide detailed, accurate compliance reports in JSON format.
+      Focus on business registration, licensing, taxation, employment standards, privacy laws, 
+      health and safety requirements, and industry-specific regulations.`,
+      cacheKey: `compliance-${businessType}-${jurisdiction}-${Date.now()}`, // Unique per request
+      logPrefix: "Compliance Analysis"
+    });
     
-    // Try Anthropic next (if configured)
-    if (config.AI_SERVICES.includes('anthropic')) {
-      try {
-        console.log('Attempting compliance analysis with Anthropic Claude');
-        const result = await callAnthropicAI(prompt, 'compliance-check');
-        
-        // Parse the result
-        const complianceResult = parseComplianceResult(result);
-        
-        // Log success and return
-        const duration = Date.now() - startTime;
-        console.log(`Compliance check: Anthropic request successful. Duration: ${duration}ms`);
-        
-        return complianceResult;
-      } catch (error) {
-        console.error('Anthropic compliance check failed:', error);
-        // Continue to next provider
-      }
-    }
+    // Parse the result
+    const complianceResult = parseComplianceResult(result);
     
-    // Try OpenAI last (if configured)
-    if (config.AI_SERVICES.includes('openai')) {
-      try {
-        console.log('Attempting compliance analysis with OpenAI');
-        const result = await callOpenAI(prompt, 'compliance-check');
-        
-        // Parse the result
-        const complianceResult = parseComplianceResult(result);
-        
-        // Log success and return
-        const duration = Date.now() - startTime;
-        console.log(`Compliance check: OpenAI request successful. Duration: ${duration}ms`);
-        
-        return complianceResult;
-      } catch (error) {
-        console.error('OpenAI compliance check failed:', error);
-        // No more providers to try
-      }
-    }
+    // Log success and return
+    const duration = Date.now() - startTime;
+    console.log(`Compliance check: AI request successful. Duration: ${duration}ms`);
     
-    // If all providers fail, throw an error
-    throw new Error('All AI providers failed to analyze compliance');
+    return complianceResult;
     
   } catch (error) {
     console.error('Compliance analysis error:', error);
