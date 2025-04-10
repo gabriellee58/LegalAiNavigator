@@ -219,17 +219,20 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
       <TabsContent value="preview" className="mt-4">
         {generatedDocument && (
           <div className="space-y-4">
-            <div className="flex justify-end">
-              <Button onClick={downloadDocument} className="bg-primary hover:bg-primary-dark">
-                <span className="material-icons mr-2">download</span>
-                {t("download_document")}
-              </Button>
+            <div className="flex justify-end space-x-2">
+              <DocumentExportOptions 
+                documentContent={generatedDocument} 
+                documentTitle={`${template.title} - ${new Date().toLocaleDateString()}`}
+              />
             </div>
             
             <Card>
-              <CardContent className="pt-6">
-                <div className="bg-white p-6 border rounded-lg shadow-sm">
-                  <pre className="whitespace-pre-wrap font-mono text-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-xl">{template.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-white p-6 border rounded-lg shadow-sm print:border-none print:shadow-none print:p-0">
+                  <pre id="document-content" className="whitespace-pre-wrap font-mono text-sm print:text-base">
                     {generatedDocument}
                   </pre>
                 </div>

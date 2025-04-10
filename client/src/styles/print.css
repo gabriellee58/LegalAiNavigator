@@ -1,0 +1,49 @@
+/* Print-specific styles */
+@media print {
+  /* Hide non-essential elements during printing */
+  header,
+  footer,
+  nav,
+  button,
+  .no-print,
+  [role="tablist"],
+  [data-state="inactive"] {
+    display: none !important;
+  }
+
+  /* Make sure the content takes up the full page */
+  body {
+    margin: 0;
+    padding: 0;
+    background: white;
+  }
+
+  /* Document content styling */
+  #document-content {
+    font-family: "Times New Roman", Times, serif;
+    font-size: 12pt;
+    line-height: 1.5;
+    margin: 0;
+    padding: 0;
+    color: black;
+  }
+
+  /* Remove shadcn UI styling */
+  .border, 
+  .rounded-lg, 
+  .shadow-sm {
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Hide export buttons */
+  [data-document-export] {
+    display: none !important;
+  }
+
+  /* Add some page margins */
+  @page {
+    margin: 2cm;
+  }
+}

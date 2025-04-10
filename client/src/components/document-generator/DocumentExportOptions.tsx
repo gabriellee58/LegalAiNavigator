@@ -90,7 +90,7 @@ const DocumentExportOptions: React.FC<DocumentExportOptionsProps> = ({
   };
   
   return (
-    <div className="flex space-x-2">
+    <div className="flex space-x-2" data-document-export>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="space-x-2">
