@@ -40,7 +40,7 @@ function validateEnv() {
 // Create and export the config object
 export const config: ConfigInterface = {
   NODE_ENV: process.env.NODE_ENV || 'development',
-  PORT: parseInt(process.env.PORT || '5000', 10),
+  PORT: parseInt(process.env.PORT || '5000', 10), // Changed back to 5000 to match Replit workflow config
   DATABASE_URL: process.env.DATABASE_URL as string,
   SESSION_SECRET: process.env.SESSION_SECRET || 'development-secret-key',
   LOG_LEVEL: process.env.LOG_LEVEL || 'info',

@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 
 // Import our new components
 import DisputePartyManager from "@/components/dispute/DisputePartyManager";
@@ -79,6 +80,7 @@ export default function DisputeDetailPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [viewingDocument, setViewingDocument] = useState<any>(null);
   const [isDocumentDialogOpen, setIsDocumentDialogOpen] = useState(false);
+  const [useAIAssistance, setUseAIAssistance] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Redirect if dispute ID is invalid
@@ -234,7 +236,7 @@ export default function DisputeDetailPage() {
   
   const handleStartMediation = () => {
     startMediationMutation.mutate({
-      aiAssistance: true,
+      aiAssistance: useAIAssistance,
     });
   };
   
@@ -1014,9 +1016,16 @@ export default function DisputeDetailPage() {
           <div className="py-4 space-y-4">
             <div className="flex items-center justify-between">
               <span className="font-medium">{t("ai_assistance")}</span>
-              <Badge variant="outline" className="ml-2">
-                {t("enabled")}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Switch 
+                  id="ai-assistance" 
+                  checked={useAIAssistance} 
+                  onCheckedChange={setUseAIAssistance} 
+                />
+                <Badge variant={useAIAssistance ? "default" : "outline"} className="ml-2">
+                  {useAIAssistance ? t("enabled") : t("disabled")}
+                </Badge>
+              </div>
             </div>
             
             <p className="text-sm text-muted-foreground">
