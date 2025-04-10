@@ -44,8 +44,14 @@ complianceRouter.post('/check', isAuthenticated, asyncHandler(async (req: Reques
       userId
     });
 
-    // Return the compliance analysis result
-    return res.status(201).json(complianceResult);
+    // Debug the result format
+    console.log('Compliance Result Type:', typeof complianceResult);
+    
+    // Ensure we have a valid JSON response
+    return res.status(201).json({
+      success: true,
+      data: complianceResult
+    });
   } catch (error) {
     console.error("Compliance check error:", error);
     return res.status(500).json({ 

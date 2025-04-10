@@ -123,15 +123,23 @@ export default function ComplianceCheckerPage() {
         // Make the actual API call
         const response = await apiRequest('POST', '/api/compliance/check', complianceData);
         
+        // Get the response data
+        const responseData = await response.json();
+        
         if (!response.ok) {
           // If the API call fails, throw an error
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Error performing compliance check');
+          throw new Error(responseData.message || 'Error performing compliance check');
         }
         
-        // Parse and set the response data
-        const result = await response.json();
-        setComplianceResult(result);
+        // Check if the response contains the data property
+        if (responseData && responseData.data) {
+          setComplianceResult(responseData.data);
+        } else if (responseData) {
+          // Fallback to use the entire response if data property is not found
+          setComplianceResult(responseData);
+        } else {
+          throw new Error("Invalid response format from the server");
+        }
       } catch (error) {
         console.error('Compliance check error:', error);
         
