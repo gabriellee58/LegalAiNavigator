@@ -792,66 +792,162 @@ const CourtProceduresPage: React.FC = () => {
                 </Card>
 
                 <div>
-                  <h3 className="text-xl font-semibold mb-4">Procedure Steps</h3>
-                  <div className="space-y-4">
-                    {procedureDetail.steps?.map((step: ProcedureStep, index: number) => (
-                      <Card key={step.id} className="border-l-4 border-l-primary">
-                        <CardHeader>
-                          <CardTitle>
-                            {index + 1}. {step.title}
-                          </CardTitle>
-                          {step.estimatedTime && (
-                            <CardDescription>
-                              Estimated time: {step.estimatedTime}
-                            </CardDescription>
-                          )}
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <p>{step.description}</p>
-                          
-                          {step.instructions && (
-                            <div>
-                              <h4 className="font-semibold mb-1">Instructions</h4>
-                              <p className="text-sm">{step.instructions}</p>
-                            </div>
-                          )}
-                          
-                          {step.requiredDocuments && step.requiredDocuments.length > 0 && (
-                            <div>
-                              <h4 className="font-semibold mb-1">Required Documents</h4>
-                              <ul className="list-disc pl-5 text-sm">
-                                {step.requiredDocuments.map((doc, i) => (
-                                  <li key={i}>{doc}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                          
-                          {step.tips && step.tips.length > 0 && (
-                            <div>
-                              <h4 className="font-semibold mb-1">Tips</h4>
-                              <ul className="list-disc pl-5 text-sm">
-                                {step.tips.map((tip, i) => (
-                                  <li key={i}>{tip}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                          
-                          {step.warnings && step.warnings.length > 0 && (
-                            <div>
-                              <h4 className="font-semibold mb-1 text-amber-700">Warnings</h4>
-                              <ul className="list-disc pl-5 text-sm text-amber-700">
-                                {step.warnings.map((warning, i) => (
-                                  <li key={i}>{warning}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-semibold">Procedure Steps</h3>
+                    <Button 
+                      variant="outline" 
+                      onClick={toggleFlowchart} 
+                      className="gap-2"
+                      size="sm"
+                    >
+                      {showFlowchart ? "Hide Flowchart" : "Show Flowchart"}
+                      {showFlowchart ? 
+                        <Eye className="h-4 w-4" /> : 
+                        <GitPullRequest className="h-4 w-4" />
+                      }
+                    </Button>
                   </div>
+                  
+                  {/* Interactive Flowchart - Toggled by the button above */}
+                  {showFlowchart && procedureDetail.flowchartData && (
+                    <Card className="mb-6 p-4 overflow-x-auto">
+                      <CardContent className="p-0">
+                        <div className="flex items-center justify-center mb-4">
+                          <div className="flex items-center gap-4">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => setFlowchartZoom(prev => Math.max(0.5, prev - 0.1))}
+                            >
+                              -
+                            </Button>
+                            <span>{Math.round(flowchartZoom * 100)}%</span>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => setFlowchartZoom(prev => Math.min(2, prev + 0.1))}
+                            >
+                              +
+                            </Button>
+                          </div>
+                        </div>
+                        <div 
+                          className="min-h-[400px] border rounded-md p-4 relative"
+                          style={{ transform: `scale(${flowchartZoom})`, transformOrigin: 'center', transition: 'transform 0.3s ease' }}
+                        >
+                          {/* Placeholder for flowchart visualization */}
+                          <div className="text-center text-muted-foreground">
+                            Interactive flowchart visualization will be implemented in the next iteration
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                  
+                  <Accordion type="multiple" className="space-y-4" value={expandedSteps} onValueChange={setExpandedSteps}>
+                    {procedureDetail.steps?.map((step: ProcedureStep, index: number) => (
+                      <AccordionItem 
+                        key={step.id} 
+                        value={`step-${step.id}`}
+                        className="border rounded-lg shadow-sm overflow-hidden"
+                      >
+                        <AccordionTrigger className="px-4 py-3 hover:no-underline bg-card data-[state=open]:bg-muted/40">
+                          <div className="flex items-start justify-between w-full">
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-medium">
+                                {index + 1}
+                              </div>
+                              <div className="text-left">
+                                <h4 className="font-medium text-base">{step.title}</h4>
+                                {step.estimatedTime && (
+                                  <p className="text-xs text-muted-foreground flex items-center mt-1">
+                                    <Clock className="h-3 w-3 mr-1" />
+                                    Estimated time: {step.estimatedTime}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            {step.isOptional && (
+                              <span className="text-xs bg-muted px-2 py-1 rounded-full text-muted-foreground">
+                                Optional
+                              </span>
+                            )}
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 py-4 bg-card border-t">
+                          <div className="space-y-4">
+                            <p>{step.description}</p>
+
+                            {step.requiredDocuments && step.requiredDocuments.length > 0 && (
+                              <div className="bg-muted/30 p-3 rounded-md">
+                                <h4 className="font-medium mb-2 flex items-center">
+                                  <FileText className="h-4 w-4 mr-2 text-primary" />
+                                  Required Documents
+                                </h4>
+                                <ul className="list-disc pl-5 space-y-1">
+                                  {step.requiredDocuments.map((doc, i) => (
+                                    <li key={i} className="text-sm">{doc}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {step.tips && step.tips.length > 0 && (
+                              <div className="bg-blue-50 p-3 rounded-md">
+                                <h4 className="font-medium mb-2 flex items-center text-blue-700">
+                                  <Info className="h-4 w-4 mr-2" />
+                                  Tips
+                                </h4>
+                                <ul className="list-disc pl-5 space-y-1 text-blue-800">
+                                  {step.tips.map((tip, i) => (
+                                    <li key={i} className="text-sm">{tip}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {step.warnings && step.warnings.length > 0 && (
+                              <div className="bg-red-50 p-3 rounded-md">
+                                <h4 className="font-medium mb-2 flex items-center text-red-700">
+                                  <AlertCircle className="h-4 w-4 mr-2" />
+                                  Warnings
+                                </h4>
+                                <ul className="list-disc pl-5 space-y-1 text-red-800">
+                                  {step.warnings.map((warning, i) => (
+                                    <li key={i} className="text-sm">{warning}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {step.instructions && (
+                              <div className="bg-muted/30 p-3 rounded-md">
+                                <h4 className="font-medium mb-2">Instructions</h4>
+                                <p className="text-sm">{step.instructions}</p>
+                              </div>
+                            )}
+                            
+                            {user && (
+                              <div className="pt-2 flex justify-end">
+                                <Button 
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleStartProcedureClick(procedureDetail.id)}
+                                  className="gap-2"
+                                >
+                                  {userProcedures?.some(p => p.procedureId === procedureDetail.id)
+                                    ? "Continue Procedure"
+                                    : "Start Procedure"
+                                  }
+                                  <ArrowRight className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
                 </div>
 
                 {procedureDetail.relatedForms && (
