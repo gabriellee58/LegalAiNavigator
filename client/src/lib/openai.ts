@@ -108,17 +108,22 @@ export const generateDocument = async (
       const anglePlaceholders = template.templateContent.match(/<([^>]+)>/g) || [];
       
       // Convert extracted placeholders to field definitions
-      const extractedFields = [...new Set([
-        ...mustachePlaceholders.map(p => p.replace(/\{\{|\}\}/g, '').trim()),
-        ...squarePlaceholders.map(p => p.replace(/\[|\]/g, '').trim()),
-        ...anglePlaceholders.map(p => p.replace(/<|>/g, '').trim())
-      ])].map(name => ({
+      const extractedPlaceholders = [
+        ...(mustachePlaceholders || []).map((p: string) => p.replace(/\{\{|\}\}/g, '').trim()),
+        ...(squarePlaceholders || []).map((p: string) => p.replace(/\[|\]/g, '').trim()),
+        ...(anglePlaceholders || []).map((p: string) => p.replace(/<|>/g, '').trim())
+      ];
+      
+      // Use Array.from to create a deduplicated array
+      const uniquePlaceholders = Array.from(new Set(extractedPlaceholders));
+      
+      const extractedFields = uniquePlaceholders.map((name: string) => ({
         name,
         label: name.replace(/([A-Z])/g, ' $1')
           .replace(/_/g, ' ')
           .trim()
           .split(' ')
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
           .join(' '),
         type: 'text',
         required: true
@@ -133,7 +138,7 @@ export const generateDocument = async (
     console.log(`Processing ${templateFields.length} fields for template ID ${templateId}`);
     
     // For each field, create all possible placeholder variations
-    templateFields.forEach(field => {
+    templateFields.forEach((field: { name: string; label: string; type?: string; required?: boolean }) => {
       const key = field.name;
       if (!key) return; // Skip fields with no name
       

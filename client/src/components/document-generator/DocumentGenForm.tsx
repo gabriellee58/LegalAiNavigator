@@ -44,9 +44,33 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
     onSuccess: (data: any) => {
       console.log("Document generation successful, response:", data);
       
+      // Debug the response structure
+      console.log("Document response type:", typeof data);
+      console.log("Document response keys:", data ? Object.keys(data) : "null");
+      
+      // Enhanced data extraction - handle different response formats
+      let documentContent = null;
+      
+      if (typeof data === 'string') {
+        // If the response is a string, use it directly
+        documentContent = data;
+      } else if (data && typeof data === 'object') {
+        // Try to extract documentContent from various possible locations
+        if (data.documentContent) {
+          documentContent = data.documentContent;
+        } else if (data.content) {
+          documentContent = data.content;
+        } else if (data.document && data.document.documentContent) {
+          documentContent = data.document.documentContent;
+        } else if (data.data && data.data.documentContent) {
+          documentContent = data.data.documentContent;
+        }
+      }
+      
       // Ensure we have document content
-      if (data && data.documentContent) {
-        setGeneratedDocument(data.documentContent);
+      if (documentContent) {
+        console.log("Document content extracted successfully, length:", documentContent.length);
+        setGeneratedDocument(documentContent);
         
         // Use setTimeout to ensure state is updated before tab switch
         setTimeout(() => {
@@ -58,7 +82,7 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
           description: "Your document has been successfully generated. You can now preview and download it.",
         });
       } else {
-        console.error("Document generation succeeded but no content was returned:", data);
+        console.error("Document generation succeeded but content could not be extracted:", data);
         toast({
           title: "Document Generation Issue",
           description: "The document was generated but the content is missing. Please try again.",
