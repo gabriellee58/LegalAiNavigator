@@ -57,6 +57,7 @@ export const translations: Translations = {
     contract_analysis: "Contract Analysis",
     dispute_resolution: "Dispute Resolution",
     compliance_checker: "Compliance Checker",
+    court_procedures: "Court Procedures",
     help_resources: "Help & Resources",
     settings: "Settings",
     

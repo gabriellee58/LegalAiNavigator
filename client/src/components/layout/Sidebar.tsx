@@ -8,6 +8,7 @@ export function Sidebar() {
   const [isContractAnalysisRoute] = useRoute("/contract-analysis");
   const [isDisputeResolutionRoute] = useRoute("/dispute-resolution");
   const [isComplianceCheckerRoute] = useRoute("/compliance-checker");
+  const [isCourtProceduresRoute] = useRoute("/court-procedures");
   const [isLegalDomainsRoute] = useRoute("/legal-domains");
   
   const [isContractsRoute] = useRoute("/documents/contracts");
@@ -77,6 +78,14 @@ export function Sidebar() {
                 <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isComplianceCheckerRoute ? 'bg-blue-50 text-primary' : ''}`}>
                   <span className={`material-icons mr-3 ${isComplianceCheckerRoute ? 'text-primary' : 'text-neutral-500'}`}>verified</span>
                   <span>{t("compliance_checker")}</span>
+                </div>
+              </Link>
+            </li>
+            <li>
+              <Link href="/court-procedures">
+                <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isCourtProceduresRoute ? 'bg-blue-50 text-primary' : ''}`}>
+                  <span className={`material-icons mr-3 ${isCourtProceduresRoute ? 'text-primary' : 'text-neutral-500'}`}>account_balance</span>
+                  <span>{t("court_procedures")}</span>
                 </div>
               </Link>
             </li>
