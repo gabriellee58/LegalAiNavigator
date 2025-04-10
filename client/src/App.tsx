@@ -25,6 +25,7 @@ import DocumentTemplatesPage from "./pages/document-templates";
 import HelpResourcesPage from "./pages/help-resources";
 import SettingsPage from "./pages/settings";
 import MorePage from "./pages/more";
+import CourtProceduresPage from "./pages/court-procedures";
 
 // Import legal domains browser
 import LegalDomainsPage from "./pages/legal-domains";
@@ -65,7 +66,8 @@ import {
   DocumentGenerationTutorial,
   ContractAnalysisGuide,
   LegalResearchGuide,
-  ComplianceCheckerTutorial
+  ComplianceCheckerTutorial,
+  CourtProceduresGuide
 } from "./pages/guides";
 
 // Import style for Material Icons
@@ -107,6 +109,7 @@ function Router() {
       <ProtectedRoute path="/dispute-resolution" component={DisputeResolutionPage} />
       <ProtectedRoute path="/dispute/:id" component={DisputeDetailPage} />
       <ProtectedRoute path="/compliance-checker" component={ComplianceCheckerPage} />
+      <ProtectedRoute path="/court-procedures" component={CourtProceduresPage} />
       
       {/* Document Templates */}
       <ProtectedRoute path="/documents/contracts" component={DocumentTemplatesPage} />
@@ -155,6 +158,7 @@ function Router() {
       <ProtectedRoute path="/guides/contract-analysis" component={ContractAnalysisGuide} />
       <ProtectedRoute path="/guides/legal-research" component={LegalResearchGuide} />
       <ProtectedRoute path="/guides/compliance-checker" component={ComplianceCheckerTutorial} />
+      <ProtectedRoute path="/guides/court-procedures" component={CourtProceduresGuide} />
       
       {/* Feedback Pages */}
       <ProtectedRoute path="/my-feedback" component={MyFeedbackPage} />
