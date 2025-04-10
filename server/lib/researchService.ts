@@ -5,12 +5,14 @@
  * - Caching for frequently asked research queries
  * - Tiered fallback between AI providers
  * - Detailed error handling and logging
+ * - Mock data fallback for testing
  */
 
 import { aiFeatureFlags, enhancedAIRequest } from './aiService';
 import { performLegalResearch as performDeepSeekResearch } from './deepseek';
 import { performLegalResearch as performOpenAIResearch } from './openai';
 import { performLegalResearch as performClaudeResearch } from './anthropic';
+import { getMockResearchData } from './mockResearchData';
 
 // Claude research result format
 interface ClaudeResearchResult {
