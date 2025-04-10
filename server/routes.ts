@@ -39,6 +39,7 @@ import { streamAIResponse } from "./lib/aiStreamService";
 import { enhancedLegalResearch } from "./lib/researchService";
 import { registerAdminRoutes } from "./lib/adminRoutes";
 import complianceRouter from "./routes/compliance";
+import courtProceduresRouter from "./routes/courtProcedures";
 
 // Set up multer for file uploads
 const storage_config = multer.memoryStorage();
@@ -2842,6 +2843,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register compliance routes
   app.use('/api/compliance', complianceRouter);
+  app.use('/api/court-procedures', courtProceduresRouter);
 
   const httpServer = createServer(app);
   return httpServer;
