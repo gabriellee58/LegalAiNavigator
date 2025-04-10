@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { t } from "@/lib/i18n";
 import { DocumentTemplate } from "@shared/schema";
 import { generateDocument } from "@/lib/openai";
+import DocumentExportOptions from "./DocumentExportOptions";
 
 interface DocumentGenFormProps {
   template: DocumentTemplate;
@@ -111,18 +112,7 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
     generateDocumentMutation(data);
   };
   
-  // Download document as txt file
-  const downloadDocument = () => {
-    if (!generatedDocument) return;
-    
-    const element = document.createElement("a");
-    const file = new Blob([generatedDocument], { type: "text/plain" });
-    element.href = URL.createObjectURL(file);
-    element.download = `${template.title.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.txt`;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-  };
+  // Export document functionality is now handled by DocumentExportOptions component
   
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
