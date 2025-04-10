@@ -100,69 +100,146 @@ export const generateDocument = async (
   // Get the document content
   let documentContent = template.templateContent;
   
-  console.log("Placeholder map:", placeholderMap);
-  console.log("Form data:", documentData);
+  console.log("Document template ID:", templateId);
+  console.log("Field definitions:", template.fields);
+  console.log("Form data submitted:", documentData);
   
-  // For each field in the submitted form data
-  Object.entries(documentData).forEach(([fieldName, fieldValue]) => {
-    // Skip empty values
-    if (fieldValue === undefined || fieldValue === null || fieldValue === "") {
-      return;
-    }
+  // Step 1: Replace all mustache placeholders {{fieldName}}
+  // This handles both regular and quoted mustache placeholders
+  for (const [fieldName, fieldValue] of Object.entries(documentData)) {
+    if (fieldValue === undefined || fieldValue === null || fieldValue === "") continue;
     
-    // Get placeholder variations for this field
+    // Handle {{fieldName}} placeholders (standard mustache)
+    const mustachePattern = new RegExp(`\\{\\{\\s*${fieldName}\\s*\\}\\}`, 'gi');
+    documentContent = documentContent.replace(mustachePattern, fieldValue.toString());
+    
+    // Handle "{{fieldName}}" placeholders (quoted mustache)
+    const quotedMustachePattern = new RegExp(`"\\{\\{\\s*${fieldName}\\s*\\}\\}"`, 'gi');
+    documentContent = documentContent.replace(quotedMustachePattern, `"${fieldValue.toString()}"`);
+    
+    // Also try with single quotes '{{fieldName}}'
+    const singleQuotedMustachePattern = new RegExp(`'\\{\\{\\s*${fieldName}\\s*\\}\\}'`, 'gi');
+    documentContent = documentContent.replace(singleQuotedMustachePattern, `'${fieldValue.toString()}'`);
+    
+    console.log(`Step 1: Replaced {{${fieldName}}} with: ${fieldValue}`);
+  }
+  
+  // Step 2: Replace square bracket placeholders [FIELD_NAME]
+  for (const [fieldName, fieldValue] of Object.entries(documentData)) {
+    if (fieldValue === undefined || fieldValue === null || fieldValue === "") continue;
+    
+    // Get all placeholder variations for this field
     const placeholders = placeholderMap[fieldName] || [];
+    console.log(`Processing field "${fieldName}" with value "${fieldValue}"`);
+    console.log(`Potential placeholder variations:`, placeholders);
     
-    // Log the field we're processing
-    console.log(`Processing field: ${fieldName}, value: ${fieldValue}`);
-    console.log(`Potential placeholders:`, placeholders);
-    
-    // Try each placeholder variation
-    placeholders.forEach(placeholder => {
-      // Create regex that looks for [PLACEHOLDER] in the template
-      const regex = new RegExp(`\\[${placeholder}\\]`, 'g');
+    // Try each placeholder variation with square brackets
+    for (const placeholder of placeholders) {
+      const bracketPattern = new RegExp(`\\[${placeholder}\\]`, 'g');
+      const matches = documentContent.match(bracketPattern);
       
-      // Check if this placeholder exists in the template
-      const matches = documentContent.match(regex);
-      if (matches) {
-        console.log(`Found matches for [${placeholder}]:`, matches.length);
-        
-        // Replace all instances of this placeholder with the field value
-        documentContent = documentContent.replace(regex, fieldValue.toString());
+      if (matches && matches.length > 0) {
+        console.log(`Found ${matches.length} matches for [${placeholder}]`);
+        documentContent = documentContent.replace(bracketPattern, fieldValue.toString());
       }
+    }
+  }
+  
+  // Step 3: Handle template-specific patterns
+  // This is crucial for templates that might use different placeholder formats
+  if (templateId === 101) {
+    // Special handling for Indigenous Self-Government Framework Agreement template
+    console.log("Applying special handling for template ID 101");
+    for (const [fieldName, fieldValue] of Object.entries(documentData)) {
+      if (!fieldValue) continue;
+      
+      // Additional placeholder variations based on field name
+      switch (fieldName) {
+        case "indigenousName":
+          documentContent = documentContent.replace(/{{indigenousName}}/g, fieldValue.toString());
+          break;
+        case "indigenousShortName":
+          // Replace all occurrences in the content
+          documentContent = documentContent.replace(/{{indigenousShortName}}/g, fieldValue.toString());
+          documentContent = documentContent.replace(/"{{indigenousShortName}}"/g, `"${fieldValue.toString()}"`);
+          documentContent = documentContent.replace(/the {{indigenousShortName}}/g, `the ${fieldValue.toString()}`);
+          break;
+        case "provinceName":
+          documentContent = documentContent.replace(/{{provinceName}}/g, fieldValue.toString());
+          break;
+        case "provincialMinistry":
+          documentContent = documentContent.replace(/{{provincialMinistry}}/g, fieldValue.toString());
+          break;
+        case "workPlanTimeframe":
+          documentContent = documentContent.replace(/{{workPlanTimeframe}}/g, fieldValue.toString());
+          break;
+        case "terminationTimeframe": 
+          documentContent = documentContent.replace(/{{terminationTimeframe}}/g, fieldValue.toString());
+          break;
+        case "withdrawalNotice":
+          documentContent = documentContent.replace(/{{withdrawalNotice}}/g, fieldValue.toString());
+          break;
+      }
+    }
+  } else if (templateId === 2) {
+    // Special handling for Residential Lease Agreement template
+    console.log("Applying special handling for template ID 2 (Lease Agreement)");
+    
+    const leaseSpecificMap: Record<string, string> = {
+      "DATE": documentData.date,
+      "LANDLORD NAME": documentData.landlordName,
+      "LANDLORD ADDRESS": documentData.landlordAddress,
+      "TENANT NAME": documentData.tenantName, 
+      "TENANT ADDRESS": documentData.tenantAddress,
+      "PROPERTY ADDRESS": documentData.propertyAddress,
+      "START DATE": documentData.startDate,
+      "END DATE": documentData.endDate,
+      "RENT AMOUNT": documentData.rentAmount,
+      "DUE DAY": documentData.dueDay,
+      "SECURITY DEPOSIT AMOUNT": documentData.securityDepositAmount,
+      "UTILITIES": documentData.utilities,
+      "LANDLORD UTILITIES": documentData.landlordUtilities,
+      "PROVINCE": documentData.province
+    };
+    
+    // Apply the direct placeholder replacements
+    Object.entries(leaseSpecificMap).forEach(([placeholder, value]) => {
+      if (!value) return; // Skip empty values
+      
+      const regex = new RegExp(`\\[${placeholder}\\]`, 'g');
+      documentContent = documentContent.replace(regex, value.toString());
     });
-    
-    // Also try {{fieldName}} format (mustache templates)
-    const mustachePlaceholder = new RegExp(`\\{\\{\\s*${fieldName}\\s*\\}\\}`, 'gi');
-    documentContent = documentContent.replace(mustachePlaceholder, fieldValue.toString());
-  });
+  }
   
-  // Manually handle specific placeholders based on the template content inspection
-  // This ensures we catch any that might have been missed
-  const directPlaceholderMap: Record<string, string> = {
-    "DATE": documentData.date,
-    "LANDLORD NAME": documentData.landlordName,
-    "LANDLORD ADDRESS": documentData.landlordAddress,
-    "TENANT NAME": documentData.tenantName, 
-    "TENANT ADDRESS": documentData.tenantAddress,
-    "PROPERTY ADDRESS": documentData.propertyAddress,
-    "START DATE": documentData.startDate,
-    "END DATE": documentData.endDate,
-    "RENT AMOUNT": documentData.rentAmount,
-    "DUE DAY": documentData.dueDay,
-    "SECURITY DEPOSIT AMOUNT": documentData.securityDepositAmount,
-    "UTILITIES": documentData.utilities,
-    "LANDLORD UTILITIES": documentData.landlordUtilities,
-    "PROVINCE": documentData.province
-  };
-  
-  // Apply the direct placeholder replacements
-  Object.entries(directPlaceholderMap).forEach(([placeholder, value]) => {
-    if (!value) return; // Skip empty values
+  // Step 4: Final generic replacement sweep for any remaining placeholders
+  // This ensures we catch any missed placeholders with a more comprehensive approach
+  for (const [fieldName, fieldValue] of Object.entries(documentData)) {
+    if (!fieldValue) continue;
     
-    const regex = new RegExp(`\\[${placeholder}\\]`, 'g');
-    documentContent = documentContent.replace(regex, value.toString());
-  });
+    // Try field name with different case formats
+    const variations = [
+      fieldName,
+      fieldName.toUpperCase(),
+      fieldName.toLowerCase(),
+      fieldName.charAt(0).toUpperCase() + fieldName.slice(1).toLowerCase(),
+      fieldName.replace(/([A-Z])/g, ' $1').trim(),
+      fieldName.replace(/([A-Z])/g, ' $1').toUpperCase().trim(),
+    ];
+    
+    variations.forEach(variant => {
+      // Try with different wrapper formats
+      [
+        `{{${variant}}}`,
+        `{${variant}}`,
+        `[${variant}]`,
+        `<${variant}>`,
+        `"{{${variant}}}"`,
+      ].forEach(pattern => {
+        const regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+        documentContent = documentContent.replace(regex, fieldValue.toString());
+      });
+    });
+  }
   
   console.log("Generated document content length:", documentContent.length);
   
