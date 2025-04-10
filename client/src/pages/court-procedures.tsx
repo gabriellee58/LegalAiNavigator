@@ -375,30 +375,59 @@ const CourtProceduresPage: React.FC = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {procedures?.map((procedure: Procedure) => (
-                  <Card key={procedure.id}>
+                  <Card key={procedure.id} className="border-l-4 border-l-primary/50 transition-all hover:border-l-primary">
                     <CardHeader>
-                      <CardTitle>{procedure.name}</CardTitle>
-                      <CardDescription>{procedure.jurisdiction}</CardDescription>
+                      <CardTitle className="flex items-start justify-between">
+                        <span>{procedure.name}</span>
+                        <span className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded ml-2">
+                          {procedure.jurisdiction}
+                        </span>
+                      </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="mb-2">{procedure.description}</p>
-                      <div className="font-medium mt-4">Estimated Timeline:</div>
-                      <p className="text-sm text-muted-foreground">
-                        {procedure.estimatedTimeframes?.total || "Varies"}
-                      </p>
+                      <p className="mb-4 line-clamp-2">{procedure.description}</p>
+                      <div className="bg-muted/40 p-3 rounded-lg mb-2">
+                        <div className="font-medium text-sm flex items-center">
+                          <svg 
+                            xmlns="http://www.w3.org/2000/svg" 
+                            viewBox="0 0 24 24" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            strokeWidth="2" 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            className="w-4 h-4 mr-2 text-primary"
+                          >
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                          </svg>
+                          Estimated Timeline:
+                        </div>
+                        <p className="text-sm text-muted-foreground ml-6">
+                          {procedure.estimatedTimeframes && typeof procedure.estimatedTimeframes === 'object' && (procedure.estimatedTimeframes as any).total 
+                            ? (procedure.estimatedTimeframes as any).total 
+                            : "Varies based on complexity"}
+                        </p>
+                      </div>
                     </CardContent>
-                    <CardFooter className="flex justify-between">
-                      <Button variant="outline" onClick={() => handleProcedureSelect(procedure.id)}>
+                    <CardFooter className="flex justify-between gap-2">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => handleProcedureSelect(procedure.id)}
+                        className="flex-1"
+                      >
                         View Details
                       </Button>
                       {user && (
-                        <Button onClick={() => {
-                          // This will be implemented with a modal in the future
-                          toast({
-                            title: "Feature Coming Soon",
-                            description: "Starting your own procedure will be available soon.",
-                          });
-                        }}>
+                        <Button 
+                          onClick={() => {
+                            toast({
+                              title: "Feature Coming Soon",
+                              description: "Starting your own procedure will be available soon.",
+                            });
+                          }}
+                          className="flex-1"
+                        >
                           Start Procedure
                         </Button>
                       )}
@@ -437,40 +466,75 @@ const CourtProceduresPage: React.FC = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {userProcedures?.map((userProcedure: UserProcedure) => (
-                  <Card key={userProcedure.id}>
-                    <CardHeader>
-                      <CardTitle>{userProcedure.title}</CardTitle>
-                      <CardDescription>
-                        Status: 
-                        <span className={`ml-2 px-2 py-1 rounded text-xs ${
-                          userProcedure.status === 'active' ? 'bg-green-100 text-green-800' :
-                          userProcedure.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                          'bg-gray-100 text-gray-800'
+                  <Card 
+                    key={userProcedure.id} 
+                    className={`border-l-4 ${
+                      userProcedure.status === 'active' ? 'border-l-primary/70 hover:border-l-primary' :
+                      userProcedure.status === 'completed' ? 'border-l-green-500/70 hover:border-l-green-500' :
+                      'border-l-muted-foreground/30 hover:border-l-muted-foreground'
+                    } transition-all`}
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex justify-between items-start">
+                        <CardTitle>{userProcedure.title}</CardTitle>
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          userProcedure.status === 'active' ? 'bg-primary/10 text-primary' :
+                          userProcedure.status === 'completed' ? 'bg-green-100 text-green-800' :
+                          'bg-muted text-muted-foreground'
                         }`}>
                           {userProcedure.status.charAt(0).toUpperCase() + userProcedure.status.slice(1)}
                         </span>
-                      </CardDescription>
+                      </div>
                     </CardHeader>
-                    <CardContent>
-                      <div className="text-sm mb-2">
-                        Started: {new Date(userProcedure.startedAt).toLocaleDateString()}
+                    <CardContent className="pb-5">
+                      <div className="flex justify-between items-center text-sm mb-3">
+                        <div className="flex items-center">
+                          <svg 
+                            xmlns="http://www.w3.org/2000/svg" 
+                            viewBox="0 0 24 24" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            strokeWidth="2" 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            className="w-4 h-4 mr-1 text-muted-foreground"
+                          >
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                            <line x1="3" y1="10" x2="21" y2="10" />
+                          </svg>
+                          Started: {new Date(userProcedure.startedAt).toLocaleDateString()}
+                        </div>
+                        {userProcedure.expectedCompletionDate && (
+                          <div className="text-muted-foreground">
+                            Est. Completion: {new Date(userProcedure.expectedCompletionDate).toLocaleDateString()}
+                          </div>
+                        )}
                       </div>
-                      <div className="w-full bg-muted rounded-full h-2.5 mb-4">
-                        <div 
-                          className="bg-primary h-2.5 rounded-full" 
-                          style={{ width: `${userProcedure.progress}%` }}
-                        ></div>
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Progress: {userProcedure.progress}%
+                      
+                      <div className="bg-muted/30 rounded-lg p-3">
+                        <div className="flex justify-between mb-1 text-sm">
+                          <span>Progress</span>
+                          <span className="font-medium">{userProcedure.progress}%</span>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-2.5">
+                          <div 
+                            className={`${
+                              userProcedure.status === 'completed' ? 'bg-green-500' : 'bg-primary'
+                            } h-2.5 rounded-full`}
+                            style={{ width: `${userProcedure.progress}%` }}
+                          ></div>
+                        </div>
                       </div>
                     </CardContent>
                     <CardFooter>
                       <Button 
-                        className="w-full"
+                        className="w-full gap-2"
                         onClick={() => handleUserProcedureSelect(userProcedure.id)}
                       >
-                        Continue Procedure
+                        {userProcedure.status === 'completed' ? 'View Details' : 'Continue Procedure'}
+                        <ArrowRight className="h-4 w-4" />
                       </Button>
                     </CardFooter>
                   </Card>
@@ -718,9 +782,30 @@ const CourtProceduresPage: React.FC = () => {
 
           {/* User Procedure Detail Tab */}
           <TabsContent value="user-procedure-detail" className="space-y-6">
-            <Button variant="outline" onClick={handleBackToUserProcedures}>
-              ← Back to My Procedures
-            </Button>
+            <div className="flex flex-col space-y-2 mb-4">
+              <div className="flex items-center text-sm text-muted-foreground mb-2">
+                <button 
+                  onClick={() => setActiveTab("my-procedures")}
+                  className="hover:text-primary transition-colors"
+                >
+                  My Procedures
+                </button>
+                <span className="mx-2">/</span>
+                <span className="font-medium text-foreground">
+                  {userProcedureDetail?.title || 'Procedure Details'}
+                </span>
+              </div>
+              
+              <Button 
+                variant="outline" 
+                onClick={handleBackToUserProcedures}
+                size="sm"
+                className="gap-2 w-fit"
+              >
+                <ArrowRight className="h-4 w-4 rotate-180" />
+                Back to My Procedures
+              </Button>
+            </div>
 
             {userProcedureDetailLoading ? (
               <div className="flex items-center justify-center min-h-[400px]">
