@@ -67,49 +67,102 @@ export const generateDocument = async (
   
   const template = await templateResponse.json();
   
-  // Replace template variables with form data
+  // Create a mapping table between field names and their placeholder equivalents
+  const placeholderMap: Record<string, string[]> = {};
+  
+  // Get field info from template schema
+  const templateFields = template.fields as Array<{
+    name: string;
+    label: string;
+    type: string;
+    required: boolean;
+  }>;
+  
+  // For each field, create all possible placeholder variations
+  templateFields.forEach(field => {
+    const key = field.name;
+    
+    // Create placeholder variations for this field
+    placeholderMap[key] = [
+      // [FIELD NAME] (uppercase)
+      key.toUpperCase(),
+      // [Field Name] (capitalized)
+      key.charAt(0).toUpperCase() + key.slice(1),
+      // [FIELD NAME WITH SPACES] (for camelCase fields)
+      key.replace(/([A-Z])/g, ' $1').toUpperCase().trim(),
+      // Field label exactly as defined
+      field.label,
+      // Field label uppercase
+      field.label.toUpperCase()
+    ];
+  });
+  
+  // Get the document content
   let documentContent = template.templateContent;
   
-  // Debug logging to help diagnose replacement issues
-  console.log("Document template fields:", template.fields);
-  console.log("Form data submitted:", documentData);
+  console.log("Placeholder map:", placeholderMap);
+  console.log("Form data:", documentData);
   
-  // Process placeholders with different formats: {{variable}}, [VARIABLE], and [Variable]
-  for (const [key, value] of Object.entries(documentData)) {
-    // Skip undefined or null values to prevent "undefined" or "null" strings in document
-    if (value === undefined || value === null || value === "") continue;
-    
-    // Format fieldKey for different placeholder styles
-    // camelCase to UPPERCASE_WITH_SPACES conversion (landlordName -> LANDLORD NAME)
-    const upperWithSpaces = key.replace(/([A-Z])/g, ' $1').toUpperCase().trim();
-    
-    // Handle {{variable}} format (common in templates)
-    const mustachePlaceholder = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'gi');
-    documentContent = documentContent.replace(mustachePlaceholder, value.toString());
-    
-    // Handle [VARIABLE] format (uppercase with spaces) - [LANDLORD NAME]
-    const uppercasePlaceholder = new RegExp(`\\[${upperWithSpaces}\\]`, 'g');
-    documentContent = documentContent.replace(uppercasePlaceholder, value.toString());
-    
-    // Handle direct field name uppercase - [LANDLORDNAME] 
-    const directUppercasePlaceholder = new RegExp(`\\[${key.toUpperCase()}\\]`, 'g');
-    documentContent = documentContent.replace(directUppercasePlaceholder, value.toString());
-    
-    // Handle [Variable] format (capitalized)
-    const capitalizedKey = key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
-    const capitalizedPlaceholder = new RegExp(`\\[${capitalizedKey}\\]`, 'g');
-    documentContent = documentContent.replace(capitalizedPlaceholder, value.toString());
-    
-    // Handle fields with words separated - also check for [Land Lord Name]
-    const labelFromField = template.fields.find((f: any) => f.name === key)?.label || "";
-    if (labelFromField) {
-      const labelPlaceholder = new RegExp(`\\[${labelFromField}\\]`, 'gi');
-      documentContent = documentContent.replace(labelPlaceholder, value.toString());
+  // For each field in the submitted form data
+  Object.entries(documentData).forEach(([fieldName, fieldValue]) => {
+    // Skip empty values
+    if (fieldValue === undefined || fieldValue === null || fieldValue === "") {
+      return;
     }
     
-    // Additional debug logging for troubleshooting
-    console.log(`Replacing for field "${key}" (${upperWithSpaces}):`, !!documentContent.match(uppercasePlaceholder));
-  }
+    // Get placeholder variations for this field
+    const placeholders = placeholderMap[fieldName] || [];
+    
+    // Log the field we're processing
+    console.log(`Processing field: ${fieldName}, value: ${fieldValue}`);
+    console.log(`Potential placeholders:`, placeholders);
+    
+    // Try each placeholder variation
+    placeholders.forEach(placeholder => {
+      // Create regex that looks for [PLACEHOLDER] in the template
+      const regex = new RegExp(`\\[${placeholder}\\]`, 'g');
+      
+      // Check if this placeholder exists in the template
+      const matches = documentContent.match(regex);
+      if (matches) {
+        console.log(`Found matches for [${placeholder}]:`, matches.length);
+        
+        // Replace all instances of this placeholder with the field value
+        documentContent = documentContent.replace(regex, fieldValue.toString());
+      }
+    });
+    
+    // Also try {{fieldName}} format (mustache templates)
+    const mustachePlaceholder = new RegExp(`\\{\\{\\s*${fieldName}\\s*\\}\\}`, 'gi');
+    documentContent = documentContent.replace(mustachePlaceholder, fieldValue.toString());
+  });
+  
+  // Manually handle specific placeholders based on the template content inspection
+  // This ensures we catch any that might have been missed
+  const directPlaceholderMap: Record<string, string> = {
+    "DATE": documentData.date,
+    "LANDLORD NAME": documentData.landlordName,
+    "LANDLORD ADDRESS": documentData.landlordAddress,
+    "TENANT NAME": documentData.tenantName, 
+    "TENANT ADDRESS": documentData.tenantAddress,
+    "PROPERTY ADDRESS": documentData.propertyAddress,
+    "START DATE": documentData.startDate,
+    "END DATE": documentData.endDate,
+    "RENT AMOUNT": documentData.rentAmount,
+    "DUE DAY": documentData.dueDay,
+    "SECURITY DEPOSIT AMOUNT": documentData.securityDepositAmount,
+    "UTILITIES": documentData.utilities,
+    "LANDLORD UTILITIES": documentData.landlordUtilities,
+    "PROVINCE": documentData.province
+  };
+  
+  // Apply the direct placeholder replacements
+  Object.entries(directPlaceholderMap).forEach(([placeholder, value]) => {
+    if (!value) return; // Skip empty values
+    
+    const regex = new RegExp(`\\[${placeholder}\\]`, 'g');
+    documentContent = documentContent.replace(regex, value.toString());
+  });
   
   console.log("Generated document content length:", documentContent.length);
   
