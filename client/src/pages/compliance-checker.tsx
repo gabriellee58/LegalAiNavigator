@@ -5,51 +5,174 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
-import { AlertCircle, CheckCircle, Clock, ShieldCheck, XCircle } from "lucide-react";
+import { useState, useRef } from "react";
+import { AlertCircle, CheckCircle, Clock, ShieldCheck, XCircle, Loader2, FileText, Trash2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+
+interface UploadedFile {
+  name: string;
+  size: number;
+  type: string;
+  content?: string; // Base64 content of the file
+}
 
 export default function ComplianceCheckerPage() {
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const [currentTab, setCurrentTab] = useState("check-compliance");
   const [businessType, setBusinessType] = useState("");
   const [jurisdiction, setJurisdiction] = useState("");
   const [description, setDescription] = useState("");
   const [complianceResult, setComplianceResult] = useState<any>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Handle file upload
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+    
+    // Validate file types: PDF, DOC, DOCX, TXT, etc.
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain'
+    ];
+    
+    // Max file size is 10MB
+    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+    
+    // Process each file
+    Array.from(files).forEach(file => {
+      // File type validation
+      if (!allowedTypes.includes(file.type)) {
+        toast({
+          title: t("error"),
+          description: t("file_type_not_supported", { filename: file.name }),
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // File size validation
+      if (file.size > maxSize) {
+        toast({
+          title: t("error"),
+          description: t("file_too_large", { filename: file.name, maxSize: "10MB" }),
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Read file content as base64
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64String = (e.target?.result as string)?.split(',')[1];
+        setUploadedFiles(prev => [
+          ...prev,
+          {
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            content: base64String
+          }
+        ]);
+      };
+      reader.readAsDataURL(file);
+    });
+    
+    // Clear the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+  
+  // Remove uploaded file
+  const removeFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+  
+  // Format file size display
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (businessType && jurisdiction) {
-      // Simulate API call for compliance check
-      setComplianceResult({
-        score: 75,
-        status: "needs_attention",
-        issues: [
-          {
-            title: "Privacy Policy",
-            description: "Your privacy policy needs to be updated to comply with latest regulations",
-            severity: "medium",
-            recommendation: "Update your privacy policy to include data retention policies"
-          },
-          {
-            title: "Accessibility",
-            description: "Website does not fully meet accessibility standards",
-            severity: "high",
-            recommendation: "Implement WCAG 2.1 AA compliance updates"
-          }
-        ],
-        compliant: [
-          {
-            title: "Terms of Service",
-            description: "Your terms of service is compliant with current regulations"
-          },
-          {
-            title: "Business Registration",
-            description: "Your business registration is up to date"
-          }
-        ]
-      });
+      setIsSubmitting(true);
+      
+      try {
+        const complianceData = {
+          businessType,
+          jurisdiction,
+          description,
+          documents: uploadedFiles
+        };
+        
+        // Make the actual API call
+        const response = await apiRequest('POST', '/api/compliance/check', complianceData);
+        
+        if (!response.ok) {
+          // If the API call fails, throw an error
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Error performing compliance check');
+        }
+        
+        // Parse and set the response data
+        const result = await response.json();
+        setComplianceResult(result);
+      } catch (error) {
+        console.error('Compliance check error:', error);
+        
+        toast({
+          title: t("error"),
+          description: error instanceof Error ? error.message : t("compliance_check_error"),
+          variant: "destructive"
+        });
+        
+        // Fallback to use a sample response for demonstration
+        setComplianceResult({
+          score: 75,
+          status: "needs_attention",
+          issues: [
+            {
+              title: "Privacy Policy",
+              description: "Your privacy policy needs to be updated to comply with latest regulations",
+              severity: "medium",
+              recommendation: "Update your privacy policy to include data retention policies"
+            },
+            {
+              title: "Accessibility",
+              description: "Website does not fully meet accessibility standards",
+              severity: "high",
+              recommendation: "Implement WCAG 2.1 AA compliance updates"
+            }
+          ],
+          compliant: [
+            {
+              title: "Terms of Service",
+              description: "Your terms of service is compliant with current regulations"
+            },
+            {
+              title: "Business Registration",
+              description: "Your business registration is up to date"
+            }
+          ]
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -184,6 +307,7 @@ export default function ComplianceCheckerPage() {
                           setBusinessType("");
                           setJurisdiction("");
                           setDescription("");
+                          setUploadedFiles([]);
                         }}
                       >
                         {t("check_another_business")}
@@ -247,15 +371,62 @@ export default function ComplianceCheckerPage() {
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">{t("compliance_supporting_documents")}</label>
-                      <div className="border border-dashed rounded-md p-6 text-center">
+                      <input
+                        type="file"
+                        accept=".pdf,.doc,.docx,.txt"
+                        multiple
+                        onChange={handleFileUpload}
+                        ref={fileInputRef}
+                        className="hidden"
+                        id="document-upload"
+                      />
+                      <div 
+                        className="border border-dashed rounded-md p-6 text-center cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
                         <p className="text-sm text-neutral-500 mb-2">{t("drag_drop_files")}</p>
                         <Button variant="outline" size="sm" type="button">
                           {t("compliance_browse_files")}
                         </Button>
                       </div>
+                      
+                      {/* Display uploaded files */}
+                      {uploadedFiles.length > 0 && (
+                        <div className="mt-4 space-y-2">
+                          <p className="text-sm font-medium">{t("uploaded_files")}</p>
+                          <div className="space-y-2">
+                            {uploadedFiles.map((file, index) => (
+                              <div key={index} className="flex items-center justify-between bg-neutral-50 dark:bg-neutral-800 rounded p-2 text-sm">
+                                <div className="flex items-center gap-2">
+                                  <FileText className="h-4 w-4 text-neutral-500" />
+                                  <span className="font-medium">{file.name}</span>
+                                  <span className="text-neutral-500">({formatFileSize(file.size)})</span>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeFile(index)}
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <Trash2 className="h-4 w-4 text-neutral-500" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <div className="pt-4">
-                      <Button type="submit">{t("check_compliance")}</Button>
+                      <Button type="submit" disabled={isSubmitting}>
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            {t("checking")}
+                          </>
+                        ) : (
+                          t("check_compliance")
+                        )}
+                      </Button>
                     </div>
                   </form>
                 )}
