@@ -94,18 +94,32 @@ export default function AuthPage() {
   // Handle login form submission
   async function onLoginSubmit(values: LoginFormValues) {
     try {
-      // Clear any previous errors
       setAuthError(null);
       
-      // Attempt to log in
       loginMutation.mutate(values, {
-        onError: (error) => {
+        onSuccess: () => {
+          navigate("/");
+        },
+        onError: (error: any) => {
           console.error("Login error:", error);
-          // Set a more user-friendly error message
-          if (error.message?.includes("res.json is not a function")) {
-            setAuthError("Server connection error. Please try again in a moment.");
-          } else {
-            setAuthError(error.message || "Login failed. Please check your credentials.");
+          
+          const errorMessage = error?.response?.data?.message || error.message;
+          
+          switch(true) {
+            case errorMessage?.includes("Invalid credentials"):
+              setAuthError("Invalid username or password. Please try again.");
+              break;
+            case errorMessage?.includes("not found"):
+              setAuthError("Account not found. Please check your username.");
+              break;
+            case errorMessage?.includes("locked"):
+              setAuthError("Account temporarily locked. Please try again later.");
+              break;
+            case error.message?.includes("Network Error"):
+              setAuthError("Connection error. Please check your internet connection.");
+              break;
+            default:
+              setAuthError("Login failed. Please try again or contact support.");
           }
         }
       });
