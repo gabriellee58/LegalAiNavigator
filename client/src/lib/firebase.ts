@@ -29,12 +29,10 @@ const auth = {
   signOut: async () => {}
 };
 
-export interface FirebaseUser {
-  uid: string;
-  email: string | null;
-  displayName: string | null;
-  photoURL: string | null;
-}
+// Clean up unused references
+const signInWithPopup = undefined;
+const provider = undefined;
+const getRedirectResult = undefined;
 
 // Alternative implementation for Google sign-in without Firebase SDK
 export async function signInWithGoogle(): Promise<FirebaseUser | null> {
