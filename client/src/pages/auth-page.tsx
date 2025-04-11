@@ -125,6 +125,29 @@ export default function AuthPage() {
                 ? t("Access your legal assistant account") 
                 : t("Join LegalAI to access AI-powered legal tools")}
             </CardDescription>
+            
+            {/* Display auth errors from login/register mutations */}
+            {(loginMutation.isError || registerMutation.isError || authError) && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+                {loginMutation.isError && (
+                  <p>{loginMutation.error?.message || "Login failed. Please check your credentials."}</p>
+                )}
+                {registerMutation.isError && (
+                  <p>{registerMutation.error?.message || "Registration failed. Please try again."}</p>
+                )}
+                {authError && (
+                  <p>{authError}</p>
+                )}
+              </div>
+            )}
+            
+            {/* Display warning about Google sign-in if that failed */}
+            {window.location.hash.includes('error=') && (
+              <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-600 text-sm">
+                <p className="font-medium">Google Sign-in Issue</p>
+                <p>Google sign-in is currently unavailable. Please use email and password instead.</p>
+              </div>
+            )}
           </CardHeader>
           <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid grid-cols-2 w-full">

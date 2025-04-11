@@ -158,19 +158,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Google Sign-in Mutation - This now handles redirect initiation
   const googleSignInMutation = useMutation({
     mutationFn: async () => {
-      // Initiate Google sign-in process (will redirect the user)
-      await signInWithGoogle();
-      
-      // This code won't actually run due to the redirect, but we need to return something
-      // to satisfy TypeScript
-      return {} as User;
+      try {
+        // Dynamically import Firebase functions to avoid circular dependencies
+        const { signInWithGoogle, isConfigured } = await import('@/lib/firebase');
+        
+        // Check if Firebase is properly configured before attempting sign-in
+        if (!isConfigured) {
+          throw new Error("Google Sign-in is not configured. Please use email/password login.");
+        }
+        
+        // Initiate Google sign-in process (will redirect the user if successful)
+        const result = await signInWithGoogle();
+        
+        // If we get here and result is null, the sign-in was canceled or failed
+        if (!result) {
+          throw new Error("Google Sign-in was canceled or failed. Please try email/password login.");
+        }
+        
+        // This code won't actually run due to the redirect, but we need to return something
+        // to satisfy TypeScript
+        return {} as User;
+      } catch (error) {
+        // Re-throw the error so it's caught by the onError handler
+        throw error;
+      }
     },
     onError: (error: Error) => {
       toast({
         title: "Google Sign-in Failed",
-        description: error.message || "Could not initiate Google sign-in",
+        description: error.message || "Could not initiate Google sign-in. Please use email/password instead.",
         variant: "destructive",
       });
+      
+      // Log the error for debugging
+      console.error("Google Sign-in error:", error);
     },
   });
 
