@@ -198,9 +198,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log in the user
       req.login(user, (err) => {
         if (err) {
+          console.error("Login error after Google auth:", err);
           return res.status(500).json({ message: "Login failed after Google auth" });
         }
-        return res.status(200).json(user);
+        
+        try {
+          // Create a safe user object without circular references
+          const safeUser = {
+            id: user.id,
+            username: user.username,
+            fullName: user.fullName || null,
+            preferredLanguage: user.preferredLanguage || "en"
+          };
+          
+          return res.status(200).json(safeUser);
+        } catch (jsonError) {
+          console.error("Error serializing user in Google auth:", jsonError);
+          return res.status(500).json({ message: "Error creating user session" });
+        }
       });
     } catch (error) {
       console.error("Google authentication error:", error);

@@ -93,14 +93,55 @@ export default function AuthPage() {
 
   // Handle login form submission
   async function onLoginSubmit(values: LoginFormValues) {
-    loginMutation.mutate(values);
+    try {
+      // Clear any previous errors
+      setAuthError(null);
+      
+      // Attempt to log in
+      loginMutation.mutate(values, {
+        onError: (error) => {
+          console.error("Login error:", error);
+          // Set a more user-friendly error message
+          if (error.message?.includes("res.json is not a function")) {
+            setAuthError("Server connection error. Please try again in a moment.");
+          } else {
+            setAuthError(error.message || "Login failed. Please check your credentials.");
+          }
+        }
+      });
+    } catch (error) {
+      console.error("Unexpected login error:", error);
+      setAuthError("An unexpected error occurred. Please try again.");
+    }
   }
 
   // Handle registration form submission
   async function onRegisterSubmit(values: RegisterFormValues) {
-    // Remove confirmPassword as it's not part of the API schema
-    const { confirmPassword, ...registrationData } = values;
-    registerMutation.mutate(registrationData);
+    try {
+      // Clear any previous errors
+      setAuthError(null);
+      
+      // Remove confirmPassword as it's not part of the API schema
+      const { confirmPassword, ...registrationData } = values;
+      
+      // Attempt to register
+      registerMutation.mutate(registrationData, {
+        onError: (error) => {
+          console.error("Registration error:", error);
+          // Set a more user-friendly error message
+          if (error.message?.includes("res.json is not a function")) {
+            setAuthError("Server connection error. Please try again in a moment.");
+          } else if (error.message?.includes("already exists")) {
+            setAuthError("This username is already taken. Please choose another one.");
+          } else {
+            setAuthError(error.message || "Registration failed. Please try again.");
+          }
+        }
+      });
+    } catch (error) {
+      console.error("Unexpected registration error:", error);
+      setAuthError("An unexpected error occurred. Please try again.");
+    }
   }
 
   if (isLoading) {

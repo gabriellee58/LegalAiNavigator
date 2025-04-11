@@ -158,17 +158,47 @@ export function setupAuth(app: Express) {
       req.login(user, (err) => {
         if (err) return next(err);
         
-        // User is already sanitized in the LocalStrategy
-        res.status(200).json(user);
+        try {
+          // User is already sanitized in the LocalStrategy
+          // Make sure the user object is serializable
+          const safeUser = {
+            id: user.id,
+            username: user.username,
+            fullName: user.fullName || undefined,
+            preferredLanguage: user.preferredLanguage || undefined
+          };
+          
+          // Send response with proper error handling
+          return res.status(200).json(safeUser);
+        } catch (error) {
+          console.error("Error in login response:", error);
+          return next(error);
+        }
       });
     })(req, res, next);
   });
 
   app.post("/api/logout", (req, res, next) => {
-    req.logout((err) => {
-      if (err) return next(err);
-      res.sendStatus(200);
-    });
+    try {
+      req.logout((err) => {
+        if (err) return next(err);
+        
+        try {
+          // Send a plain text OK response to avoid JSON parsing
+          res.set('Content-Type', 'text/plain');
+          res.status(200).send('OK');
+        } catch (error) {
+          console.error("Error in logout response:", error);
+          return next(error);
+        }
+      });
+    } catch (error) {
+      console.error("Error during logout process:", error);
+      
+      // Return a plaintext response to avoid JSON parsing issues
+      res.set('Content-Type', 'text/plain');
+      res.status(500).send('Logout failed');
+    }
   });
 
   app.get("/api/user", (req, res) => {
