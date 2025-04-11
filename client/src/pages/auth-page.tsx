@@ -35,6 +35,33 @@ export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<string>("login");
   const { user, isLoading, loginMutation, registerMutation, googleSignInMutation } = useAuth();
   const [location, navigate] = useLocation();
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  // Handle Google OAuth redirect
+  useEffect(() => {
+    const handleRedirect = async () => {
+      if (window.location.hash.includes('access_token')) {
+        try {
+          // Clear any previous errors
+          setAuthError(null);
+          
+          // Import handleGoogleRedirect dynamically to avoid circular dependencies
+          const { handleGoogleRedirect } = await import('@/lib/firebase');
+          const googleUser = await handleGoogleRedirect();
+          
+          if (googleUser) {
+            // Successful redirect - we should now be logged in
+            navigate("/");
+          }
+        } catch (error) {
+          console.error("Error handling Google redirect:", error);
+          setAuthError("Failed to complete Google sign-in. Please try again.");
+        }
+      }
+    };
+    
+    handleRedirect();
+  }, [navigate]);
 
   // Redirect to home if already logged in
   useEffect(() => {

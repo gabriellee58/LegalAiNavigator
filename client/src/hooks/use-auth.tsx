@@ -145,36 +145,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // Google Sign-in Mutation
+  // Google Sign-in Mutation - This now handles redirect initiation
   const googleSignInMutation = useMutation({
     mutationFn: async () => {
-      // First sign in with Google
-      const googleUser = await signInWithGoogle();
-      if (!googleUser) {
-        throw new Error("Google sign-in failed");
-      }
+      // Initiate Google sign-in process (will redirect the user)
+      await signInWithGoogle();
       
-      // Then register or login the user on our backend
-      const res = await apiRequest("POST", "/api/google-auth", {
-        email: googleUser.email,
-        displayName: googleUser.displayName,
-        photoURL: googleUser.photoURL,
-        uid: googleUser.uid
-      });
-      
-      return await res.json();
-    },
-    onSuccess: (user: User) => {
-      toast({
-        title: "Google Sign-in Successful",
-        description: `Welcome, ${user.fullName || user.username}!`,
-      });
-      queryClient.setQueryData(["/api/user"], user);
+      // This code won't actually run due to the redirect, but we need to return something
+      // to satisfy TypeScript
+      return {} as User;
     },
     onError: (error: Error) => {
       toast({
         title: "Google Sign-in Failed",
-        description: error.message || "Could not sign in with Google",
+        description: error.message || "Could not initiate Google sign-in",
         variant: "destructive",
       });
     },
