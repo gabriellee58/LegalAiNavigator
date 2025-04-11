@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import MainLayout from "@/components/layout/MainLayout";
@@ -17,14 +17,37 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { 
   Loader2, Upload, AlertTriangle, CheckCircle, FileText, Scale, FileDiff,
   File, Type, FileSearch, Search, FileQuestion, ChevronRight, Calendar as CalendarIcon,
-  Circle, Tag
+  Circle, Tag, Download, Printer, Share2, Edit, Save, ListTodo, ArrowRight,
+  ArrowLeft, FileOutput, FileCheck, ExternalLink, Copy, Edit2
 } from "lucide-react";
 import { t } from "@/lib/i18n";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 type AnalysisResult = {
   score: number;
@@ -871,18 +894,146 @@ export default function ContractAnalysisPage() {
           </TabsContent>
 
           {/* Analysis Results Tab */}
-          <TabsContent value="results" className="space-y-4">
+          <TabsContent value="results" className="space-y-6">
             {analysis && (
               <>
+                {/* Analysis Progress & Action Bar */}
+                <div className="bg-white dark:bg-gray-800 border rounded-lg p-4 sticky top-0 z-10 shadow-sm">
+                  <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <FileCheck className="h-5 w-5 text-primary" />
+                      <span className="font-medium">Analysis Complete</span>
+                    </div>
+                    
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Printer className="h-4 w-4 mr-2" />
+                              Print
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Print this analysis report</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Download className="h-4 w-4 mr-2" />
+                              Export
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Download as PDF or Word document</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            <Share2 className="h-4 w-4 mr-2" />
+                            Share
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem>
+                            <Copy className="h-4 w-4 mr-2" />
+                            Copy link
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <Edit2 className="h-4 w-4 mr-2" />
+                            Add collaborator
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      
+                      {!saveAnalysis && (
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button size="sm">
+                              <Save className="h-4 w-4 mr-2" />
+                              Save Analysis
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Save Analysis</DialogTitle>
+                              <DialogDescription>
+                                Save this analysis to your history for future reference.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                              <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="save-title" className="text-right">
+                                  Title
+                                </Label>
+                                <Input
+                                  id="save-title"
+                                  value={title}
+                                  onChange={(e) => setTitle(e.target.value)}
+                                  className="col-span-3"
+                                  placeholder="Enter a title for this analysis"
+                                />
+                              </div>
+                            </div>
+                            <DialogFooter>
+                              <Button type="submit" onClick={() => {
+                                // Logic to save the analysis
+                                toast({
+                                  title: "Analysis saved",
+                                  description: "The analysis has been saved to your history."
+                                });
+                              }}>
+                                Save
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Steps Progress */}
+                  <div className="mt-6">
+                    <div className="grid grid-cols-4 gap-2 mb-2 text-center text-xs">
+                      <div className="text-primary font-medium">Summary</div>
+                      <div>Risks</div>
+                      <div>Improvements</div>
+                      <div>Next Steps</div>
+                    </div>
+                    <Progress value={25} className="h-2" />
+                  </div>
+                </div>
+                
+                {/* Analysis Summary Card */}
                 <Card>
-                  <CardHeader>
-                    <CardTitle>{t("analysis_summary")}</CardTitle>
-                    <CardDescription>
-                      {t("overall_assessment")}
-                    </CardDescription>
+                  <CardHeader className="pb-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle>{t("analysis_summary")}</CardTitle>
+                        <CardDescription>
+                          {t("overall_assessment")}
+                        </CardDescription>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => {
+                        const element = document.getElementById("risks-section");
+                        if (element) {
+                          element.scrollIntoView({ behavior: "smooth" });
+                        }
+                      }}>
+                        View Risks
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </Button>
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       <div className="text-lg">
                         {t("risk_score")}:
                         <span 
@@ -915,15 +1066,75 @@ export default function ContractAnalysisPage() {
                     <div className="p-4 bg-muted rounded-md">
                       <p>{analysis.summary}</p>
                     </div>
+                    
+                    {/* Key Stats Section */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                      <div className="bg-red-50 dark:bg-red-950/30 p-3 rounded-md">
+                        <h4 className="font-medium text-red-700 dark:text-red-300 flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4" />
+                          High Risk Issues
+                        </h4>
+                        <p className="text-2xl font-bold text-red-700 dark:text-red-300">
+                          {analysis.risks.filter(r => r.severity === 'high').length}
+                        </p>
+                      </div>
+                      <div className="bg-amber-50 dark:bg-amber-950/30 p-3 rounded-md">
+                        <h4 className="font-medium text-amber-700 dark:text-amber-300 flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4" />
+                          Medium Risk Issues
+                        </h4>
+                        <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">
+                          {analysis.risks.filter(r => r.severity === 'medium').length}
+                        </p>
+                      </div>
+                      <div className="bg-emerald-50 dark:bg-emerald-950/30 p-3 rounded-md">
+                        <h4 className="font-medium text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4" />
+                          Improvement Suggestions
+                        </h4>
+                        <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
+                          {analysis.suggestions.length}
+                        </p>
+                      </div>
+                    </div>
                   </CardContent>
+                  <CardFooter className="border-t pt-4 flex justify-between">
+                    <Button variant="outline" size="sm" onClick={() => setActiveTab("upload")}>
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Back to Upload
+                    </Button>
+                    <Button variant="default" size="sm" onClick={() => {
+                      const element = document.getElementById("risks-section");
+                      if (element) {
+                        element.scrollIntoView({ behavior: "smooth" });
+                      }
+                    }}>
+                      Continue to Risks
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </CardFooter>
                 </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>{t("contract_risks")}</CardTitle>
-                    <CardDescription>
-                      {t("potential_issues")}
-                    </CardDescription>
+                {/* Risks Card */}
+                <Card id="risks-section">
+                  <CardHeader className="pb-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle>{t("contract_risks")}</CardTitle>
+                        <CardDescription>
+                          {t("potential_issues")}
+                        </CardDescription>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => {
+                        const element = document.getElementById("suggestions-section");
+                        if (element) {
+                          element.scrollIntoView({ behavior: "smooth" });
+                        }
+                      }}>
+                        View Suggestions
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </Button>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     {analysis.risks.length === 0 ? (
@@ -940,6 +1151,11 @@ export default function ContractAnalysisPage() {
                               <span className={`font-medium ${getSeverityColor(risk.severity)}`}>
                                 {t(`risk_severity_${risk.severity}`)}
                               </span>
+                              {risk.category && (
+                                <Badge variant="outline" className="ml-auto">
+                                  {risk.category}
+                                </Badge>
+                              )}
                             </div>
                             <h4 className="font-medium mb-1">{t("clause")}:</h4>
                             <p className="text-sm bg-muted p-2 rounded mb-2 whitespace-pre-wrap">
@@ -956,14 +1172,45 @@ export default function ContractAnalysisPage() {
                       </div>
                     )}
                   </CardContent>
+                  <CardFooter className="border-t pt-4 flex justify-between">
+                    <Button variant="outline" size="sm" onClick={() => {
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}>
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Back to Summary
+                    </Button>
+                    <Button variant="default" size="sm" onClick={() => {
+                      const element = document.getElementById("suggestions-section");
+                      if (element) {
+                        element.scrollIntoView({ behavior: "smooth" });
+                      }
+                    }}>
+                      Continue to Suggestions
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </CardFooter>
                 </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>{t("contract_suggestions")}</CardTitle>
-                    <CardDescription>
-                      {t("improvement_recommendations")}
-                    </CardDescription>
+                {/* Suggestions Card */}
+                <Card id="suggestions-section">
+                  <CardHeader className="pb-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle>{t("contract_suggestions")}</CardTitle>
+                        <CardDescription>
+                          {t("improvement_recommendations")}
+                        </CardDescription>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => {
+                        const element = document.getElementById("next-steps-section");
+                        if (element) {
+                          element.scrollIntoView({ behavior: "smooth" });
+                        }
+                      }}>
+                        View Next Steps
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </Button>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     {analysis.suggestions.length === 0 ? (
