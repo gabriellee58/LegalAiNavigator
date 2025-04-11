@@ -11,6 +11,8 @@ export function Sidebar() {
   const [isCourtProceduresRoute] = useRoute("/court-procedures");
   const [isLegalDomainsRoute] = useRoute("/legal-domains");
   
+  // Document template routes
+  const [isAllDocumentsRoute] = useRoute("/documents/all");
   const [isContractRoute] = useRoute("/documents/contract");
   const [isRealEstateRoute] = useRoute("/documents/real-estate");
   const [isFamilyRoute] = useRoute("/documents/family");
