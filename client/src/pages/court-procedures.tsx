@@ -249,6 +249,9 @@ const CourtProceduresPage: React.FC = () => {
   // Handle Procedure Selection
   const handleProcedureSelect = (procedureId: number) => {
     setSelectedProcedureId(procedureId);
+    // Reset flowchart visibility and type when selecting a procedure
+    setShowFlowchart(false);
+    setFlowchartType('vertical');
     setActiveTab("procedure-detail");
   };
 
@@ -835,7 +838,7 @@ const CourtProceduresPage: React.FC = () => {
                   </div>
                   
                   {/* Interactive Flowchart - Toggled by the button above */}
-                  {showFlowchart && procedureDetail.steps && (
+                  {showFlowchart && procedureDetail && procedureDetail.steps && procedureDetail.steps.length > 0 && (
                     <Card className="mb-8 overflow-hidden border-2 border-primary/30">
                       <CardHeader className="bg-muted/30">
                         <CardTitle className="text-lg">
