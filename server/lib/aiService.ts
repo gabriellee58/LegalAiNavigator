@@ -168,8 +168,12 @@ export async function enhancedAIRequest<T>(
     // Start with OpenAI for better reliability
     try {
       return await trackRequest("OpenAI", async () => {
-        // Update the openai.ts implementation to match this signature
-        const response = await generateOpenAIResponse(prompt);
+        const response = await generateOpenAIResponse(prompt, {
+          system: options.system,
+          temperature: options.temperature,
+          maxTokens: options.maxTokens,
+          model: options.model
+        });
         return response as unknown as T;
       });
     } catch (openaiError) {
@@ -184,7 +188,12 @@ export async function enhancedAIRequest<T>(
       try {
         // Try Anthropic Claude next
         return await trackRequest("Anthropic Claude", async () => {
-          const response = await generateAIResponseClaude(prompt);
+          const response = await generateAIResponseClaude(prompt, {
+            system: options.system,
+            temperature: options.temperature,
+            maxTokens: options.maxTokens,
+            model: options.model
+          });
           return response as unknown as T;
         });
       } catch (claudeError) {
@@ -194,7 +203,12 @@ export async function enhancedAIRequest<T>(
         // Final fallback to DeepSeek
         try {
           return await trackRequest("DeepSeek", async () => {
-            const response = await generateDeepSeekResponse(prompt);
+            const response = await generateDeepSeekResponse(prompt, {
+              system: options.system,
+              temperature: options.temperature,
+              maxTokens: options.maxTokens,
+              model: options.model
+            });
             return response as unknown as T;
           });
         } catch (deepseekError) {

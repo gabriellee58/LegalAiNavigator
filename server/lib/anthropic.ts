@@ -89,25 +89,37 @@ Please enhance this document to make it more comprehensive, legally sound, and c
  * @param jurisdiction Legal jurisdiction (province)
  * @returns Analysis results
  */
+interface ClaudeOptions {
+  system?: string;
+  temperature?: number;
+  maxTokens?: number;
+  model?: string;
+}
+
 /**
  * Generate a response to a user message using Claude
  * @param userMessage The user's message
+ * @param options Optional configuration parameters
  * @returns AI generated response
  */
-export async function generateAIResponseClaude(userMessage: string): Promise<string> {
+export async function generateAIResponseClaude(userMessage: string, options: ClaudeOptions = {}): Promise<string> {
   try {
     console.log(`Attempting Claude API fallback for prompt: "${userMessage.substring(0, 50)}..."`);
     
-    // the newest Anthropic model is "claude-3-7-sonnet-20250219" which was released February 24, 2025
-    const response = await anthropic.messages.create({
-      model: 'claude-3-7-sonnet-20250219',
-      max_tokens: 800,
-      system: `You are an AI legal assistant specialized in Canadian law. 
+    // Default system prompt if none provided
+    const systemPrompt = options.system || `You are an AI legal assistant specialized in Canadian law. 
       Provide helpful, accurate information about Canadian legal topics. 
       Always clarify that you are not providing legal advice and recommend consulting a qualified lawyer for specific legal issues.
       Focus on Canadian legal frameworks, regulations, and precedents.
       Be respectful, concise, and easy to understand.
-      Avoid excessive legalese, but maintain accuracy in legal concepts.`,
+      Avoid excessive legalese, but maintain accuracy in legal concepts.`;
+    
+    // the newest Anthropic model is "claude-3-7-sonnet-20250219" which was released February 24, 2025
+    const response = await anthropic.messages.create({
+      model: options.model || 'claude-3-7-sonnet-20250219',
+      max_tokens: options.maxTokens || 800,
+      temperature: options.temperature || 0.7,
+      system: systemPrompt,
       messages: [{ role: 'user', content: userMessage }],
     });
 
@@ -120,10 +132,14 @@ export async function generateAIResponseClaude(userMessage: string): Promise<str
       }
     }
     
-    return responseText || "I'm sorry, but I couldn't generate a response to your question.";
+    if (!responseText) {
+      throw new Error("Empty response from Claude");
+    }
+    
+    return responseText;
   } catch (error) {
     console.error('Error generating response with Claude:', error);
-    return "I'm sorry, but I encountered an error processing your request. Please try again later.";
+    throw error; // Let the caller handle the error (for proper fallback)
   }
 }
 

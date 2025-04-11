@@ -29,14 +29,34 @@ interface DeepSeekCompletionResponse {
 const DEEPSEEK_API_URL = "https://api.deepseek.com/v1";
 const DEFAULT_MODEL = "deepseek-chat"; // Replace with the appropriate DeepSeek model
 
+interface DeepSeekOptions {
+  system?: string;
+  temperature?: number;
+  maxTokens?: number;
+  model?: string;
+}
+
 /**
  * Generate an AI response for a legal question using DeepSeek
  * @param userMessage The user's message/question
+ * @param options Configuration options for the request
  * @returns AI generated response
  */
-export async function generateAIResponse(userMessage: string): Promise<string> {
+export async function generateAIResponse(userMessage: string, options: DeepSeekOptions = {}): Promise<string> {
   try {
     console.log(`Attempting DeepSeek API request for prompt: "${userMessage.substring(0, 50)}..."`);
+    
+    // Set up default options
+    const systemPrompt = options.system || `You are an AI legal assistant specialized in Canadian law. 
+      Provide helpful, accurate information about Canadian legal topics. 
+      Always clarify that you are not providing legal advice and recommend consulting a qualified lawyer for specific legal issues.
+      Focus on Canadian legal frameworks, regulations, and precedents.
+      Be respectful, concise, and easy to understand.
+      Avoid excessive legalese, but maintain accuracy in legal concepts.`;
+    
+    const model = options.model || DEFAULT_MODEL;
+    const temperature = options.temperature || 0.7;
+    const maxTokens = options.maxTokens || 800;
     
     const response = await fetch(`${DEEPSEEK_API_URL}/chat/completions`, {
       method: "POST",
@@ -45,23 +65,19 @@ export async function generateAIResponse(userMessage: string): Promise<string> {
         "Authorization": `Bearer ${process.env.DEEPSEEK_API_KEY}`
       },
       body: JSON.stringify({
-        model: DEFAULT_MODEL,
+        model: model,
         messages: [
           {
             role: "system",
-            content: `You are an AI legal assistant specialized in Canadian law. 
-            Provide helpful, accurate information about Canadian legal topics. 
-            Always clarify that you are not providing legal advice and recommend consulting a qualified lawyer for specific legal issues.
-            Focus on Canadian legal frameworks, regulations, and precedents.
-            Be respectful, concise, and easy to understand.
-            Avoid excessive legalese, but maintain accuracy in legal concepts.`
+            content: systemPrompt
           },
           {
             role: "user",
             content: userMessage
           }
         ],
-        max_tokens: 800
+        temperature: temperature,
+        max_tokens: maxTokens
       })
     });
 
@@ -80,12 +96,21 @@ export async function generateAIResponse(userMessage: string): Promise<string> {
     const data: DeepSeekCompletionResponse = await response.json();
     const content = data.choices[0]?.message.content;
     
-    return content ? content : "I apologize, but I couldn't generate a response. Please try asking your question differently.";
+    if (!content) {
+      throw new Error("Empty response from DeepSeek");
+    }
+    
+    return content;
   } catch (error) {
     console.error("Error generating AI response with DeepSeek:", error);
-    return "I'm sorry, but I encountered an error processing your request. Please try again later.";
+    throw error; // Let the caller handle the error (for proper fallback)
   }
 }
+
+/**
+ * Alias for generateAIResponse specifically for the aiService module
+ */
+export const generateDeepSeekResponse = generateAIResponse;
 
 /**
  * Analyze a contract for risks and suggestions using DeepSeek
