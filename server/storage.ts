@@ -921,8 +921,228 @@ export class DatabaseStorage implements IStorage {
     const existingTemplates = await this.getDocumentTemplates();
     if (existingTemplates.length > 0) return;
 
-    // Implementation would go here to create default templates
-    console.log("Initialized default document templates");
+    // Default template data for the Canadian legal system
+    const defaultTemplates = [
+      // CONTRACTS
+      {
+        templateType: "contracts",
+        subcategory: "services",
+        title: "Service Agreement",
+        description: "A standard agreement for providing services to clients",
+        language: "en",
+        templateContent: "# SERVICE AGREEMENT\n\nThis Service Agreement (the \"Agreement\") is entered into as of [DATE] by and between [SERVICE PROVIDER NAME], located at [ADDRESS] (the \"Service Provider\"), and [CLIENT NAME], located at [CLIENT ADDRESS] (the \"Client\").\n\n## 1. SERVICES\n\nService Provider agrees to provide the following services to Client (the \"Services\"): [DETAILED DESCRIPTION OF SERVICES]\n\n## 2. TERM\n\nThis Agreement shall commence on [START DATE] and continue until [END DATE], unless earlier terminated as provided herein.\n\n## 3. COMPENSATION\n\nClient agrees to pay Service Provider [AMOUNT] in Canadian Dollars (CAD) for the Services according to the following schedule: [PAYMENT SCHEDULE]\n\n## 4. TERMINATION\n\nEither party may terminate this Agreement with [NOTICE PERIOD] written notice to the other party.\n\n## 5. CONFIDENTIALITY\n\nEach party agrees to maintain the confidentiality of any proprietary information received from the other party during the term of this Agreement and for [TIME PERIOD] thereafter.\n\n## 6. GOVERNING LAW\n\nThis Agreement shall be governed by the laws of [PROVINCE/TERRITORY], Canada.\n\n## 7. DISPUTE RESOLUTION\n\nAny dispute arising from this Agreement shall be resolved through arbitration in [CITY], [PROVINCE/TERRITORY] in accordance with the rules of the Canadian Arbitration Association.\n\n## 8. ENTIRE AGREEMENT\n\nThis Agreement constitutes the entire agreement between the parties and supersedes all previous agreements or representations, whether written or oral.\n\nIN WITNESS WHEREOF, the parties have executed this Agreement as of the date first above written.\n\n[SERVICE PROVIDER NAME]\nBy: ______________________________\nName: [NAME]\nTitle: [TITLE]\n\n[CLIENT NAME]\nBy: ______________________________\nName: [NAME]\nTitle: [TITLE]",
+        fields: {
+          serviceProviderName: { type: "text", label: "Service Provider Name", required: true },
+          serviceProviderAddress: { type: "text", label: "Service Provider Address", required: true },
+          clientName: { type: "text", label: "Client Name", required: true },
+          clientAddress: { type: "text", label: "Client Address", required: true },
+          serviceDescription: { type: "textarea", label: "Service Description", required: true },
+          startDate: { type: "date", label: "Start Date", required: true },
+          endDate: { type: "date", label: "End Date", required: true },
+          compensationAmount: { type: "text", label: "Compensation Amount", required: true },
+          paymentSchedule: { type: "text", label: "Payment Schedule", required: true },
+          noticePeriod: { type: "text", label: "Notice Period", required: true, default: "30 days" },
+          confidentialityPeriod: { type: "text", label: "Confidentiality Period", required: true, default: "2 years" },
+          province: { type: "select", label: "Governing Law Province/Territory", required: true, options: ["Alberta", "British Columbia", "Manitoba", "New Brunswick", "Newfoundland and Labrador", "Northwest Territories", "Nova Scotia", "Nunavut", "Ontario", "Prince Edward Island", "Quebec", "Saskatchewan", "Yukon"] },
+          city: { type: "text", label: "Arbitration City", required: true },
+          signatoryName1: { type: "text", label: "Service Provider Signatory Name", required: true },
+          signatoryTitle1: { type: "text", label: "Service Provider Signatory Title", required: true },
+          signatoryName2: { type: "text", label: "Client Signatory Name", required: true },
+          signatoryTitle2: { type: "text", label: "Client Signatory Title", required: true }
+        },
+        jurisdiction: "Canada"
+      },
+      {
+        templateType: "contracts",
+        subcategory: "nda",
+        title: "Non-Disclosure Agreement",
+        description: "A confidentiality agreement to protect sensitive information",
+        language: "en",
+        templateContent: "# NON-DISCLOSURE AGREEMENT\n\nThis Non-Disclosure Agreement (the \"Agreement\") is entered into as of [DATE] between [PARTY A NAME], located at [PARTY A ADDRESS] (\"Party A\"), and [PARTY B NAME], located at [PARTY B ADDRESS] (\"Party B\").\n\n## 1. PURPOSE\n\nThe parties wish to explore a potential business relationship concerning [BUSINESS PURPOSE] (the \"Purpose\"). In connection with the Purpose, each party may disclose to the other certain confidential and proprietary information.\n\n## 2. CONFIDENTIAL INFORMATION\n\n\"Confidential Information\" means any information disclosed by one party (the \"Disclosing Party\") to the other party (the \"Receiving Party\"), either directly or indirectly, in writing, orally or by inspection of tangible objects, which is designated as \"Confidential\" or would reasonably be understood to be confidential given the nature of the information and the circumstances of disclosure.\n\n## 3. OBLIGATIONS\n\nThe Receiving Party shall:\n(a) maintain the confidentiality of the Disclosing Party's Confidential Information;\n(b) not disclose any Confidential Information to any person other than employees or agents of the Receiving Party who have a need to know such information and who are bound by obligations of confidentiality at least as restrictive as those contained herein;\n(c) not use any Confidential Information for any purpose other than in connection with the Purpose; and\n(d) use at least the same degree of care to protect the Disclosing Party's Confidential Information as it uses to protect its own confidential information, but in no case less than reasonable care.\n\n## 4. EXCLUSIONS\n\nThe obligations in Section 3 shall not apply to information that:\n(a) was rightfully known to the Receiving Party without restriction before receipt from the Disclosing Party;\n(b) is or becomes publicly available through no fault of the Receiving Party;\n(c) is rightfully received by the Receiving Party from a third party without a duty of confidentiality; or\n(d) is independently developed by the Receiving Party without use of the Disclosing Party's Confidential Information.\n\n## 5. REQUIRED DISCLOSURE\n\nIf the Receiving Party is required by law to disclose Confidential Information, it shall promptly notify the Disclosing Party and provide reasonable cooperation, at the Disclosing Party's expense, to permit the Disclosing Party to obtain a protective order or otherwise prevent or restrict such disclosure.\n\n## 6. TERM AND TERMINATION\n\nThis Agreement shall commence on the date first written above and continue for a period of [TERM] years. The Receiving Party's obligations with respect to Confidential Information shall survive for a period of [CONFIDENTIALITY PERIOD] years following termination of this Agreement.\n\n## 7. GOVERNING LAW\n\nThis Agreement shall be governed by the laws of [PROVINCE/TERRITORY], Canada, without regard to its conflict of laws principles.\n\nIN WITNESS WHEREOF, the parties have executed this Agreement as of the date first above written.\n\n[PARTY A NAME]\nBy: ______________________________\nName: [NAME]\nTitle: [TITLE]\n\n[PARTY B NAME]\nBy: ______________________________\nName: [NAME]\nTitle: [TITLE]",
+        fields: {
+          partyAName: { type: "text", label: "Party A Name", required: true },
+          partyAAddress: { type: "text", label: "Party A Address", required: true },
+          partyBName: { type: "text", label: "Party B Name", required: true },
+          partyBAddress: { type: "text", label: "Party B Address", required: true },
+          businessPurpose: { type: "textarea", label: "Business Purpose", required: true },
+          term: { type: "number", label: "Agreement Term (years)", required: true, default: 2 },
+          confidentialityPeriod: { type: "number", label: "Confidentiality Period (years)", required: true, default: 5 },
+          province: { type: "select", label: "Governing Law Province/Territory", required: true, options: ["Alberta", "British Columbia", "Manitoba", "New Brunswick", "Newfoundland and Labrador", "Northwest Territories", "Nova Scotia", "Nunavut", "Ontario", "Prince Edward Island", "Quebec", "Saskatchewan", "Yukon"] },
+          signatoryNameA: { type: "text", label: "Party A Signatory Name", required: true },
+          signatoryTitleA: { type: "text", label: "Party A Signatory Title", required: true },
+          signatoryNameB: { type: "text", label: "Party B Signatory Name", required: true },
+          signatoryTitleB: { type: "text", label: "Party B Signatory Title", required: true }
+        },
+        jurisdiction: "Canada"
+      },
+      
+      // LEASES
+      {
+        templateType: "leases",
+        subcategory: "residential",
+        title: "Residential Lease Agreement",
+        description: "A standard residential lease agreement compliant with Ontario regulations.",
+        language: "en",
+        templateContent: "# RESIDENTIAL LEASE AGREEMENT\n\nThis Residential Lease Agreement (the \"Lease\") is made on [DATE] between [LANDLORD NAME], located at [LANDLORD ADDRESS] (the \"Landlord\"), and [TENANT NAME] (the \"Tenant\").\n\n## 1. PREMISES\n\nLandlord hereby leases to Tenant and Tenant hereby leases from Landlord, subject to the terms and conditions of this Lease, the residential premises located at [PROPERTY ADDRESS] (the \"Premises\").\n\n## 2. TERM\n\nThe term of this Lease shall be for [LEASE TERM] commencing on [START DATE] and ending on [END DATE], unless earlier terminated as provided herein.\n\n## 3. RENT\n\nTenant shall pay to Landlord as rent for the Premises the sum of $[MONTHLY RENT] per month, due on the [DUE DATE] day of each month, without demand or deduction. Rent shall be paid to Landlord at [PAYMENT ADDRESS] or such other place as Landlord may designate from time to time.\n\n## 4. SECURITY DEPOSIT\n\nUpon execution of this Lease, Tenant shall pay to Landlord the sum of $[SECURITY DEPOSIT AMOUNT] as a security deposit. Landlord may apply the security deposit to remedy any default by Tenant in the performance of Tenant's obligations under this Lease. The security deposit, or any balance thereof, shall be returned to Tenant within [RETURN PERIOD] days after the termination of this Lease.\n\n## 5. UTILITIES\n\nTenant shall be responsible for arranging and paying for all utility services required on the Premises, except for the following, which shall be provided by the Landlord: [LANDLORD PROVIDED UTILITIES].\n\n## 6. USE OF PREMISES\n\nThe Premises shall be used as a private dwelling only. Tenant shall not use or allow the Premises to be used for any other purpose without the prior written consent of Landlord.\n\n## 7. MAINTENANCE AND REPAIRS\n\nTenant shall maintain the Premises in a clean and sanitary condition and shall not damage or permit damage to be done to the Premises. Tenant shall be responsible for the cost of repairing any damage to the Premises caused by Tenant or Tenant's guests, other than normal wear and tear.\n\n## 8. ASSIGNMENT AND SUBLETTING\n\nTenant shall not assign this Lease or sublet any portion of the Premises without the prior written consent of Landlord, which consent shall not be unreasonably withheld.\n\n## 9. LANDLORD'S ACCESS TO PREMISES\n\nLandlord may enter the Premises at reasonable times and with reasonable notice to inspect the Premises, make necessary repairs, or show the Premises to prospective tenants or purchasers. In case of emergency, Landlord may enter the Premises without notice.\n\n## 10. TERMINATION\n\nThis Lease may be terminated by Landlord or Tenant in accordance with applicable law.\n\n## 11. GOVERNING LAW\n\nThis Lease shall be governed by the laws of [PROVINCE/TERRITORY], Canada, and the Residential Tenancies Act.\n\nIN WITNESS WHEREOF, the parties have executed this Lease as of the date first above written.\n\n[LANDLORD NAME]\nBy: ______________________________\nName: [NAME]\nTitle: [TITLE]\n\n[TENANT NAME]\nBy: ______________________________\nName: [NAME]",
+        fields: {
+          landlordName: { type: "text", label: "Landlord Name", required: true },
+          landlordAddress: { type: "text", label: "Landlord Address", required: true },
+          tenantName: { type: "text", label: "Tenant Name", required: true },
+          propertyAddress: { type: "text", label: "Property Address", required: true },
+          leaseTerm: { type: "text", label: "Lease Term", required: true, default: "12 months" },
+          startDate: { type: "date", label: "Start Date", required: true },
+          endDate: { type: "date", label: "End Date", required: true },
+          monthlyRent: { type: "number", label: "Monthly Rent", required: true },
+          dueDate: { type: "number", label: "Rent Due Date", required: true, default: 1 },
+          paymentAddress: { type: "text", label: "Payment Address", required: true },
+          securityDeposit: { type: "number", label: "Security Deposit Amount", required: true },
+          returnPeriod: { type: "number", label: "Security Deposit Return Period (days)", required: true, default: 30 },
+          landlordProvidedUtilities: { type: "text", label: "Landlord Provided Utilities", required: true, default: "water, property tax" },
+          province: { type: "select", label: "Province/Territory", required: true, options: ["Alberta", "British Columbia", "Manitoba", "New Brunswick", "Newfoundland and Labrador", "Northwest Territories", "Nova Scotia", "Nunavut", "Ontario", "Prince Edward Island", "Quebec", "Saskatchewan", "Yukon"] },
+          landlordSignatoryName: { type: "text", label: "Landlord Signatory Name", required: true },
+          landlordSignatoryTitle: { type: "text", label: "Landlord Signatory Title", required: true },
+          tenantSignatoryName: { type: "text", label: "Tenant Signatory Name", required: true }
+        },
+        jurisdiction: "Ontario"
+      },
+      {
+        templateType: "leases",
+        subcategory: "commercial",
+        title: "Commercial Lease Agreement",
+        description: "A comprehensive commercial lease agreement for business properties.",
+        language: "en",
+        templateContent: "# COMMERCIAL LEASE AGREEMENT\n\nThis Commercial Lease Agreement (the \"Lease\") is made on [DATE] between [LANDLORD NAME], located at [LANDLORD ADDRESS] (the \"Landlord\"), and [TENANT NAME], located at [TENANT ADDRESS] (the \"Tenant\").\n\n## 1. PREMISES\n\nLandlord hereby leases to Tenant and Tenant hereby leases from Landlord, subject to the terms and conditions of this Lease, the commercial premises located at [PROPERTY ADDRESS], consisting of approximately [SQUARE FOOTAGE] square feet (the \"Premises\").\n\n## 2. TERM\n\nThe term of this Lease shall be for [LEASE TERM] commencing on [START DATE] (the \"Commencement Date\") and ending on [END DATE] (the \"Expiration Date\"), unless earlier terminated or extended as provided herein.\n\n## 3. RENT\n\n### 3.1 Base Rent\n\nTenant shall pay to Landlord as base rent for the Premises the sum of $[ANNUAL RENT] per year, payable in equal monthly installments of $[MONTHLY RENT] on the [DUE DATE] day of each month, without demand or deduction.\n\n### 3.2 Additional Rent\n\nIn addition to the Base Rent, Tenant shall pay as additional rent Tenant's proportionate share of all Operating Expenses, as defined in Section 4 below.\n\n### 3.3 Late Payment\n\nIf Tenant fails to pay any installment of rent within [GRACE PERIOD] days after the due date, Tenant shall pay to Landlord a late charge equal to [LATE FEE PERCENTAGE]% of the overdue amount.\n\n## 4. OPERATING EXPENSES\n\n### 4.1 Definition\n\n\"Operating Expenses\" shall mean all costs and expenses incurred by Landlord in the ownership, operation, maintenance, repair and replacement of the Building, including but not limited to: [LIST OF OPERATING EXPENSES].\n\n### 4.2 Payment of Tenant's Share\n\nTenant shall pay to Landlord Tenant's proportionate share of the Operating Expenses. Tenant's proportionate share shall be calculated by dividing the square footage of the Premises by the total square footage of the Building.\n\n## 5. SECURITY DEPOSIT\n\nUpon execution of this Lease, Tenant shall pay to Landlord the sum of $[SECURITY DEPOSIT AMOUNT] as a security deposit. Landlord may apply the security deposit to remedy any default by Tenant in the performance of Tenant's obligations under this Lease. The security deposit, or any balance thereof, shall be returned to Tenant within [RETURN PERIOD] days after the termination of this Lease.\n\n## 6. USE OF PREMISES\n\nTenant shall use the Premises solely for the purpose of [PERMITTED USE] and for no other purpose without the prior written consent of Landlord.\n\n## 7. MAINTENANCE AND REPAIRS\n\n### 7.1 Landlord's Obligations\n\nLandlord shall maintain in good condition and repair the structural elements of the Building, including the foundation, exterior walls, structural condition of interior bearing walls, exterior roof, common areas, and the building systems serving the Premises.\n\n### 7.2 Tenant's Obligations\n\nTenant shall, at Tenant's expense, maintain the Premises in good condition and repair, including all non-structural portions of the Premises such as interior walls, floors, ceilings, doors, windows, and all electrical, plumbing, heating, ventilating and air conditioning systems serving the Premises exclusively.\n\n## 8. ALTERATIONS AND IMPROVEMENTS\n\nTenant shall not make any alterations, additions or improvements to the Premises without the prior written consent of Landlord, which consent shall not be unreasonably withheld.\n\n## 9. ASSIGNMENT AND SUBLETTING\n\nTenant shall not assign this Lease or sublet any portion of the Premises without the prior written consent of Landlord, which consent shall not be unreasonably withheld.\n\n## 10. INSURANCE\n\nTenant shall, at Tenant's expense, obtain and maintain throughout the term of this Lease commercial general liability insurance, property insurance, and any other insurance required by Landlord or by law.\n\n## 11. INDEMNIFICATION\n\nTenant shall indemnify, defend and hold harmless Landlord from and against any and all claims, damages, liabilities, costs and expenses (including reasonable attorneys' fees) arising from Tenant's use of the Premises or from any activity, work or thing done, permitted or suffered by Tenant in or about the Premises.\n\n## 12. DEFAULT\n\nThe occurrence of any of the following shall constitute a default by Tenant under this Lease: [LIST OF DEFAULT EVENTS].\n\n## 13. REMEDIES\n\nUpon the occurrence of any default by Tenant, Landlord may, at Landlord's option, exercise any one or more of the following remedies: [LIST OF REMEDIES].\n\n## 14. GOVERNING LAW\n\nThis Lease shall be governed by the laws of [PROVINCE/TERRITORY], Canada.\n\nIN WITNESS WHEREOF, the parties have executed this Lease as of the date first above written.\n\n[LANDLORD NAME]\nBy: ______________________________\nName: [NAME]\nTitle: [TITLE]\n\n[TENANT NAME]\nBy: ______________________________\nName: [NAME]\nTitle: [TITLE]",
+        fields: {
+          landlordName: { type: "text", label: "Landlord Name", required: true },
+          landlordAddress: { type: "text", label: "Landlord Address", required: true },
+          tenantName: { type: "text", label: "Tenant Name", required: true },
+          tenantAddress: { type: "text", label: "Tenant Address", required: true },
+          propertyAddress: { type: "text", label: "Property Address", required: true },
+          squareFootage: { type: "number", label: "Square Footage", required: true },
+          leaseTerm: { type: "text", label: "Lease Term", required: true, default: "5 years" },
+          startDate: { type: "date", label: "Start Date", required: true },
+          endDate: { type: "date", label: "End Date", required: true },
+          annualRent: { type: "number", label: "Annual Rent", required: true },
+          monthlyRent: { type: "number", label: "Monthly Rent", required: true },
+          dueDate: { type: "number", label: "Rent Due Date", required: true, default: 1 },
+          gracePeriod: { type: "number", label: "Grace Period (days)", required: true, default: 5 },
+          lateFeePercentage: { type: "number", label: "Late Fee Percentage", required: true, default: 5 },
+          operatingExpenses: { type: "textarea", label: "List of Operating Expenses", required: true, default: "property taxes, insurance, utilities, maintenance, repairs, cleaning, security" },
+          securityDeposit: { type: "number", label: "Security Deposit Amount", required: true },
+          returnPeriod: { type: "number", label: "Security Deposit Return Period (days)", required: true, default: 30 },
+          permittedUse: { type: "text", label: "Permitted Use", required: true },
+          defaultEvents: { type: "textarea", label: "List of Default Events", required: true, default: "Failure to pay rent, breach of any provision of this Lease, abandonment of the Premises, bankruptcy or insolvency" },
+          remedies: { type: "textarea", label: "List of Remedies", required: true, default: "Terminate the Lease, recover all damages, recover possession of the Premises, pursue any other remedy available at law or in equity" },
+          province: { type: "select", label: "Province/Territory", required: true, options: ["Alberta", "British Columbia", "Manitoba", "New Brunswick", "Newfoundland and Labrador", "Northwest Territories", "Nova Scotia", "Nunavut", "Ontario", "Prince Edward Island", "Quebec", "Saskatchewan", "Yukon"] },
+          landlordSignatoryName: { type: "text", label: "Landlord Signatory Name", required: true },
+          landlordSignatoryTitle: { type: "text", label: "Landlord Signatory Title", required: true },
+          tenantSignatoryName: { type: "text", label: "Tenant Signatory Name", required: true },
+          tenantSignatoryTitle: { type: "text", label: "Tenant Signatory Title", required: true }
+        },
+        jurisdiction: "Canada"
+      },
+
+      // WILLS & ESTATES
+      {
+        templateType: "wills-estates",
+        subcategory: "simple-will",
+        title: "Simple Will",
+        description: "A basic will template suitable for individuals with straightforward estates.",
+        language: "en",
+        templateContent: "# LAST WILL AND TESTAMENT\n\nI, [TESTATOR NAME], of [TESTATOR ADDRESS], being of sound mind and memory, hereby revoke all previous wills and codicils made by me and declare this to be my Last Will and Testament.\n\n## 1. EXECUTOR\n\nI appoint [EXECUTOR NAME], of [EXECUTOR ADDRESS], to be the Executor of this Will. If [EXECUTOR NAME] is unable or unwilling to act as Executor, I appoint [ALTERNATE EXECUTOR NAME], of [ALTERNATE EXECUTOR ADDRESS], to be the Executor of this Will.\n\n## 2. GUARDIAN\n\nIf at the time of my death I have any minor children, I appoint [GUARDIAN NAME], of [GUARDIAN ADDRESS], to be the Guardian of such children. If [GUARDIAN NAME] is unable or unwilling to act as Guardian, I appoint [ALTERNATE GUARDIAN NAME], of [ALTERNATE GUARDIAN ADDRESS], to be the Guardian of such children.\n\n## 3. SPECIFIC BEQUESTS\n\nI give the following specific bequests:\n\n[SPECIFIC BEQUESTS]\n\n## 4. RESIDUE OF ESTATE\n\nI give the residue of my estate to [RESIDUARY BENEFICIARY], of [RESIDUARY BENEFICIARY ADDRESS]. If [RESIDUARY BENEFICIARY] does not survive me, I give the residue of my estate to [ALTERNATE RESIDUARY BENEFICIARY], of [ALTERNATE RESIDUARY BENEFICIARY ADDRESS].\n\n## 5. EXECUTOR'S POWERS\n\nMy Executor shall have the following powers:\n\n(a) to sell, lease, or otherwise dispose of any property in my estate;\n(b) to invest any money in my estate in any investments that my Executor considers appropriate;\n(c) to make any division or distribution of property in my estate in cash or in kind, or partly in cash and partly in kind;\n(d) to pay any debts or expenses relating to my estate;\n(e) to exercise any other powers that are necessary or desirable for the proper administration of my estate.\n\n## 6. GOVERNING LAW\n\nThis Will shall be governed by the laws of [PROVINCE/TERRITORY], Canada.\n\nIN WITNESS WHEREOF, I have signed this Will on [DATE].\n\n______________________________\n[TESTATOR NAME]\n\nSigned by [TESTATOR NAME] as their Last Will and Testament in our presence, and at their request and in their presence and in the presence of each other, we have signed our names as witnesses.\n\n______________________________\nWitness Signature\n[WITNESS 1 NAME]\n[WITNESS 1 ADDRESS]\n[WITNESS 1 OCCUPATION]\n\n______________________________\nWitness Signature\n[WITNESS 2 NAME]\n[WITNESS 2 ADDRESS]\n[WITNESS 2 OCCUPATION]",
+        fields: {
+          testatorName: { type: "text", label: "Your Full Legal Name", required: true },
+          testatorAddress: { type: "text", label: "Your Full Address", required: true },
+          executorName: { type: "text", label: "Executor Full Name", required: true },
+          executorAddress: { type: "text", label: "Executor Address", required: true },
+          alternateExecutorName: { type: "text", label: "Alternate Executor Full Name", required: true },
+          alternateExecutorAddress: { type: "text", label: "Alternate Executor Address", required: true },
+          guardianName: { type: "text", label: "Guardian Full Name (if applicable)" },
+          guardianAddress: { type: "text", label: "Guardian Address (if applicable)" },
+          alternateGuardianName: { type: "text", label: "Alternate Guardian Full Name (if applicable)" },
+          alternateGuardianAddress: { type: "text", label: "Alternate Guardian Address (if applicable)" },
+          specificBequests: { type: "textarea", label: "Specific Bequests", default: "1. I give my [ITEM] to [BENEFICIARY NAME].\n2. I give my [ITEM] to [BENEFICIARY NAME]." },
+          residuaryBeneficiary: { type: "text", label: "Residuary Beneficiary Full Name", required: true },
+          residuaryBeneficiaryAddress: { type: "text", label: "Residuary Beneficiary Address", required: true },
+          alternateResiduaryBeneficiary: { type: "text", label: "Alternate Residuary Beneficiary Full Name", required: true },
+          alternateResiduaryBeneficiaryAddress: { type: "text", label: "Alternate Residuary Beneficiary Address", required: true },
+          province: { type: "select", label: "Province/Territory", required: true, options: ["Alberta", "British Columbia", "Manitoba", "New Brunswick", "Newfoundland and Labrador", "Northwest Territories", "Nova Scotia", "Nunavut", "Ontario", "Prince Edward Island", "Quebec", "Saskatchewan", "Yukon"] },
+          witness1Name: { type: "text", label: "First Witness Full Name", required: true },
+          witness1Address: { type: "text", label: "First Witness Address", required: true },
+          witness1Occupation: { type: "text", label: "First Witness Occupation", required: true },
+          witness2Name: { type: "text", label: "Second Witness Full Name", required: true },
+          witness2Address: { type: "text", label: "Second Witness Address", required: true },
+          witness2Occupation: { type: "text", label: "Second Witness Occupation", required: true }
+        },
+        jurisdiction: "Canada"
+      },
+
+      // BUSINESS FORMATION
+      {
+        templateType: "business-formation",
+        subcategory: "incorporation",
+        title: "Articles of Incorporation",
+        description: "Documentation required for incorporating a business in Canada.",
+        language: "en",
+        templateContent: "# ARTICLES OF INCORPORATION\n\nThese Articles of Incorporation are submitted to incorporate a corporation under the Canada Business Corporations Act.\n\n## 1. CORPORATE NAME\n\nThe name of the corporation is: [CORPORATION NAME]\n\n## 2. REGISTERED OFFICE\n\nThe registered office of the corporation is located in the province of [PROVINCE/TERRITORY], at:\n\n[REGISTERED OFFICE ADDRESS]\n\n## 3. CLASSES AND MAXIMUM NUMBER OF SHARES\n\nThe corporation is authorized to issue an unlimited number of shares of the following classes:\n\n[SHARE CLASSES]\n\n## 4. RESTRICTIONS ON SHARE TRANSFERS\n\nThe right to transfer shares of the corporation shall be restricted as follows:\n\n[TRANSFER RESTRICTIONS]\n\n## 5. NUMBER OF DIRECTORS\n\nThe board of directors of the corporation shall consist of a minimum of [MINIMUM NUMBER] and a maximum of [MAXIMUM NUMBER] directors.\n\n## 6. RESTRICTIONS ON BUSINESS\n\nThere are no restrictions on the business that the corporation may carry on.\n\n## 7. OTHER PROVISIONS\n\n[OTHER PROVISIONS]\n\n## 8. INCORPORATORS\n\nName and address of each incorporator:\n\n[INCORPORATOR NAME]\n[INCORPORATOR ADDRESS]\n\nDate: [DATE]\n\n______________________________\nSignature of Incorporator",
+        fields: {
+          corporationName: { type: "text", label: "Corporation Name", required: true },
+          province: { type: "select", label: "Province/Territory", required: true, options: ["Alberta", "British Columbia", "Manitoba", "New Brunswick", "Newfoundland and Labrador", "Northwest Territories", "Nova Scotia", "Nunavut", "Ontario", "Prince Edward Island", "Quebec", "Saskatchewan", "Yukon"] },
+          registeredOfficeAddress: { type: "textarea", label: "Registered Office Address", required: true },
+          shareClasses: { type: "textarea", label: "Share Classes", required: true, default: "Class A Common Shares: The holders of Class A Common Shares shall be entitled to vote at all meetings of shareholders, to receive dividends as and when declared by the directors, and to receive the remaining property of the corporation upon dissolution." },
+          transferRestrictions: { type: "textarea", label: "Transfer Restrictions", required: true, default: "No shares of the corporation shall be transferred without the approval of the board of directors of the corporation, expressed by a resolution passed at a meeting of the board of directors or by a resolution in writing signed by all of the directors." },
+          minimumDirectors: { type: "number", label: "Minimum Number of Directors", required: true, default: 1 },
+          maximumDirectors: { type: "number", label: "Maximum Number of Directors", required: true, default: 10 },
+          otherProvisions: { type: "textarea", label: "Other Provisions", default: "The directors may appoint one or more additional directors, who shall hold office for a term expiring not later than the close of the next annual meeting of shareholders, but the total number of directors so appointed may not exceed one-third of the number of directors elected at the previous annual meeting of shareholders." },
+          incorporatorName: { type: "text", label: "Incorporator Full Name", required: true },
+          incorporatorAddress: { type: "text", label: "Incorporator Address", required: true }
+        },
+        jurisdiction: "Canada"
+      },
+
+      // IP MANAGEMENT
+      {
+        templateType: "ip-management",
+        subcategory: "trademark",
+        title: "Trademark Application",
+        description: "Template for filing a trademark application in Canada.",
+        language: "en",
+        templateContent: "# APPLICATION FOR REGISTRATION OF A TRADEMARK\n\nTo the Registrar of Trademarks:\n\nThe undersigned hereby requests the registration of the following trademark under the Trademarks Act:\n\n## 1. APPLICANT INFORMATION\n\nName: [APPLICANT NAME]\nAddress: [APPLICANT ADDRESS]\nTelephone: [APPLICANT PHONE]\nEmail: [APPLICANT EMAIL]\n\n## 2. TRADEMARK INFORMATION\n\nTrademark: [TRADEMARK]\nType of Trademark: [TRADEMARK TYPE]\nDescription of Trademark (if applicable): [TRADEMARK DESCRIPTION]\n\n## 3. GOODS AND SERVICES\n\nThe trademark is used or proposed to be used in Canada in association with the following goods and services:\n\n[GOODS AND SERVICES]\n\n## 4. DATE OF FIRST USE\n\nThe trademark has been used in Canada since [FIRST USE DATE] in association with the following goods and services: [USED GOODS AND SERVICES]\n\nThe trademark is proposed to be used in Canada in association with the following goods and services: [PROPOSED GOODS AND SERVICES]\n\n## 5. PRIORITY CLAIM\n\n[PRIORITY CLAIM]\n\n## 6. DISCLAIMERS\n\n[DISCLAIMERS]\n\n## 7. REPRESENTATIVE FOR SERVICE\n\nName: [REPRESENTATIVE NAME]\nAddress: [REPRESENTATIVE ADDRESS]\nTelephone: [REPRESENTATIVE PHONE]\nEmail: [REPRESENTATIVE EMAIL]\n\nDated at [CITY], [PROVINCE/TERRITORY], this [DAY] day of [MONTH], [YEAR].\n\n______________________________\n[APPLICANT NAME]\n[TITLE]",
+        fields: {
+          applicantName: { type: "text", label: "Applicant Name", required: true },
+          applicantAddress: { type: "textarea", label: "Applicant Address", required: true },
+          applicantPhone: { type: "text", label: "Applicant Phone", required: true },
+          applicantEmail: { type: "text", label: "Applicant Email", required: true },
+          trademark: { type: "text", label: "Trademark", required: true },
+          trademarkType: { type: "select", label: "Type of Trademark", required: true, options: ["Word Mark", "Design Mark", "Sound Mark", "Certification Mark", "Distinguishing Guise"] },
+          trademarkDescription: { type: "textarea", label: "Trademark Description (for non-word marks)" },
+          goodsAndServices: { type: "textarea", label: "Goods and Services", required: true },
+          firstUseDate: { type: "date", label: "Date of First Use (if applicable)" },
+          usedGoodsAndServices: { type: "textarea", label: "Goods and Services Already in Use" },
+          proposedGoodsAndServices: { type: "textarea", label: "Goods and Services Proposed to be Used" },
+          priorityClaim: { type: "textarea", label: "Priority Claim (if applicable)" },
+          disclaimers: { type: "textarea", label: "Disclaimers (if applicable)" },
+          representativeName: { type: "text", label: "Representative Name" },
+          representativeAddress: { type: "textarea", label: "Representative Address" },
+          representativePhone: { type: "text", label: "Representative Phone" },
+          representativeEmail: { type: "text", label: "Representative Email" },
+          city: { type: "text", label: "City", required: true },
+          province: { type: "select", label: "Province/Territory", required: true, options: ["Alberta", "British Columbia", "Manitoba", "New Brunswick", "Newfoundland and Labrador", "Northwest Territories", "Nova Scotia", "Nunavut", "Ontario", "Prince Edward Island", "Quebec", "Saskatchewan", "Yukon"] },
+          day: { type: "number", label: "Day", required: true },
+          month: { type: "text", label: "Month", required: true },
+          year: { type: "number", label: "Year", required: true },
+          title: { type: "text", label: "Title", required: true }
+        },
+        jurisdiction: "Canada"
+      }
+    ];
+
+    // Insert default templates
+    for (const template of defaultTemplates) {
+      await this.createDocumentTemplate(template);
+    }
+
+    console.log(`Initialized ${defaultTemplates.length} default document templates`);
   }
 
   async initializeLegalDomains(): Promise<void> {

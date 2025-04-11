@@ -4,95 +4,68 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
-import { Search, Filter, ChevronRight, Clock, FileText } from "lucide-react";
+import { Search, Filter, ChevronRight, Clock, FileText, RefreshCw } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import { SelectTrigger, SelectValue, SelectContent, SelectItem, Select } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 
-// Mock template data with proper typing
-interface Template {
+// Define template type based on the schema
+interface DocumentTemplate {
   id: number;
   title: string;
   description: string;
   language: string;
   templateType: string;
+  subcategory?: string;
   templateContent: string;
-  fields: unknown;
-  // These are mock properties we'll pretend exist without changing the schema
-  // for demonstration purposes only
-  mockCategory?: string;
-  mockLastUpdated?: string;
+  fields: Record<string, any>;
+  jurisdiction?: string;
+  createdAt?: string;
 }
 
 export default function DocumentTemplatesPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [templateType, setTemplateType] = useState("");
+  const [templateTypeFilter, setTemplateTypeFilter] = useState("");
   const [location] = useLocation();
+  const { toast } = useToast();
   
   // Extract category from URL path: /documents/contracts -> "contracts"
   const category = location.startsWith("/documents/") 
     ? location.replace("/documents/", "") 
     : "all";
-  
-  // Mock data for now
-  const [templates, setTemplates] = useState<Template[]>([
-    {
-      id: 1,
-      title: "Standard Employment Contract",
-      description: "A comprehensive employment agreement suitable for most Canadian employers.",
-      language: "en",
-      templateType: "contracts",
-      templateContent: "Sample contract content",
-      fields: {},
-      mockCategory: "contracts",
-      mockLastUpdated: "2023-12-01"
+    
+  // Fetch templates from API
+  const { 
+    data: templates = [], 
+    isLoading, 
+    error,
+    refetch
+  } = useQuery<DocumentTemplate[]>({
+    queryKey: ["/api/document-templates", category !== "all" ? category : undefined],
+    queryFn: async () => {
+      const url = category !== "all" 
+        ? `/api/document-templates?type=${category}` 
+        : "/api/document-templates";
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Error fetching templates: ${response.statusText}`);
+      }
+      return response.json();
     },
-    {
-      id: 2,
-      title: "Residential Lease Agreement",
-      description: "A standard residential lease agreement compliant with Ontario regulations.",
-      language: "en",
-      templateType: "leases",
-      templateContent: "Sample lease content",
-      fields: {},
-      mockCategory: "leases",
-      mockLastUpdated: "2023-11-15"
-    },
-    {
-      id: 3,
-      title: "Simple Will",
-      description: "A basic will template suitable for individuals with straightforward estates.",
-      language: "en",
-      templateType: "wills-estates",
-      templateContent: "Sample will content",
-      fields: {},
-      mockCategory: "wills-estates",
-      mockLastUpdated: "2023-10-22"
-    },
-    {
-      id: 4,
-      title: "Corporation Registration",
-      description: "Documentation required for incorporating a business in Canada.",
-      language: "en",
-      templateType: "business-formation",
-      templateContent: "Sample corporation docs",
-      fields: {},
-      mockCategory: "business-formation",
-      mockLastUpdated: "2023-09-30"
-    },
-    {
-      id: 5,
-      title: "Trademark Application",
-      description: "Template for filing a trademark application in Canada.",
-      language: "en",
-      templateType: "ip-management",
-      templateContent: "Sample trademark application",
-      fields: {},
-      mockCategory: "ip-management",
-      mockLastUpdated: "2023-08-15"
+    onError: (err) => {
+      console.error("Failed to fetch templates:", err);
+      toast({
+        title: "Failed to load templates",
+        description: "There was an error loading the document templates. Please try again.",
+        variant: "destructive",
+      });
     }
-  ]);
+  });
 
   const filteredTemplates = templates.filter(template => {
     // Filter by category
