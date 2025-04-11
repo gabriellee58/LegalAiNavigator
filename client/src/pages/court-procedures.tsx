@@ -205,7 +205,7 @@ const CourtProceduresPage: React.FC = () => {
   const [expandedSteps, setExpandedSteps] = useState<string[]>([]);
   const [startProcedureDialogOpen, setStartProcedureDialogOpen] = useState<boolean>(false);
   const [flowchartType, setFlowchartType] = useState<'vertical' | 'horizontal' | 'branching'>('vertical');
-  const [selectedStepId, setSelectedStepId] = useState<string | undefined>(undefined);
+  const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
 
   // Fetch categories
   const { data: categories, isLoading: categoriesLoading, error: categoriesError } = useQuery<ProcedureCategory[]>({
@@ -886,7 +886,7 @@ const CourtProceduresPage: React.FC = () => {
                                 toId: procedureDetail.steps[index + 1].id.toString(),
                                 direction: 'vertical'
                               }))}
-                              currentNodeId={selectedStepId}
+                              currentNodeId={nullToUndefined(selectedStepId)}
                               onNodeClick={(nodeId) => setSelectedStepId(nodeId)}
                             />
                           )}
@@ -906,7 +906,7 @@ const CourtProceduresPage: React.FC = () => {
                                 toId: procedureDetail.steps[index + 1].id.toString(),
                                 direction: 'horizontal'
                               }))}
-                              currentNodeId={selectedStepId}
+                              currentNodeId={nullToUndefined(selectedStepId)}
                               onNodeClick={(nodeId) => setSelectedStepId(nodeId)}
                             />
                           )}
@@ -926,7 +926,7 @@ const CourtProceduresPage: React.FC = () => {
                                 toId: procedureDetail.steps[index + 1].id.toString(),
                                 direction: 'horizontal'
                               }))}
-                              currentNodeId={selectedStepId}
+                              currentNodeId={nullToUndefined(selectedStepId)}
                               onNodeClick={(nodeId) => setSelectedStepId(nodeId)}
                             />
                           )}
