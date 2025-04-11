@@ -872,10 +872,10 @@ const CourtProceduresPage: React.FC = () => {
                                 id: step.id.toString(),
                                 label: step.title,
                                 description: step.description.substring(0, 60) + (step.description.length > 60 ? '...' : ''),
-                                status: selectedStepId === step.id.toString() ? 'current' : 'pending',
-                                type: step.order === 1 ? 'start' : 
+                                status: (selectedStepId === step.id.toString() ? 'current' : 'pending') as 'pending' | 'current' | 'completed' | 'optional',
+                                type: (step.order === 1 ? 'start' : 
                                       step.order === procedureDetail.steps.length ? 'end' :
-                                      !step.isRequired ? 'optional' : 'process'
+                                      !step.isRequired ? 'process' : 'process') as 'start' | 'end' | 'process' | 'decision' | 'document' | 'optional'
                               }))} 
                               connections={procedureDetail.steps.slice(0, -1).map((step, index) => ({
                                 fromId: step.id.toString(),
@@ -892,10 +892,10 @@ const CourtProceduresPage: React.FC = () => {
                                 id: step.id.toString(),
                                 label: step.title,
                                 description: step.description.substring(0, 60) + (step.description.length > 60 ? '...' : ''),
-                                status: selectedStepId === step.id.toString() ? 'current' : 'pending',
-                                type: step.order === 1 ? 'start' : 
+                                status: (selectedStepId === step.id.toString() ? 'current' : 'pending') as 'pending' | 'current' | 'completed' | 'optional',
+                                type: (step.order === 1 ? 'start' : 
                                       step.order === procedureDetail.steps.length ? 'end' :
-                                      !step.isRequired ? 'optional' : 'process'
+                                      !step.isRequired ? 'process' : 'process') as 'start' | 'end' | 'process' | 'decision' | 'document' | 'optional'
                               }))} 
                               connections={procedureDetail.steps.slice(0, -1).map((step, index) => ({
                                 fromId: step.id.toString(),
@@ -912,10 +912,10 @@ const CourtProceduresPage: React.FC = () => {
                                 id: step.id.toString(),
                                 label: step.title,
                                 description: step.description.substring(0, 60) + (step.description.length > 60 ? '...' : ''),
-                                status: selectedStepId === step.id.toString() ? 'current' : 'pending',
-                                type: step.order === 1 ? 'start' : 
+                                status: (selectedStepId === step.id.toString() ? 'current' : 'pending') as 'pending' | 'current' | 'completed' | 'optional',
+                                type: (step.order === 1 ? 'start' : 
                                       step.order === procedureDetail.steps.length ? 'end' :
-                                      !step.isRequired ? 'optional' : 'process'
+                                      !step.isRequired ? 'process' : 'process') as 'start' | 'end' | 'process' | 'decision' | 'document' | 'optional'
                               }))} 
                               connections={procedureDetail.steps.slice(0, -1).map((step, index) => ({
                                 fromId: step.id.toString(),
