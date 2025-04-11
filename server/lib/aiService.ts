@@ -248,18 +248,88 @@ export async function enhancedAIRequest<T>(
             return response as unknown as T;
           });
         } catch (deepseekError) {
-          // All providers failed - implement emergency fallback with direct response
+          // All providers failed - implement sophisticated emergency fallback
           console.error(`${logPrefix}: All AI providers failed.`, deepseekError);
           
-          // Create an emergency fallback response
-          const fallbackResponse = "I apologize, but I'm currently experiencing technical difficulties processing your request. Our team has been notified of this issue. Please try again in a few moments, or contact support if this problem persists.";
+          // Determine error type to provide more specific guidance
+          const errorString = String(deepseekError);
+          const isTokenLimitError = 
+            errorString.includes("context length") || 
+            errorString.includes("maximum token") || 
+            errorString.includes("too long");
+          
+          const isRateLimitError = 
+            errorString.includes("rate limit") || 
+            errorString.includes("requests per minute") ||
+            errorString.includes("quota");
+            
+          const isAuthError =
+            errorString.includes("authentication") ||
+            errorString.includes("api key") ||
+            errorString.includes("unauthorized");
+            
+          // Create a tailored emergency fallback response
+          let fallbackResponse = "";
+          let errorType = "unknown";
+          
+          if (isTokenLimitError) {
+            errorType = "token_limit";
+            fallbackResponse = 
+              "I apologize, but your request contains too much text for me to process at once. " +
+              "Please try breaking it into smaller parts or summarizing the key points you'd like me to address. " +
+              "For documents, consider focusing on specific sections rather than the entire text.";
+          } else if (isRateLimitError) {
+            errorType = "rate_limit"; 
+            fallbackResponse = 
+              "I apologize, but we're currently experiencing high demand on our AI services. " +
+              "Please try again in a few minutes when our systems are less busy. " +
+              "If you're working with time-sensitive information, try simplifying your request or breaking it into smaller parts.";
+          } else if (isAuthError) {
+            errorType = "auth_error";
+            fallbackResponse = 
+              "There appears to be an authentication issue with our AI services. " +
+              "Our team has been notified and is working to resolve this problem. " +
+              "Please try again in a few minutes or contact support if this issue persists.";
+          } else {
+            errorType = "general_error";
+            fallbackResponse = 
+              "I apologize, but I'm currently experiencing technical difficulties processing your request. " +
+              "This might be due to temporary service issues or limitations with processing your specific input. " +
+              "Please try again with different wording or after a short delay. " +
+              "If the problem continues, contact support for assistance.";
+          }
+          
+          // Log detailed error for monitoring
+          console.error(`Emergency fallback activated: ${errorType} error detected in AI request`, {
+            promptLength: prompt.length,
+            errorType,
+            originalError: String(deepseekError).substring(0, 500) // Truncate for readability
+          });
           
           if (useCache && cacheKey) {
             // Don't cache error responses for too long
             responseCache.set(cacheKey, {
-              response: fallbackResponse as unknown as T,
+              response: { 
+                content: fallbackResponse,
+                error: true,
+                errorType,
+                timestamp: new Date().toISOString()
+              } as unknown as T,
               timestamp: Date.now() - (CACHE_TTL - 60000) // Cache for just 1 minute
             });
+          }
+          
+          // For structured responses where we expect a specific format,
+          // we need to handle this differently - return a fallback object
+          // that will be recognized by the calling code
+          if (typeof prompt === 'object' || prompt.includes('JSON') || options.system?.includes('JSON')) {
+            // This might be expecting a structured response
+            return {
+              error: true,
+              errorType,
+              message: fallbackResponse,
+              fallback: true
+            } as unknown as T;
           }
           
           return fallbackResponse as unknown as T;
@@ -270,24 +340,84 @@ export async function enhancedAIRequest<T>(
 }
 
 /**
- * Enhanced chat message processing
+ * Enhanced chat message processing with improved error handling
  */
 export async function generateChatResponse(
   userMessage: string, 
   options: AIServiceOptions = {}
-): Promise<string> {
+): Promise<string | { error: boolean; message: string; errorType: string; recovery?: string }> {
   if (!aiFeatureFlags.enableAIChatAssistant) {
-    return "This feature is currently disabled during development. Please try again later.";
+    return {
+      error: true,
+      errorType: "feature_disabled",
+      message: "This feature is currently disabled during maintenance.",
+      recovery: "Please try again later when the service is fully restored."
+    };
   }
 
   try {
-    return await enhancedAIRequest<string>(userMessage, {
+    const response = await enhancedAIRequest<string | any>(userMessage, {
       ...options,
       logPrefix: "Chat"
     });
+    
+    // Check if we received an error response object from the fallback system
+    if (response && typeof response === 'object' && response.error === true) {
+      return {
+        error: true,
+        errorType: response.errorType || "unknown_error",
+        message: response.message || "An error occurred while processing your request.",
+        recovery: getRecoveryMessage(response.errorType)
+      };
+    }
+    
+    // Normal string response
+    return response as string;
   } catch (error: any) {
-    console.error("Chat generation error:", error);
-    return "I apologize, but I'm having trouble processing your request right now. Please try again in a moment.";
+    // Determine error type for better user guidance
+    const errorMessage = error.toString();
+    let errorType = "unknown";
+    
+    if (errorMessage.includes("rate limit") || errorMessage.includes("too many requests")) {
+      errorType = "rate_limit";
+    } else if (errorMessage.includes("token") || errorMessage.includes("context length")) {
+      errorType = "token_limit";
+    } else if (errorMessage.includes("timeout") || errorMessage.includes("timed out")) {
+      errorType = "timeout";
+    } else if (errorMessage.includes("connection") || errorMessage.includes("network")) {
+      errorType = "network";
+    }
+    
+    console.error(`Chat generation ${errorType} error:`, error);
+    
+    return {
+      error: true,
+      errorType,
+      message: "I encountered a problem while processing your message.",
+      recovery: getRecoveryMessage(errorType)
+    };
+  }
+}
+
+/**
+ * Get appropriate recovery instructions based on error type
+ */
+function getRecoveryMessage(errorType: string): string {
+  switch (errorType) {
+    case "token_limit":
+      return "Try sending a shorter message or breaking your question into smaller parts.";
+    case "rate_limit":
+      return "Our system is currently handling many requests. Please try again in a few minutes.";
+    case "timeout":
+      return "The response took too long to generate. Try a simpler question or try again later.";
+    case "network":
+      return "Check your internet connection and try again. If the problem persists, our servers might be experiencing issues.";
+    case "auth_error":
+      return "There's an issue with our AI service authentication. Our team has been notified.";
+    case "feature_disabled":
+      return "This feature is temporarily disabled. Please check back later.";
+    default:
+      return "Please try rewording your question or try again in a few moments.";
   }
 }
 
