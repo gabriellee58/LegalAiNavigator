@@ -21,12 +21,10 @@ export async function extractTextFromPdf(pdfBuffer: Buffer): Promise<string> {
   try {
     console.log('Attempting to extract text from PDF using PDF.js');
     
-    // Set a higher maxImageSize to handle larger PDFs
+    // Set options for PDF loading
     const loadingTask = pdfjsLib.getDocument({
       data: pdfBuffer,
       disableFontFace: true,
-      ignoreErrors: true,
-      isEvalSupported: true,
       cMapUrl: undefined,
       standardFontDataUrl: undefined
     });
@@ -303,10 +301,10 @@ export async function compareContracts(
     
     // Process both contract texts to handle length and token limitations
     console.log(`Processing first contract with approximate length: ${firstContract.length} characters`);
-    const processedFirstContract = await processContractForAnalysis(firstContract, 30000); // Allocate half token limit
+    const processedFirstContract = await processContractForAnalysis(firstContract);
     
     console.log(`Processing second contract with approximate length: ${secondContract.length} characters`);
-    const processedSecondContract = await processContractForAnalysis(secondContract, 30000); // Allocate half token limit
+    const processedSecondContract = await processContractForAnalysis(secondContract);
     
     const prompt = `
       I need you to compare the following two contracts and identify key differences between them.

@@ -274,25 +274,26 @@ function emergencyTruncateContract(contractText: string, maxTokens: number): str
  * Process contract text for optimal AI analysis
  * Combines all techniques based on text length and complexity
  * @param contractText Original contract text
+ * @param maxTokens Optional custom token limit (defaults to MAX_TOKENS)
  * @returns Processed text ready for AI analysis
  */
-export async function processContractForAnalysis(contractText: string): Promise<string> {
+export async function processContractForAnalysis(contractText: string, maxTokens: number = MAX_TOKENS): Promise<string> {
   try {
     const estimatedTokens = estimateTokenCount(contractText);
     
     // Simple case: already fits within token limit
-    if (estimatedTokens <= MAX_TOKENS) {
+    if (estimatedTokens <= maxTokens) {
       return contractText;
     }
     
     // Extract key sections for large documents
-    if (estimatedTokens > MAX_TOKENS) {
-      return await extractKeyContractSections(contractText, MAX_TOKENS);
+    if (estimatedTokens > maxTokens) {
+      return await extractKeyContractSections(contractText, maxTokens);
     }
     
     return contractText;
   } catch (error) {
     console.error("Error processing contract for analysis:", error);
-    return emergencyTruncateContract(contractText, MAX_TOKENS);
+    return emergencyTruncateContract(contractText, maxTokens);
   }
 }

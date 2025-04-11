@@ -505,6 +505,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.file.mimetype === 'application/pdf') {
         // Extract text from PDF
         contractText = await extractTextFromPdf(req.file.buffer);
+        console.log(`Extracted ${contractText.length} characters from PDF file`);
       } else if (
         req.file.mimetype === 'text/plain' ||
         req.file.mimetype === 'application/msword' ||
@@ -512,10 +513,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ) {
         // For text and Word files, convert buffer to string
         contractText = req.file.buffer.toString('utf-8');
+        console.log(`Extracted ${contractText.length} characters from text/Word file`);
       }
       
       if (!contractText.trim()) {
         return res.status(400).json({ message: "Could not extract text from the uploaded file" });
+      }
+      
+      // Import the document chunker to process large text
+      try {
+        // Log token estimate
+        const { estimateTokenCount } = await import('./lib/documentChunker');
+        const estimatedTokens = estimateTokenCount(contractText);
+        console.log(`Estimated tokens in contract: ${estimatedTokens}`);
+      } catch (estimateError) {
+        console.warn("Failed to estimate token count:", estimateError);
       }
       
       // Analyze the contract
@@ -597,6 +609,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const parsed = comparisonSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ message: "Invalid contract comparison data" });
+      }
+      
+      // Import the document chunker to process large text
+      try {
+        // Log token estimates
+        const { estimateTokenCount } = await import('./lib/documentChunker');
+        const firstEstimatedTokens = estimateTokenCount(parsed.data.firstContract);
+        const secondEstimatedTokens = estimateTokenCount(parsed.data.secondContract);
+        
+        console.log(`Estimated tokens in first contract: ${firstEstimatedTokens}`);
+        console.log(`Estimated tokens in second contract: ${secondEstimatedTokens}`);
+        console.log(`Total estimated tokens: ${firstEstimatedTokens + secondEstimatedTokens}`);
+      } catch (estimateError) {
+        console.warn("Failed to estimate token count:", estimateError);
       }
       
       const comparison = await compareContracts(
