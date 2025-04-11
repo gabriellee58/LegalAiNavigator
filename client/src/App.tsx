@@ -116,6 +116,7 @@ function Router() {
       <ProtectedRoute path="/court-procedures" component={CourtProceduresPage} />
       
       {/* Document Templates */}
+      <ProtectedRoute path="/documents/all" component={DocumentTemplatesPage} />
       <ProtectedRoute path="/documents/contracts" component={DocumentTemplatesPage} />
       <ProtectedRoute path="/documents/leases" component={DocumentTemplatesPage} />
       <ProtectedRoute path="/documents/wills-estates" component={DocumentTemplatesPage} />

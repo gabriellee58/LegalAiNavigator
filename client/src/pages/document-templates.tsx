@@ -56,30 +56,34 @@ export default function DocumentTemplatesPage() {
         throw new Error(`Error fetching templates: ${response.statusText}`);
       }
       return response.json();
-    },
-    onError: (err) => {
-      console.error("Failed to fetch templates:", err);
+    }
+  });
+  
+  // Handle error state
+  useEffect(() => {
+    if (error) {
+      console.error("Failed to fetch templates:", error);
       toast({
         title: "Failed to load templates",
         description: "There was an error loading the document templates. Please try again.",
         variant: "destructive",
       });
     }
-  });
+  }, [error, toast]);
 
-  const filteredTemplates = templates.filter(template => {
-    // Filter by category
-    if (category !== "all" && template.mockCategory !== category) {
-      return false;
-    }
-    
+  // Filter templates based on search query and filter criteria
+  const filteredTemplates = templates.filter((template: DocumentTemplate) => {
     // Filter by search query
-    if (searchQuery && !template.title.toLowerCase().includes(searchQuery.toLowerCase()) && !template.description.toLowerCase().includes(searchQuery.toLowerCase())) {
+    if (searchQuery && 
+        !template.title.toLowerCase().includes(searchQuery.toLowerCase()) && 
+        !template.description.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
     }
     
-    // Filter by template type
-    if (templateType && templateType !== "all_types" && template.templateType !== templateType) {
+    // Filter by template type dropdown (if a specific type is selected)
+    if (templateTypeFilter && 
+        templateTypeFilter !== "all_types" && 
+        template.templateType !== templateTypeFilter) {
       return false;
     }
     
@@ -191,8 +195,8 @@ export default function DocumentTemplatesPage() {
                   <div className="space-y-2">
                     <label className="text-sm font-medium">{t("document_type")}</label>
                     <Select 
-                      value={templateType || "all_types"} 
-                      onValueChange={setTemplateType}
+                      value={templateTypeFilter || "all_types"} 
+                      onValueChange={setTemplateTypeFilter}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder={t("all_types")} />
@@ -233,7 +237,25 @@ export default function DocumentTemplatesPage() {
                 </div>
               </CardHeader>
               <CardContent className="p-4">
-                {filteredTemplates.length === 0 ? (
+                {isLoading ? (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="border rounded-lg overflow-hidden p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Skeleton className="h-6 w-24" />
+                              <Skeleton className="h-4 w-16" />
+                            </div>
+                            <Skeleton className="h-6 w-[80%] mb-2" />
+                            <Skeleton className="h-4 w-[90%]" />
+                          </div>
+                          <Skeleton className="h-9 w-24" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : filteredTemplates.length === 0 ? (
                   <div className="text-center py-8">
                     <div className="mx-auto w-12 h-12 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-3">
                       <Search className="h-6 w-6 text-neutral-400" />
@@ -242,6 +264,14 @@ export default function DocumentTemplatesPage() {
                     <p className="text-neutral-500 max-w-md mx-auto">
                       {t("no_templates_message")}
                     </p>
+                    <Button 
+                      variant="outline" 
+                      className="mt-4"
+                      onClick={() => refetch()}
+                    >
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      {t("retry")}
+                    </Button>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -251,13 +281,19 @@ export default function DocumentTemplatesPage() {
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2">
-                                <Badge className={`${getCategoryColor(template.mockCategory || '')}`}>
-                                  {t(template.mockCategory || '')}
+                                <Badge className={`${getCategoryColor(template.templateType)}`}>
+                                  {t(template.templateType)}
                                 </Badge>
-                                <span className="text-xs text-neutral-500">
-                                  <Clock className="inline h-3 w-3 mr-1" />
-                                  {template.mockLastUpdated}
-                                </span>
+                                {template.subcategory && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {template.subcategory}
+                                  </Badge>
+                                )}
+                                {template.jurisdiction && (
+                                  <span className="text-xs text-neutral-500">
+                                    {template.jurisdiction}
+                                  </span>
+                                )}
                               </div>
                               <h3 className="text-lg font-medium mb-1">{template.title}</h3>
                               <p className="text-neutral-600 dark:text-neutral-300 text-sm">{template.description}</p>
