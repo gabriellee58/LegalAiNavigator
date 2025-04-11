@@ -27,8 +27,8 @@ export async function extractTextFromPdf(pdfBuffer: Buffer): Promise<string> {
       disableFontFace: true,
       ignoreErrors: true,
       isEvalSupported: true,
-      cMapUrl: null,
-      standardFontDataUrl: null
+      cMapUrl: undefined,
+      standardFontDataUrl: undefined
     });
     
     const pdf = await loadingTask.promise;
@@ -194,6 +194,15 @@ export async function analyzeContract(
   contractType: string = 'general'
 ): Promise<ContractAnalysisResult> {
   try {
+    // Import the document processing utility
+    // Using a dynamic import to avoid circular dependencies
+    const { processContractForAnalysis } = await import('./documentChunker');
+    
+    // Process the contract text to handle length and token limitations
+    console.log(`Processing contract with approximate length: ${contractText.length} characters`);
+    const processedText = await processContractForAnalysis(contractText);
+    console.log(`Processed contract text to: ${processedText.length} characters`);
+    
     const prompt = `
       I need you to analyze the following contract for potential legal risks and provide improvement suggestions within the legal context of ${jurisdiction}, focusing specifically on laws and regulations applicable to ${contractType} contracts.
       
@@ -205,6 +214,8 @@ export async function analyzeContract(
       5. A summary of the contract and your analysis
       6. Identification of any clauses that may not align with ${jurisdiction} laws and regulations
       7. Analysis of key clauses by category (payment terms, termination, liability, etc.)
+      
+      If the contract appears to be truncated or summarized, note this in your analysis.
       
       Format your response as a JSON object with the following structure:
       {
@@ -246,7 +257,7 @@ export async function analyzeContract(
       }
       
       CONTRACT:
-      ${contractText}
+      ${processedText}
     `;
 
     const response = await openai.chat.completions.create({
@@ -287,6 +298,16 @@ export async function compareContracts(
   secondContract: string
 ): Promise<ContractComparisonResult> {
   try {
+    // Import the document processing utility
+    const { processContractForAnalysis } = await import('./documentChunker');
+    
+    // Process both contract texts to handle length and token limitations
+    console.log(`Processing first contract with approximate length: ${firstContract.length} characters`);
+    const processedFirstContract = await processContractForAnalysis(firstContract, 30000); // Allocate half token limit
+    
+    console.log(`Processing second contract with approximate length: ${secondContract.length} characters`);
+    const processedSecondContract = await processContractForAnalysis(secondContract, 30000); // Allocate half token limit
+    
     const prompt = `
       I need you to compare the following two contracts and identify key differences between them.
       
@@ -295,6 +316,8 @@ export async function compareContracts(
       2. Details of specific differences, organized by section
       3. The potential impact of those differences when relevant
       4. An overall recommendation about which contract is more favorable or balanced
+      
+      If either contract appears to be truncated or summarized, note this in your analysis.
       
       Format your response as a JSON object with the following structure:
       {
@@ -311,10 +334,10 @@ export async function compareContracts(
       }
       
       FIRST CONTRACT:
-      ${firstContract}
+      ${processedFirstContract}
       
       SECOND CONTRACT:
-      ${secondContract}
+      ${processedSecondContract}
     `;
 
     const response = await openai.chat.completions.create({

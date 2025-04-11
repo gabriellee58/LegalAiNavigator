@@ -132,6 +132,15 @@ export async function analyzeContract(
   clause_categories?: any;
 }> {
   try {
+    // Import the document processing utility
+    // Dynamically import to avoid circular dependencies
+    const { processContractForAnalysis } = await import('./documentChunker');
+    
+    // Process the contract text to handle length and token limitations
+    console.log(`Processing contract with approximate length: ${contractText.length} characters`);
+    const processedText = await processContractForAnalysis(contractText);
+    console.log(`Processed contract text to: ${processedText.length} characters`);
+    
     const response = await fetch(`${DEEPSEEK_API_URL}/chat/completions`, {
       method: "POST",
       headers: {
@@ -145,6 +154,9 @@ export async function analyzeContract(
             role: "system",
             content: `You are a legal contract analysis expert specializing in ${jurisdiction} contract law.
             Analyze the provided ${contractType} contract and identify risks, make improvement suggestions, and provide a summary.
+            
+            If the contract appears to be truncated or summarized, note this in your analysis.
+            
             Respond with JSON in this format:
             {
               "risks": [
@@ -164,7 +176,7 @@ export async function analyzeContract(
           },
           {
             role: "user",
-            content: `Please analyze this ${contractType} contract from a ${jurisdiction} legal perspective:\n\n${contractText}`
+            content: `Please analyze this ${contractType} contract from a ${jurisdiction} legal perspective:\n\n${processedText}`
           }
         ],
         max_tokens: 1500,
