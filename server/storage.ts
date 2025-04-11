@@ -24,7 +24,8 @@ import {
   documentComments, type DocumentComment, type InsertDocumentComment,
   settlementProposals, type SettlementProposal, type InsertSettlementProposal,
   digitalSignatures, type DigitalSignature, type InsertDigitalSignature,
-  disputeActivities, type DisputeActivity, type InsertDisputeActivity
+  disputeActivities, type DisputeActivity, type InsertDisputeActivity,
+  passwordResetTokens, type PasswordResetToken, type InsertPasswordResetToken
 } from "@shared/schema";
 import { db } from './db';
 import { eq, and, desc, inArray, sql } from 'drizzle-orm';
@@ -42,7 +43,12 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  updateUser(id: number, userData: Partial<Omit<User, "id" | "password">>): Promise<User | undefined>;
+  updateUser(id: number, userData: Partial<Omit<User, "id">>): Promise<User | undefined>;
+  
+  // Password reset token operations
+  createPasswordResetToken(userId: number, token: string, expiresAt: Date): Promise<PasswordResetToken>;
+  getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined>;
+  deletePasswordResetToken(token: string): Promise<void>;
   
   // Collaborative features
   // Shared Documents

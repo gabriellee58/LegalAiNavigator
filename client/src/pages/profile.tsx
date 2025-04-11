@@ -1,329 +1,274 @@
-import { useState } from "react";
-import { useAuth, UpdateProfileData, UpdatePasswordData } from "@/hooks/use-auth";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { Container } from "@/components/ui/container";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2 } from "lucide-react";
+import React from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { useAuth } from '@/hooks/use-auth';
+import { usePermissions } from '@/hooks/use-permissions';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { AlertCircle, Save, User, KeyRound, Languages } from 'lucide-react';
+import { withBreadcrumbs } from '@/components/ui/breadcrumb';
 
+// Define form schema
 const profileFormSchema = z.object({
-  fullName: z.string().min(2, { message: "Name must be at least 2 characters." }),
-  preferredLanguage: z.enum(["en", "fr"], {
-    required_error: "You need to select a language preference.",
+  fullName: z.string().min(2, {
+    message: 'Full name must be at least 2 characters.',
   }),
+  password: z.string()
+    .min(8, { message: 'Password must be at least 8 characters.' })
+    .optional()
+    .or(z.literal('')),
+  confirmPassword: z.string().optional().or(z.literal('')),
+  preferredLanguage: z.enum(['en', 'fr'])
+}).refine((data) => {
+  if (data.password && data.password !== data.confirmPassword) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Passwords don't match",
+  path: ['confirmPassword'],
 });
 
-const passwordFormSchema = z.object({
-  currentPassword: z.string().min(6, {
-    message: "Current password must be at least 6 characters.",
-  }),
-  newPassword: z.string().min(8, {
-    message: "New password must be at least 8 characters.",
-  }),
-  confirmPassword: z.string(),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
-});
+type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
-function ProfilePage() {
-  const { user, updateProfileMutation, updatePasswordMutation } = useAuth();
-  const [activeTab, setActiveTab] = useState("account");
-
-  const profileForm = useForm<UpdateProfileData>({
+const ProfilePage: React.FC = () => {
+  const { user } = useAuth();
+  const { userRole, isAdmin, isModerator } = usePermissions();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  // Set default form values
+  const defaultValues: Partial<ProfileFormValues> = {
+    fullName: user?.fullName || '',
+    password: '',
+    confirmPassword: '',
+    preferredLanguage: user?.preferredLanguage as 'en' | 'fr' || 'en',
+  };
+  
+  const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
-    defaultValues: {
-      fullName: user?.fullName || "",
-      preferredLanguage: user?.preferredLanguage || "en",
+    defaultValues,
+    mode: 'onChange',
+  });
+  
+  // Update profile mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: ProfileFormValues) => {
+      // Omit confirmPassword from the data sent to the server
+      const { confirmPassword, ...updateData } = data;
+      
+      // If password is empty, omit it from the request
+      if (!updateData.password) {
+        const { password, ...dataWithoutPassword } = updateData;
+        return apiRequest('PUT', '/api/user/profile', dataWithoutPassword);
+      }
+      
+      return apiRequest('PUT', '/api/user/profile', updateData);
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Profile updated',
+        description: 'Your profile has been updated successfully',
+      });
+      
+      // Invalidate user query to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+      
+      // Reset password fields
+      form.setValue('password', '');
+      form.setValue('confirmPassword', '');
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error updating profile',
+        description: error.message,
+        variant: 'destructive',
+      });
     },
   });
-
-  const passwordForm = useForm<UpdatePasswordData & { confirmPassword: string }>({
-    resolver: zodResolver(passwordFormSchema),
-    defaultValues: {
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    },
-  });
-
-  function onProfileSubmit(data: UpdateProfileData) {
+  
+  const onSubmit = (data: ProfileFormValues) => {
     updateProfileMutation.mutate(data);
-  }
-
-  function onPasswordSubmit(data: UpdatePasswordData & { confirmPassword: string }) {
-    const { confirmPassword, ...passwordData } = data;
-    updatePasswordMutation.mutate(passwordData);
-    passwordForm.reset();
-  }
-
-  if (!user) {
-    return (
-      <Container className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </Container>
-    );
-  }
-
+  };
+  
+  const getRoleBadge = () => {
+    if (isAdmin) {
+      return <Badge className="bg-red-500 hover:bg-red-600">Administrator</Badge>;
+    } else if (isModerator) {
+      return <Badge className="bg-amber-500 hover:bg-amber-600">Moderator</Badge>;
+    } else {
+      return <Badge>User</Badge>;
+    }
+  };
+  
   return (
-    <Container>
-      <div className="max-w-4xl mx-auto py-8">
-        <div className="flex items-center mb-8">
-          <div className="w-16 h-16 rounded-full bg-primary/20 overflow-hidden border-2 border-primary/30 mr-4 flex items-center justify-center text-primary font-bold text-2xl">
-            {user.fullName?.charAt(0).toUpperCase() || user.username?.charAt(0).toUpperCase() || '?'}
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">{user.fullName || user.username}</h1>
-            <p className="text-muted-foreground">{user.username}</p>
-          </div>
-        </div>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="account">Account</TabsTrigger>
-            <TabsTrigger value="password">Password</TabsTrigger>
-            <TabsTrigger value="preferences">Preferences</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="account" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Profile Information</CardTitle>
-                <CardDescription>
-                  Update your account information, profile image and settings.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...profileForm}>
-                  <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
-                    <FormField
-                      control={profileForm.control}
-                      name="fullName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Full Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Your full name" {...field} />
-                          </FormControl>
-                          <FormDescription>
-                            This is your public display name.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={profileForm.control}
-                      name="preferredLanguage"
-                      render={({ field }) => (
-                        <FormItem className="space-y-3">
-                          <FormLabel>Language Preference</FormLabel>
-                          <FormControl>
-                            <RadioGroup
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                              className="flex flex-col space-y-1"
-                            >
-                              <FormItem className="flex items-center space-x-3 space-y-0">
-                                <FormControl>
-                                  <RadioGroupItem value="en" />
-                                </FormControl>
-                                <FormLabel className="font-normal">
-                                  English
-                                </FormLabel>
-                              </FormItem>
-                              <FormItem className="flex items-center space-x-3 space-y-0">
-                                <FormControl>
-                                  <RadioGroupItem value="fr" />
-                                </FormControl>
-                                <FormLabel className="font-normal">
-                                  French
-                                </FormLabel>
-                              </FormItem>
-                            </RadioGroup>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <Button 
-                      type="submit" 
-                      className="mt-4"
-                      disabled={updateProfileMutation.isPending}
-                    >
-                      {updateProfileMutation.isPending && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      )}
-                      Save Changes
-                    </Button>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="password" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Change Password</CardTitle>
-                <CardDescription>
-                  Ensure your account is using a secure password.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...passwordForm}>
-                  <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-6">
-                    <FormField
-                      control={passwordForm.control}
-                      name="currentPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Current Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={passwordForm.control}
-                      name="newPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>New Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" {...field} />
-                          </FormControl>
-                          <FormDescription>
-                            Password must be at least 8 characters.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={passwordForm.control}
-                      name="confirmPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Confirm New Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <Button 
-                      type="submit" 
-                      className="mt-4"
-                      disabled={updatePasswordMutation.isPending}
-                    >
-                      {updatePasswordMutation.isPending && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      )}
-                      Update Password
-                    </Button>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="preferences" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Preferences</CardTitle>
-                <CardDescription>
-                  Manage your notification settings and app preferences.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium">Notifications</h3>
-                  <Separator className="my-4" />
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="email-notifications" className="font-medium">
-                          Email Notifications
-                        </Label>
-                        <p className="text-sm text-muted-foreground">
-                          Receive email notifications for important updates.
-                        </p>
-                      </div>
-                      <Input
-                        id="email-notifications"
-                        type="checkbox"
-                        className="h-4 w-4"
-                        defaultChecked
-                      />
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="document-updates" className="font-medium">
-                          Document Updates
-                        </Label>
-                        <p className="text-sm text-muted-foreground">
-                          Get notified when your documents require attention.
-                        </p>
-                      </div>
-                      <Input
-                        id="document-updates"
-                        type="checkbox"
-                        className="h-4 w-4"
-                        defaultChecked
-                      />
-                    </div>
-                  </div>
+    <div className="container mx-auto p-6">
+      <div className="max-w-2xl mx-auto">
+        <h1 className="text-3xl font-bold mb-6">Your Profile</h1>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Account Information</CardTitle>
+            <CardDescription>
+              Update your account information and preferences
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Email/Username</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-medium">{user?.username}</p>
                 </div>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Account Type</p>
+                <div>{getRoleBadge()}</div>
+              </div>
+            </div>
+            
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                {/* Full Name */}
+                <FormField
+                  control={form.control}
+                  name="fullName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                          <Input placeholder="Your full name" className="pl-10" {...field} />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 
-                <div>
-                  <h3 className="text-lg font-medium">Privacy Settings</h3>
-                  <Separator className="my-4" />
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="data-collection" className="font-medium">
-                          Data Collection
-                        </Label>
-                        <p className="text-sm text-muted-foreground">
-                          Allow us to collect usage data to improve the service.
-                        </p>
-                      </div>
-                      <Input
-                        id="data-collection"
-                        type="checkbox"
-                        className="h-4 w-4"
-                        defaultChecked
-                      />
-                    </div>
-                  </div>
+                {/* Preferred Language */}
+                <FormField
+                  control={form.control}
+                  name="preferredLanguage"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Preferred Language</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <div className="relative">
+                            <Languages className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <SelectTrigger className="pl-10">
+                              <SelectValue placeholder="Select language" />
+                            </SelectTrigger>
+                          </div>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="en">English</SelectItem>
+                          <SelectItem value="fr">Français</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        This will change the language of the interface
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                {/* Password */}
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>New Password</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <KeyRound className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                          <Input 
+                            type="password" 
+                            placeholder="Leave blank to keep current password" 
+                            className="pl-10"
+                            {...field} 
+                          />
+                        </div>
+                      </FormControl>
+                      <FormDescription>
+                        Enter a new password or leave blank to keep your current password
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                {/* Confirm Password */}
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm New Password</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <KeyRound className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                          <Input 
+                            type="password" 
+                            placeholder="Confirm your new password" 
+                            className="pl-10"
+                            {...field} 
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                {/* Submit */}
+                <div className="mt-6">
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={updateProfileMutation.isPending}
+                  >
+                    {updateProfileMutation.isPending ? (
+                      <>Saving...</>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        Save Changes
+                      </>
+                    )}
+                  </Button>
                 </div>
-                
-                <Button>Save Preferences</Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+              </form>
+            </Form>
+          </CardContent>
+          <CardFooter className="flex justify-between border-t px-6 py-4">
+            <div className="flex items-center text-sm text-muted-foreground">
+              <AlertCircle className="mr-2 h-4 w-4" />
+              For security reasons, certain changes may require verification
+            </div>
+          </CardFooter>
+        </Card>
       </div>
-    </Container>
+    </div>
   );
-}
+};
 
-export default ProfilePage;
+export default withBreadcrumbs(ProfilePage, [
+  { href: '/', label: 'Home' },
+  { href: '/profile', label: 'Profile' }
+]);

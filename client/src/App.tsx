@@ -36,6 +36,7 @@ import DomainPage from "./pages/legal-domains/domain-page";
 // Import feedback pages
 import MyFeedbackPage from "./pages/my-feedback";
 import AdminFeedbackPage from "./pages/admin/feedback";
+import AdminDashboard from "./pages/admin/dashboard";
 
 // Import legal domain pages
 import FamilyLawPage from "./pages/legal-domains/family-law";
@@ -164,6 +165,9 @@ function Router() {
       
       {/* Feedback Pages */}
       <ProtectedRoute path="/my-feedback" component={MyFeedbackPage} />
+      
+      {/* Admin Pages */}
+      <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} />
       <ProtectedRoute path="/admin/feedback" component={AdminFeedbackPage} />
       
       <Route path="/auth" component={AuthPage} />

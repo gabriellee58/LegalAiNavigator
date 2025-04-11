@@ -24,6 +24,24 @@ export const roles = pgTable("roles", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Password reset tokens schema
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  token: text("token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertPasswordResetTokenSchema = createInsertSchema(passwordResetTokens).pick({
+  userId: true,
+  token: true,
+  expiresAt: true,
+});
+
+export type InsertPasswordResetToken = z.infer<typeof insertPasswordResetTokenSchema>;
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+
 const userSchema = createInsertSchema(users);
 export const insertUserSchema = userSchema.pick({
   username: true,
