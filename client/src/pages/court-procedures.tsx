@@ -860,6 +860,9 @@ const CourtProceduresPage: React.FC = () => {
                               Branching
                             </Button>
                           </div>
+                          <div className="text-sm text-muted-foreground">
+                            {procedureDetail.steps.length} steps
+                          </div>
                         </div>
                         
                         {/* Enhanced Interactive Flowchart */}
