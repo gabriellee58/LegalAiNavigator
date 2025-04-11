@@ -1052,7 +1052,7 @@ export default function ContractAnalysisPage() {
                 </div>
                 
                 {/* Analysis Summary Card */}
-                <Card>
+                <Card id="summary-section">
                   <CardHeader className="pb-3">
                     <div className="flex justify-between items-start">
                       <div>
@@ -1065,6 +1065,8 @@ export default function ContractAnalysisPage() {
                         const element = document.getElementById("risks-section");
                         if (element) {
                           element.scrollIntoView({ behavior: "smooth" });
+                          setCurrentSection("risks");
+                          setProgressValue(50);
                         }
                       }}>
                         View Risks
@@ -1147,6 +1149,8 @@ export default function ContractAnalysisPage() {
                       const element = document.getElementById("risks-section");
                       if (element) {
                         element.scrollIntoView({ behavior: "smooth" });
+                        setCurrentSection("risks");
+                        setProgressValue(50);
                       }
                     }}>
                       Continue to Risks
@@ -1223,6 +1227,8 @@ export default function ContractAnalysisPage() {
                       const element = document.getElementById("suggestions-section");
                       if (element) {
                         element.scrollIntoView({ behavior: "smooth" });
+                        setCurrentSection("suggestions");
+                        setProgressValue(75);
                       }
                     }}>
                       Continue to Suggestions
@@ -1300,6 +1306,8 @@ export default function ContractAnalysisPage() {
                       const element = document.getElementById("next-steps-section");
                       if (element) {
                         element.scrollIntoView({ behavior: "smooth" });
+                        setCurrentSection("next-steps");
+                        setProgressValue(100);
                       }
                     }}>
                       Continue to Next Steps
