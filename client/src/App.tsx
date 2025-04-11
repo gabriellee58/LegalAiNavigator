@@ -200,17 +200,15 @@ function App() {
 
   return (
     <AuthProvider>
-      <PermissionsProvider>
-        <ErrorProvider>
-          <ErrorBoundary>
-            <Head />
-            <div className="app-container" key={language}>
-              <Router />
-            </div>
-            <Toaster />
-          </ErrorBoundary>
-        </ErrorProvider>
-      </PermissionsProvider>
+      <ErrorProvider>
+        <ErrorBoundary>
+          <Head />
+          <div className="app-container" key={language}>
+            <Router />
+          </div>
+          <Toaster />
+        </ErrorBoundary>
+      </ErrorProvider>
     </AuthProvider>
   );
 }

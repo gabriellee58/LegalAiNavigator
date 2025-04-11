@@ -1,4 +1,5 @@
-// Firebase implementation using standard web redirection flow
+// Simplified Firebase implementation for local email/password auth
+// with Google OAuth disabled due to configuration issues
 
 // Define types for Firebase modules
 export interface FirebaseUser {
@@ -8,125 +9,70 @@ export interface FirebaseUser {
   photoURL: string | null;
 }
 
-// Firebase configuration using environment variables
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-};
-
-// Log that we're using the standard redirect-based Google Sign-In 
-console.log('Using Google Sign-In configuration:', {
-  apiKey: '[REDACTED]',
-  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-});
-
 /**
- * Sign in with Google using redirect flow
- * This function is a more reliable implementation that uses
- * standard email/password authentication instead of trying to use Google OAuth
- * since we don't have a properly configured Google OAuth client
+ * Sign in with Google - DISABLED VERSION
+ * This function informs the user that Google Sign-in is not properly configured
+ * and directs them to use email/password instead
  */
 export async function signInWithGoogle(): Promise<FirebaseUser | null> {
   try {
-    // Fallback to letting the user know they need to log in with email/password
-    alert('Google Sign-in is not available in this environment. Please use email/password login.');
+    console.log("Google Sign-in attempted but disabled due to configuration issues");
     
-    // Return null to indicate the operation didn't proceed
+    // Show a friendly message to the user
+    const message = "Google Sign-in is currently unavailable due to configuration issues. " +
+      "Please use email and password to log in. We apologize for the inconvenience.";
+    
+    // Use a confirmation dialog instead of a simple alert for better UX
+    if (confirm(message + "\n\nWould you like to be redirected to the email login page?")) {
+      // If the user confirms, redirect them to the regular auth page
+      window.location.href = "/auth";
+    }
+    
     return null;
   } catch (error) {
-    console.error("Error initiating Google sign-in:", error);
+    console.error("Error in Google sign-in handler:", error);
     return null;
   }
 }
 
 /**
- * Handle the redirect from Google OAuth
- * This function should be called when the page loads to check for OAuth response data
+ * Handle the redirect from Google OAuth - STUB VERSION
+ * This is a stub implementation since OAuth redirects are not functioning
  */
 export async function handleGoogleRedirect(): Promise<FirebaseUser | null> {
-  try {
-    // Check if we have a token in the URL fragment
-    const hash = window.location.hash.substring(1);
-    const params = new URLSearchParams(hash);
-    const accessToken = params.get('access_token');
-    
-    if (!accessToken) {
-      return null;
-    }
-    
-    // Exchange the token for user info
-    const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-      headers: {
-        Authorization: `Bearer ${accessToken}`
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to get user info from Google');
-    }
-    
-    const userData = await response.json();
-    
-    // Construct a FirebaseUser-like object from the response
-    const user: FirebaseUser = {
-      uid: userData.sub,
-      email: userData.email || null,
-      displayName: userData.name || null,
-      photoURL: userData.picture || null
-    };
-    
-    // Call our backend API to register/login the user
-    await authenticateWithBackend(user);
-    
-    return user;
-  } catch (error) {
-    console.error("Error handling Google redirect:", error);
-    return null;
-  }
+  console.log("Checking for Google redirect (disabled)");
+  return null;
 }
 
 /**
- * Authenticate with our backend after Google sign-in
- */
-async function authenticateWithBackend(user: FirebaseUser): Promise<void> {
-  try {
-    const response = await fetch('/api/google-auth', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email: user.email,
-        displayName: user.displayName,
-        photoURL: user.photoURL,
-        uid: user.uid
-      }),
-      credentials: 'include'
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to authenticate with backend');
-    }
-  } catch (error) {
-    console.error("Error authenticating with backend:", error);
-    throw error;
-  }
-}
-
-/**
- * Sign out the user
+ * Sign out the user - WORKING VERSION
+ * This function works with our backend logout endpoint
  */
 export async function signOutUser(): Promise<boolean> {
   try {
-    // Call our logout endpoint
-    await fetch('/api/logout', {
-      method: 'POST',
-      credentials: 'include'
-    });
+    console.log("Signing out user");
+    
+    try {
+      // First attempt to call our logout endpoint
+      const response = await fetch('/api/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        console.warn("Server logout returned non-OK status:", response.status);
+        // Continue with client-side cleanup even if server request failed
+      }
+    } catch (error) {
+      console.warn("Error calling logout endpoint, continuing with client-side cleanup:", error);
+      // Continue with client-side cleanup even if server request failed
+    }
+    
+    // Clear storage and cookies regardless of API success
+    localStorage.removeItem('user');
+    
+    // Clear auth cookies (connect.sid is the express session cookie)
+    document.cookie = 'connect.sid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     
     // Clear URL hash if it contains OAuth data
     if (window.location.hash.includes('access_token')) {
@@ -135,32 +81,39 @@ export async function signOutUser(): Promise<boolean> {
     
     return true;
   } catch (error) {
-    console.error("Error signing out:", error);
+    console.error("Error in signOutUser:", error);
     return false;
   }
 }
 
 /**
- * Placeholder for auth state change listener
- * In a redirect-based flow, we don't have a persistent auth state
+ * No-op auth state change listener
+ * In our implementation, we don't have a persistent auth state
  */
 export function onAuthChange(callback: (user: FirebaseUser | null) => void): () => void {
-  // Check for redirect response when initialized
-  handleGoogleRedirect()
-    .then(user => {
-      if (user) {
-        callback(user);
-      }
-    })
-    .catch(err => {
-      console.error("Error in auth change handler:", err);
-    });
-  
-  // Return noop function for unsubscribe
+  // This is intentionally a no-op function since we're not using Firebase auth
   return () => {}; 
 }
 
-// Auth object for compatibility
+// Stub auth object for compatibility with existing code
 export const auth = {
   currentUser: null
 };
+
+// Export an isConfigured flag to check if Firebase is properly configured
+export const isConfigured = Boolean(
+  import.meta.env.VITE_FIREBASE_API_KEY && 
+  import.meta.env.VITE_FIREBASE_PROJECT_ID &&
+  import.meta.env.VITE_FIREBASE_APP_ID
+);
+
+// Log configuration status
+console.log('Firebase auth configuration status:', isConfigured ? 'CONFIGURED' : 'NOT CONFIGURED');
+
+// Add error handler for fetch failures that might affect auth
+window.addEventListener('unhandledrejection', function(event) {
+  if (event.reason && typeof event.reason.message === 'string' && 
+      event.reason.message.includes('Failed to fetch')) {
+    console.warn('Network request failed - this may affect authentication:', event.reason);
+  }
+});

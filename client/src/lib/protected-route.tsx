@@ -1,10 +1,11 @@
 import { useAuth } from "../hooks/use-auth";
 import { Loader2 } from "lucide-react";
 import { Redirect, Route } from "wouter";
+import React from "react";
 
 interface ProtectedRouteProps {
   path: string;
-  component: () => React.JSX.Element;
+  component: React.ComponentType<any>; // Accept any component type
   exact?: boolean;
 }
 
@@ -15,27 +16,25 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { user, isLoading } = useAuth();
 
-  if (isLoading) {
-    return (
-      <Route path={path} {...(exact ? { exact } : {})}>
+  // Create a wrapper component to render the protected component
+  const RenderedComponent = () => {
+    if (isLoading) {
+      return (
         <div className="flex items-center justify-center min-h-screen">
           <Loader2 className="h-8 w-8 animate-spin text-border" />
         </div>
-      </Route>
-    );
-  }
+      );
+    }
 
-  if (!user) {
-    return (
-      <Route path={path} {...(exact ? { exact } : {})}>
-        <Redirect to="/auth" />
-      </Route>
-    );
-  }
+    if (!user) {
+      return <Redirect to="/auth" />;
+    }
 
+    return <Component />;
+  };
+
+  // Return the route with the wrapper component
   return (
-    <Route path={path} {...(exact ? { exact } : {})}>
-      <Component />
-    </Route>
+    <Route path={path} component={RenderedComponent} {...(exact ? { exact } : {})} />
   );
 }
