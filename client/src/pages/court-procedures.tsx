@@ -23,6 +23,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import AdvancedProcedureView from '@/components/court-procedures/AdvancedProcedureView';
+import { VerticalFlowChart } from '@/components/court-procedures/FlowChart';
+import HorizontalFlowChart, { BranchingFlowChart } from '@/components/court-procedures/HorizontalFlowChart';
 
 // Court Procedure Types
 interface ProcedureCategory {
@@ -43,6 +45,7 @@ interface ProcedureStep {
   title: string;
   description: string;
   stepOrder: number;
+  order: number; // Added to support flowchart visualization
   estimatedTime?: string;
   requiredDocuments?: string[];
   instructions?: string;
@@ -50,6 +53,7 @@ interface ProcedureStep {
   warnings?: string[];
   fees?: Record<string, string>;
   isOptional: boolean;
+  isRequired: boolean; // Added to support flowchart visualization
   nextStepIds?: number[];
   alternatePathInfo?: string | null;
   sourceReferences?: { name: string; url: string }[];
@@ -196,6 +200,8 @@ const CourtProceduresPage: React.FC = () => {
   const [showFlowchart, setShowFlowchart] = useState<boolean>(false);
   const [expandedSteps, setExpandedSteps] = useState<string[]>([]);
   const [startProcedureDialogOpen, setStartProcedureDialogOpen] = useState<boolean>(false);
+  const [flowchartType, setFlowchartType] = useState<'vertical' | 'horizontal' | 'branching'>('vertical');
+  const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
 
   // Fetch categories
   const { data: categories, isLoading: categoriesLoading, error: categoriesError } = useQuery<ProcedureCategory[]>({
@@ -810,10 +816,10 @@ const CourtProceduresPage: React.FC = () => {
                   </div>
                   
                   {/* Interactive Flowchart - Toggled by the button above */}
-                  {showFlowchart && procedureDetail.flowchartData && (
+                  {showFlowchart && procedureDetail.steps && (
                     <Card className="mb-6 p-4 overflow-x-auto">
                       <CardContent className="p-0">
-                        <div className="flex items-center justify-center mb-4">
+                        <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center gap-4">
                             <Button 
                               variant="outline" 
@@ -831,15 +837,95 @@ const CourtProceduresPage: React.FC = () => {
                               +
                             </Button>
                           </div>
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              variant={flowchartType === 'vertical' ? 'default' : 'outline'} 
+                              size="sm"
+                              onClick={() => setFlowchartType('vertical')}
+                            >
+                              Vertical
+                            </Button>
+                            <Button 
+                              variant={flowchartType === 'horizontal' ? 'default' : 'outline'} 
+                              size="sm"
+                              onClick={() => setFlowchartType('horizontal')}
+                            >
+                              Horizontal
+                            </Button>
+                            <Button 
+                              variant={flowchartType === 'branching' ? 'default' : 'outline'} 
+                              size="sm"
+                              onClick={() => setFlowchartType('branching')}
+                            >
+                              Branching
+                            </Button>
+                          </div>
                         </div>
                         <div 
-                          className="min-h-[400px] border rounded-md p-4 relative"
+                          className="border rounded-md p-4 relative"
                           style={{ transform: `scale(${flowchartZoom})`, transformOrigin: 'center', transition: 'transform 0.3s ease' }}
                         >
-                          {/* Placeholder for flowchart visualization */}
-                          <div className="text-center text-muted-foreground">
-                            Interactive flowchart visualization will be implemented in the next iteration
-                          </div>
+                          {/* Integrated flowchart visualization */}
+                          {flowchartType === 'vertical' && (
+                            <VerticalFlowChart 
+                              nodes={procedureDetail.steps.map(step => ({
+                                id: step.id.toString(),
+                                label: step.title,
+                                description: step.description.substring(0, 60) + (step.description.length > 60 ? '...' : ''),
+                                status: selectedStepId === step.id.toString() ? 'current' : 'pending',
+                                type: step.order === 1 ? 'start' : 
+                                      step.order === procedureDetail.steps.length ? 'end' :
+                                      !step.isRequired ? 'optional' : 'process'
+                              }))} 
+                              connections={procedureDetail.steps.slice(0, -1).map((step, index) => ({
+                                fromId: step.id.toString(),
+                                toId: procedureDetail.steps[index + 1].id.toString(),
+                                direction: 'vertical'
+                              }))}
+                              currentNodeId={selectedStepId}
+                              onNodeClick={(nodeId) => setSelectedStepId(nodeId)}
+                            />
+                          )}
+                          {flowchartType === 'horizontal' && (
+                            <HorizontalFlowChart 
+                              nodes={procedureDetail.steps.map(step => ({
+                                id: step.id.toString(),
+                                label: step.title,
+                                description: step.description.substring(0, 60) + (step.description.length > 60 ? '...' : ''),
+                                status: selectedStepId === step.id.toString() ? 'current' : 'pending',
+                                type: step.order === 1 ? 'start' : 
+                                      step.order === procedureDetail.steps.length ? 'end' :
+                                      !step.isRequired ? 'optional' : 'process'
+                              }))} 
+                              connections={procedureDetail.steps.slice(0, -1).map((step, index) => ({
+                                fromId: step.id.toString(),
+                                toId: procedureDetail.steps[index + 1].id.toString(),
+                                direction: 'horizontal'
+                              }))}
+                              currentNodeId={selectedStepId}
+                              onNodeClick={(nodeId) => setSelectedStepId(nodeId)}
+                            />
+                          )}
+                          {flowchartType === 'branching' && (
+                            <BranchingFlowChart 
+                              nodes={procedureDetail.steps.map(step => ({
+                                id: step.id.toString(),
+                                label: step.title,
+                                description: step.description.substring(0, 60) + (step.description.length > 60 ? '...' : ''),
+                                status: selectedStepId === step.id.toString() ? 'current' : 'pending',
+                                type: step.order === 1 ? 'start' : 
+                                      step.order === procedureDetail.steps.length ? 'end' :
+                                      !step.isRequired ? 'optional' : 'process'
+                              }))} 
+                              connections={procedureDetail.steps.slice(0, -1).map((step, index) => ({
+                                fromId: step.id.toString(),
+                                toId: procedureDetail.steps[index + 1].id.toString(),
+                                direction: 'horizontal'
+                              }))}
+                              currentNodeId={selectedStepId}
+                              onNodeClick={(nodeId) => setSelectedStepId(nodeId)}
+                            />
+                          )}
                         </div>
                       </CardContent>
                     </Card>
