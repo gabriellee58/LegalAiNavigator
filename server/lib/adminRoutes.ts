@@ -66,13 +66,19 @@ export function registerAdminRoutes(app: Express): void {
   });
 
   // Clear AI response cache
-  app.post("/api/admin/ai-service/clear-cache", isAuthenticated, isAdmin, (req: Request, res: Response) => {
+  app.post("/api/admin/ai-service/clear-cache", isAuthenticated, isAdmin, async (req: Request, res: Response) => {
     try {
-      const cacheStats = getCacheStats();
-      clearResponseCache();
+      // Get stats before clearing for reporting
+      const cacheStatsBefore = await getCacheStats();
+      const memoryCount = cacheStatsBefore.memoryCache.size;
+      const dbCount = cacheStatsBefore.databaseCache?.count || 0;
+      
+      // Clear both memory and database caches
+      await clearResponseCache();
+      
       res.json({
         success: true,
-        message: `Cache cleared successfully (${cacheStats.size} entries removed)`
+        message: `Cache cleared successfully (${memoryCount} memory entries and ${dbCount} database entries removed)`
       });
     } catch (error) {
       console.error("Error clearing cache:", error);

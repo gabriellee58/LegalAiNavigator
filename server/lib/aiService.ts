@@ -299,13 +299,27 @@ export async function clearResponseCache(): Promise<void> {
   const cacheSize = responseCache.size;
   responseCache.clear();
   
-  // Clean expired entries from database cache
+  // First get stats for reporting
+  let dbCount = 0;
   try {
-    await CacheService.cleanExpiredCache();
-    console.log(`AI response cache cleared: ${cacheSize} in-memory entries removed and database cache cleaned`);
+    const dbStats = await db.select({
+      count: sql`count(*)`
+    })
+    .from(aiResponseCache);
+    
+    dbCount = Number(dbStats[0]?.count || 0);
   } catch (error) {
-    console.error('Error cleaning database cache:', error);
-    console.log(`AI in-memory response cache cleared (${cacheSize} entries removed), but database cleanup failed`);
+    console.error('Error getting database cache count:', error);
+  }
+  
+  // Completely clear database cache (not just expired entries)
+  try {
+    const result = await db.delete(aiResponseCache).returning({ deletedId: aiResponseCache.id });
+    console.log(`AI response cache cleared completely: ${cacheSize} in-memory entries and ${result.length} database entries removed`);
+  } catch (error) {
+    console.error('Error clearing database cache:', error);
+    console.log(`AI in-memory response cache cleared (${cacheSize} entries removed), but database cache clear failed`);
+    throw new Error("Failed to clear database cache");
   }
 }
 
