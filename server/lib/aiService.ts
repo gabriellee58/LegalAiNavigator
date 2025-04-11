@@ -317,12 +317,14 @@ export async function getCacheStats(): Promise<{
   databaseCache?: { count: number, providers: Record<string, number> }
 }> {
   // Get basic memory cache stats
-  const stats = {
+  const stats: {
+    memoryCache: { size: number, keys: string[] },
+    databaseCache?: { count: number, providers: Record<string, number> }
+  } = {
     memoryCache: {
       size: responseCache.size,
       keys: Array.from(responseCache.keys())
-    },
-    databaseCache: undefined
+    }
   };
   
   // Try to get database cache stats
@@ -335,13 +337,13 @@ export async function getCacheStats(): Promise<{
     .groupBy(aiResponseCache.provider);
     
     // Organize stats by provider
-    const providers = dbStats.reduce((acc, item) => {
+    const providers = dbStats.reduce<Record<string, number>>((acc, item) => {
       acc[item.provider] = Number(item.count);
       return acc;
-    }, {} as Record<string, number>);
+    }, {});
     
     // Calculate total count
-    const count = Object.values(providers).reduce((sum, val) => sum + val, 0);
+    const count = Object.values(providers).reduce((sum, val) => sum + Number(val), 0);
     
     stats.databaseCache = { count, providers };
   } catch (error) {

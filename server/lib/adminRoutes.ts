@@ -20,11 +20,19 @@ import { z } from 'zod';
  */
 export function registerAdminRoutes(app: Express): void {
   // Get AI service status
-  app.get("/api/admin/ai-service/status", isAuthenticated, isAdmin, (req: Request, res: Response) => {
-    res.json({
-      featureFlags: aiFeatureFlags,
-      cacheStats: getCacheStats()
-    });
+  app.get("/api/admin/ai-service/status", isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const cacheStats = await getCacheStats();
+      res.json({
+        featureFlags: aiFeatureFlags,
+        cacheStats
+      });
+    } catch (error) {
+      console.error("Error getting AI service status:", error);
+      res.status(500).json({ 
+        message: "Error getting AI service status" 
+      });
+    }
   });
 
   // Update feature flags
