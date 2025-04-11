@@ -128,20 +128,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Log the full response for debugging
       console.log("\n=== AI SERVICE TEST RESPONSE ===");
-      console.log(`Full response: "${response}"`);
-      console.log("=====================================\n");
       
-      // Send the response to client
-      const result = {
-        success: true,
-        prompt,
-        response,
-        timestamp: new Date().toISOString()
-      };
-      
-      res.json(result);
-      
-      return result;
+      // Check if we received an error object from the enhanced error handling
+      if (response && typeof response === 'object' && 'error' in response) {
+        // Handle structured error response
+        const errorObj = response as { error: boolean; message: string; errorType: string; recovery?: string };
+        console.log(`Error response: Type=${errorObj.errorType}, Message="${errorObj.message}"`);
+        console.log(`Recovery suggestion: "${errorObj.recovery || 'None provided'}"`);
+        console.log("=====================================\n");
+        
+        // Return a user-friendly error response with recovery instructions
+        const errorResult = {
+          success: false,
+          errorType: errorObj.errorType,
+          message: errorObj.message,
+          recovery: errorObj.recovery,
+          timestamp: new Date().toISOString()
+        };
+        
+        // Use a 200 status with error info in body, as this is a expected behavior
+        res.json(errorResult);
+        return errorResult;
+      } else {
+        // Handle normal string response
+        console.log(`Full response: "${response}"`);
+        console.log("=====================================\n");
+        
+        // Send the response to client
+        const result = {
+          success: true,
+          prompt,
+          response,
+          timestamp: new Date().toISOString()
+        };
+        
+        res.json(result);
+        return result;
+      }
     } catch (error) {
       console.error("\n=== AI SERVICE TEST ERROR ===");
       console.error(error);
@@ -265,14 +288,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         logPrefix: "Chat API"
       });
       
+      // Check if we received an error object from the enhanced error handling
+      let aiContent: string;
+      let aiErrorCode: string | null = null;
+      
+      if (aiResponse && typeof aiResponse === 'object' && 'error' in aiResponse) {
+        // Handle structured error response with recovery info
+        const errorObj = aiResponse as { error: boolean; message: string; errorType: string; recovery?: string };
+        console.log(`AI Chat error: Type=${errorObj.errorType}, Message="${errorObj.message}"`);
+        
+        // Format a user-friendly error message
+        aiContent = `${errorObj.message}\n\n${errorObj.recovery || 'Please try again later.'}`;
+        aiErrorCode = errorObj.errorType;
+      } else {
+        // Normal string response
+        aiContent = aiResponse as string;
+      }
+      
       // Save the AI message
       const aiMessage = await storage.createChatMessage({
         userId: req.user!.id,
         role: "assistant",
-        content: aiResponse
+        content: aiContent,
+        metadata: aiErrorCode ? { errorType: aiErrorCode } : undefined
       });
       
-      res.status(201).json({ userMessage, aiMessage });
+      res.status(201).json({ 
+        userMessage, 
+        aiMessage,
+        error: aiErrorCode ? {
+          type: aiErrorCode,
+          retry: aiErrorCode === 'rate_limit' || aiErrorCode === 'timeout'
+        } : null
+      });
     } catch (error) {
       res.status(500).json({ message: "Error creating chat message" });
     }

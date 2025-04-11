@@ -62,12 +62,14 @@ export const chatMessages = pgTable("chat_messages", {
   role: text("role").notNull(), // 'user' or 'assistant'
   content: text("content").notNull(),
   timestamp: timestamp("timestamp").defaultNow(),
+  metadata: jsonb("metadata"), // Store error information or other metadata
 });
 
 export const insertChatMessageSchema = createInsertSchema(chatMessages).pick({
   userId: true,
   role: true,
   content: true,
+  metadata: true,
 });
 
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
