@@ -11,11 +11,11 @@ export function Sidebar() {
   const [isCourtProceduresRoute] = useRoute("/court-procedures");
   const [isLegalDomainsRoute] = useRoute("/legal-domains");
   
-  const [isContractsRoute] = useRoute("/documents/contracts");
-  const [isLeasesRoute] = useRoute("/documents/leases");
-  const [isWillsEstatesRoute] = useRoute("/documents/wills-estates");
-  const [isBusinessFormationRoute] = useRoute("/documents/business-formation");
-  const [isIpManagementRoute] = useRoute("/documents/ip-management");
+  const [isContractRoute] = useRoute("/documents/contract");
+  const [isRealEstateRoute] = useRoute("/documents/real-estate");
+  const [isFamilyRoute] = useRoute("/documents/family");
+  const [isEmploymentRoute] = useRoute("/documents/employment");
+  const [isImmigrationRoute] = useRoute("/documents/immigration");
   
   return (
     <div className="hidden md:flex md:w-64 flex-col bg-white shadow-md z-10 h-screen fixed">
@@ -104,42 +104,42 @@ export function Sidebar() {
           <p className="text-neutral-500 text-xs uppercase font-medium mb-2">{t("document_templates")}</p>
           <ul>
             <li>
-              <Link href="/documents/contracts">
-                <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isContractsRoute ? 'bg-blue-50 text-primary' : ''}`}>
-                  <span className={`material-icons mr-3 ${isContractsRoute ? 'text-primary' : 'text-neutral-500'}`}>assignment</span>
+              <Link href="/documents/contract">
+                <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isContractRoute ? 'bg-blue-50 text-primary' : ''}`}>
+                  <span className={`material-icons mr-3 ${isContractRoute ? 'text-primary' : 'text-neutral-500'}`}>assignment</span>
                   <span>{t("contracts")}</span>
                 </div>
               </Link>
             </li>
             <li>
-              <Link href="/documents/leases">
-                <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isLeasesRoute ? 'bg-blue-50 text-primary' : ''}`}>
-                  <span className={`material-icons mr-3 ${isLeasesRoute ? 'text-primary' : 'text-neutral-500'}`}>home</span>
-                  <span>{t("leases")}</span>
+              <Link href="/documents/real-estate">
+                <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isRealEstateRoute ? 'bg-blue-50 text-primary' : ''}`}>
+                  <span className={`material-icons mr-3 ${isRealEstateRoute ? 'text-primary' : 'text-neutral-500'}`}>home</span>
+                  <span>{t("real_estate")}</span>
                 </div>
               </Link>
             </li>
             <li>
-              <Link href="/documents/wills-estates">
-                <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isWillsEstatesRoute ? 'bg-blue-50 text-primary' : ''}`}>
-                  <span className={`material-icons mr-3 ${isWillsEstatesRoute ? 'text-primary' : 'text-neutral-500'}`}>account_balance</span>
-                  <span>{t("wills_estates")}</span>
+              <Link href="/documents/family">
+                <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isFamilyRoute ? 'bg-blue-50 text-primary' : ''}`}>
+                  <span className={`material-icons mr-3 ${isFamilyRoute ? 'text-primary' : 'text-neutral-500'}`}>family_restroom</span>
+                  <span>{t("family")}</span>
                 </div>
               </Link>
             </li>
             <li>
-              <Link href="/documents/business-formation">
-                <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isBusinessFormationRoute ? 'bg-blue-50 text-primary' : ''}`}>
-                  <span className={`material-icons mr-3 ${isBusinessFormationRoute ? 'text-primary' : 'text-neutral-500'}`}>business</span>
-                  <span>{t("business_formation")}</span>
+              <Link href="/documents/employment">
+                <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isEmploymentRoute ? 'bg-blue-50 text-primary' : ''}`}>
+                  <span className={`material-icons mr-3 ${isEmploymentRoute ? 'text-primary' : 'text-neutral-500'}`}>work</span>
+                  <span>{t("employment")}</span>
                 </div>
               </Link>
             </li>
             <li>
-              <Link href="/documents/ip-management">
-                <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isIpManagementRoute ? 'bg-blue-50 text-primary' : ''}`}>
-                  <span className={`material-icons mr-3 ${isIpManagementRoute ? 'text-primary' : 'text-neutral-500'}`}>copyright</span>
-                  <span>{t("ip_management")}</span>
+              <Link href="/documents/immigration">
+                <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isImmigrationRoute ? 'bg-blue-50 text-primary' : ''}`}>
+                  <span className={`material-icons mr-3 ${isImmigrationRoute ? 'text-primary' : 'text-neutral-500'}`}>flight</span>
+                  <span>{t("immigration")}</span>
                 </div>
               </Link>
             </li>
