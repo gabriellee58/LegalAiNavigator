@@ -108,6 +108,8 @@ export default function ContractAnalysisPage() {
   const [title, setTitle] = useState<string>("");
   const [saveAnalysis, setSaveAnalysis] = useState<boolean>(false);
   const [selectedAnalysisId, setSelectedAnalysisId] = useState<number | null>(null);
+  const [currentSection, setCurrentSection] = useState<string>("summary");
+  const [progressValue, setProgressValue] = useState<number>(25);
   
   // State for search/filter functionality
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -133,6 +135,44 @@ export default function ContractAnalysisPage() {
       setActiveTab("results");
     }
   }, [selectedAnalysisData]);
+  
+  // Setup Intersection Observer to track scroll position for progress bar
+  useEffect(() => {
+    if (!analysis) return;
+    
+    const sections = [
+      { id: "summary-section", section: "summary", progress: 25 },
+      { id: "risks-section", section: "risks", progress: 50 },
+      { id: "suggestions-section", section: "suggestions", progress: 75 },
+      { id: "next-steps-section", section: "next-steps", progress: 100 }
+    ];
+    
+    const observers = sections.map(({id, section, progress}) => {
+      const element = document.getElementById(id);
+      if (!element) return null;
+      
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            setCurrentSection(section);
+            setProgressValue(progress);
+          }
+        });
+      }, { threshold: 0.2 });
+      
+      observer.observe(element);
+      return { element, observer };
+    }).filter(Boolean);
+    
+    // Cleanup observers on unmount
+    return () => {
+      observers.forEach(item => {
+        if (item && item.observer && item.element) {
+          item.observer.unobserve(item.element);
+        }
+      });
+    };
+  }, [analysis]);
 
   // Analyze contract using text input
   const analyzeContractMutation = useMutation({
@@ -1002,12 +1042,12 @@ export default function ContractAnalysisPage() {
                   {/* Steps Progress */}
                   <div className="mt-6">
                     <div className="grid grid-cols-4 gap-2 mb-2 text-center text-xs">
-                      <div className="text-primary font-medium">Summary</div>
-                      <div>Risks</div>
-                      <div>Improvements</div>
-                      <div>Next Steps</div>
+                      <div className={currentSection === "summary" ? "text-primary font-medium" : ""}>Summary</div>
+                      <div className={currentSection === "risks" ? "text-primary font-medium" : ""}>Risks</div>
+                      <div className={currentSection === "suggestions" ? "text-primary font-medium" : ""}>Improvements</div>
+                      <div className={currentSection === "next-steps" ? "text-primary font-medium" : ""}>Next Steps</div>
                     </div>
-                    <Progress value={25} className="h-2" />
+                    <Progress value={progressValue} className="h-2" />
                   </div>
                 </div>
                 
@@ -1222,6 +1262,15 @@ export default function ContractAnalysisPage() {
                       <div className="space-y-4">
                         {analysis.suggestions.map((suggestion, index) => (
                           <div key={index} className="border rounded-md p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                              <FileCheck className="h-5 w-5 text-emerald-500" />
+                              <span className="font-medium">Improvement #{index + 1}</span>
+                              {suggestion.category && (
+                                <Badge variant="outline" className="ml-auto">
+                                  {suggestion.category}
+                                </Badge>
+                              )}
+                            </div>
                             <h4 className="font-medium mb-1">{t("clause")}:</h4>
                             <p className="text-sm bg-muted p-2 rounded mb-2 whitespace-pre-wrap">
                               {suggestion.clause}
@@ -1237,6 +1286,193 @@ export default function ContractAnalysisPage() {
                       </div>
                     )}
                   </CardContent>
+                  <CardFooter className="border-t pt-4 flex justify-between">
+                    <Button variant="outline" size="sm" onClick={() => {
+                      const element = document.getElementById("risks-section");
+                      if (element) {
+                        element.scrollIntoView({ behavior: "smooth" });
+                      }
+                    }}>
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Back to Risks
+                    </Button>
+                    <Button variant="default" size="sm" onClick={() => {
+                      const element = document.getElementById("next-steps-section");
+                      if (element) {
+                        element.scrollIntoView({ behavior: "smooth" });
+                      }
+                    }}>
+                      Continue to Next Steps
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </CardFooter>
+                </Card>
+
+                {/* Next Steps Card */}
+                <Card id="next-steps-section">
+                  <CardHeader className="pb-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle>Next Steps</CardTitle>
+                        <CardDescription>
+                          Recommended actions based on your contract analysis
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-6">
+                      {/* Progress indicators */}
+                      <div className="flex justify-between items-center">
+                        <div className="text-lg font-medium">Contract Analysis Progress</div>
+                        <div className="text-sm text-muted-foreground">4 of 4 steps completed</div>
+                      </div>
+                      
+                      <div>
+                        <Progress value={100} className="h-2 mb-2" />
+                        <div className="grid grid-cols-4 gap-2 text-center text-xs">
+                          <div className="text-muted-foreground">Summary</div>
+                          <div className="text-muted-foreground">Risks</div>
+                          <div className="text-muted-foreground">Improvements</div>
+                          <div className="text-primary font-medium">Next Steps</div>
+                        </div>
+                      </div>
+
+                      {/* Recommended actions list */}
+                      <div className="rounded-lg border bg-card text-card-foreground">
+                        <div className="p-6 flex flex-col gap-4">
+                          <h3 className="text-lg font-semibold">Recommended Actions</h3>
+                          
+                          <div className="space-y-4">
+                            <div className="flex items-start gap-3">
+                              <div className="h-6 w-6 flex items-center justify-center rounded-full bg-primary/10">
+                                <Edit className="h-3.5 w-3.5 text-primary" />
+                              </div>
+                              <div className="space-y-1">
+                                <div className="font-medium">Review and Edit Contract</div>
+                                <p className="text-sm text-muted-foreground">
+                                  Implement the suggested changes to address the identified risks and improve your contract.
+                                </p>
+                                <Button variant="outline" size="sm" className="mt-2">
+                                  <Edit2 className="h-4 w-4 mr-2" />
+                                  Edit Contract
+                                </Button>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-start gap-3">
+                              <div className="h-6 w-6 flex items-center justify-center rounded-full bg-primary/10">
+                                <FileOutput className="h-3.5 w-3.5 text-primary" />
+                              </div>
+                              <div className="space-y-1">
+                                <div className="font-medium">Export Analysis Report</div>
+                                <p className="text-sm text-muted-foreground">
+                                  Download a detailed report of the analysis for your records or to share with colleagues.
+                                </p>
+                                <div className="flex gap-2 mt-2">
+                                  <Button variant="outline" size="sm">
+                                    <Download className="h-4 w-4 mr-2" />
+                                    PDF
+                                  </Button>
+                                  <Button variant="outline" size="sm">
+                                    <Download className="h-4 w-4 mr-2" />
+                                    Word
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-start gap-3">
+                              <div className="h-6 w-6 flex items-center justify-center rounded-full bg-primary/10">
+                                <Save className="h-3.5 w-3.5 text-primary" />
+                              </div>
+                              <div className="space-y-1">
+                                <div className="font-medium">Save Analysis for Later</div>
+                                <p className="text-sm text-muted-foreground">
+                                  Save this analysis to your account for future reference or continued work.
+                                </p>
+                                <Button variant="outline" size="sm" className="mt-2">
+                                  <Save className="h-4 w-4 mr-2" />
+                                  Save Analysis
+                                </Button>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-start gap-3">
+                              <div className="h-6 w-6 flex items-center justify-center rounded-full bg-primary/10">
+                                <FileDiff className="h-3.5 w-3.5 text-primary" />
+                              </div>
+                              <div className="space-y-1">
+                                <div className="font-medium">Compare with Another Contract</div>
+                                <p className="text-sm text-muted-foreground">
+                                  Compare this contract with another version or a template to see key differences.
+                                </p>
+                                <Button variant="outline" size="sm" className="mt-2" onClick={() => setActiveTab("compare")}>
+                                  <FileDiff className="h-4 w-4 mr-2" />
+                                  Start Comparison
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Additional services */}
+                      <div className="rounded-lg border bg-card text-card-foreground">
+                        <div className="p-6">
+                          <h3 className="text-lg font-semibold mb-4">Additional Services</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="border rounded-md p-4">
+                              <div className="flex items-center gap-2 mb-2">
+                                <FileText className="h-5 w-5 text-primary" />
+                                <span className="font-medium">Document Generation</span>
+                              </div>
+                              <p className="text-sm text-muted-foreground mb-3">
+                                Create new legal documents based on the lessons learned from this analysis.
+                              </p>
+                              <Button variant="secondary" size="sm">
+                                Create New Document
+                              </Button>
+                            </div>
+                            <div className="border rounded-md p-4">
+                              <div className="flex items-center gap-2 mb-2">
+                                <ListTodo className="h-5 w-5 text-primary" />
+                                <span className="font-medium">Compliance Check</span>
+                              </div>
+                              <p className="text-sm text-muted-foreground mb-3">
+                                Verify if your contract meets all compliance requirements for your industry.
+                              </p>
+                              <Button variant="secondary" size="sm">
+                                Run Compliance Check
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="border-t pt-4 flex justify-between">
+                    <Button variant="outline" size="sm" onClick={() => {
+                      const element = document.getElementById("suggestions-section");
+                      if (element) {
+                        element.scrollIntoView({ behavior: "smooth" });
+                      }
+                    }}>
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Back to Suggestions
+                    </Button>
+                    <Button variant="default" size="sm" onClick={() => {
+                      // Logic to finish and return to upload
+                      setActiveTab("upload");
+                      toast({
+                        title: "Analysis workflow complete",
+                        description: "Your contract analysis workflow has been completed successfully."
+                      });
+                    }}>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Finish
+                    </Button>
+                  </CardFooter>
                 </Card>
               </>
             )}
