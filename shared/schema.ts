@@ -10,8 +10,18 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   fullName: text("full_name"),
   preferredLanguage: text("preferred_language").default("en"),
+  role: text("role").notNull().default("user"),
   createdAt: timestamp("created_at").defaultNow(),
   firebaseUid: text("firebase_uid").unique(), // For Google authentication
+});
+
+// Role schema
+export const roles = pgTable("roles", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  permissions: jsonb("permissions").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 const userSchema = createInsertSchema(users);
@@ -20,6 +30,7 @@ export const insertUserSchema = userSchema.pick({
   password: true,
   fullName: true,
   preferredLanguage: true,
+  role: true,
   firebaseUid: true,
 });
 

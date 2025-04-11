@@ -6,6 +6,7 @@ import { ProtectedRoute } from "@/lib/protected-route";
 import { ErrorBoundary } from "./components/error-boundary";
 import { Toaster } from "@/components/ui/toaster";
 import { ErrorProvider } from "@/components/ui/error-handler";
+import { PermissionsProvider } from "@/hooks/use-permissions";
 
 // Import pages
 import HomePage from "@/pages/home";
@@ -190,15 +191,17 @@ function App() {
 
   return (
     <AuthProvider>
-      <ErrorProvider>
-        <ErrorBoundary>
-          <Head />
-          <div className="app-container" key={language}>
-            <Router />
-          </div>
-          <Toaster />
-        </ErrorBoundary>
-      </ErrorProvider>
+      <PermissionsProvider>
+        <ErrorProvider>
+          <ErrorBoundary>
+            <Head />
+            <div className="app-container" key={language}>
+              <Router />
+            </div>
+            <Toaster />
+          </ErrorBoundary>
+        </ErrorProvider>
+      </PermissionsProvider>
     </AuthProvider>
   );
 }
