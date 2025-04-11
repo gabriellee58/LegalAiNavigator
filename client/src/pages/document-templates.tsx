@@ -157,29 +157,29 @@ export default function DocumentTemplatesPage() {
                       {t("all_templates")}
                     </div>
                   </Link>
-                  <Link href="/documents/contracts">
-                    <div className={`px-3 py-2 rounded-md cursor-pointer ${category === "contracts" ? "bg-primary text-white" : "hover:bg-neutral-100 dark:hover:bg-neutral-800"}`}>
+                  <Link href="/documents/contract">
+                    <div className={`px-3 py-2 rounded-md cursor-pointer ${category === "contract" ? "bg-primary text-white" : "hover:bg-neutral-100 dark:hover:bg-neutral-800"}`}>
                       {t("contracts")}
                     </div>
                   </Link>
-                  <Link href="/documents/leases">
-                    <div className={`px-3 py-2 rounded-md cursor-pointer ${category === "leases" ? "bg-primary text-white" : "hover:bg-neutral-100 dark:hover:bg-neutral-800"}`}>
-                      {t("leases")}
+                  <Link href="/documents/real-estate">
+                    <div className={`px-3 py-2 rounded-md cursor-pointer ${category === "real-estate" ? "bg-primary text-white" : "hover:bg-neutral-100 dark:hover:bg-neutral-800"}`}>
+                      {t("real_estate")}
                     </div>
                   </Link>
-                  <Link href="/documents/wills-estates">
-                    <div className={`px-3 py-2 rounded-md cursor-pointer ${category === "wills-estates" ? "bg-primary text-white" : "hover:bg-neutral-100 dark:hover:bg-neutral-800"}`}>
-                      {t("wills_estates")}
+                  <Link href="/documents/family">
+                    <div className={`px-3 py-2 rounded-md cursor-pointer ${category === "family" ? "bg-primary text-white" : "hover:bg-neutral-100 dark:hover:bg-neutral-800"}`}>
+                      {t("family")}
                     </div>
                   </Link>
-                  <Link href="/documents/business-formation">
-                    <div className={`px-3 py-2 rounded-md cursor-pointer ${category === "business-formation" ? "bg-primary text-white" : "hover:bg-neutral-100 dark:hover:bg-neutral-800"}`}>
-                      {t("business_formation")}
+                  <Link href="/documents/employment">
+                    <div className={`px-3 py-2 rounded-md cursor-pointer ${category === "employment" ? "bg-primary text-white" : "hover:bg-neutral-100 dark:hover:bg-neutral-800"}`}>
+                      {t("employment")}
                     </div>
                   </Link>
-                  <Link href="/documents/ip-management">
-                    <div className={`px-3 py-2 rounded-md cursor-pointer ${category === "ip-management" ? "bg-primary text-white" : "hover:bg-neutral-100 dark:hover:bg-neutral-800"}`}>
-                      {t("ip_management")}
+                  <Link href="/documents/immigration">
+                    <div className={`px-3 py-2 rounded-md cursor-pointer ${category === "immigration" ? "bg-primary text-white" : "hover:bg-neutral-100 dark:hover:bg-neutral-800"}`}>
+                      {t("immigration")}
                     </div>
                   </Link>
                 </div>
@@ -203,11 +203,13 @@ export default function DocumentTemplatesPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all_types">{t("all_types")}</SelectItem>
-                        <SelectItem value="contracts">{t("contracts")}</SelectItem>
-                        <SelectItem value="leases">{t("leases")}</SelectItem>
-                        <SelectItem value="wills-estates">{t("wills_estates")}</SelectItem>
-                        <SelectItem value="business-formation">{t("business_formation")}</SelectItem>
-                        <SelectItem value="ip-management">{t("ip_management")}</SelectItem>
+                        <SelectItem value="contract">{t("contracts")}</SelectItem>
+                        <SelectItem value="real-estate">{t("real_estate")}</SelectItem>
+                        <SelectItem value="family">{t("family")}</SelectItem>
+                        <SelectItem value="employment">{t("employment")}</SelectItem>
+                        <SelectItem value="immigration">{t("immigration")}</SelectItem>
+                        <SelectItem value="will">{t("wills")}</SelectItem>
+                        <SelectItem value="personal-injury">{t("personal_injury")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

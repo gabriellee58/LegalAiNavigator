@@ -117,11 +117,13 @@ function Router() {
       
       {/* Document Templates */}
       <ProtectedRoute path="/documents/all" component={DocumentTemplatesPage} />
-      <ProtectedRoute path="/documents/contracts" component={DocumentTemplatesPage} />
-      <ProtectedRoute path="/documents/leases" component={DocumentTemplatesPage} />
-      <ProtectedRoute path="/documents/wills-estates" component={DocumentTemplatesPage} />
-      <ProtectedRoute path="/documents/business-formation" component={DocumentTemplatesPage} />
-      <ProtectedRoute path="/documents/ip-management" component={DocumentTemplatesPage} />
+      <ProtectedRoute path="/documents/contract" component={DocumentTemplatesPage} />
+      <ProtectedRoute path="/documents/real-estate" component={DocumentTemplatesPage} />
+      <ProtectedRoute path="/documents/family" component={DocumentTemplatesPage} />
+      <ProtectedRoute path="/documents/employment" component={DocumentTemplatesPage} />
+      <ProtectedRoute path="/documents/immigration" component={DocumentTemplatesPage} />
+      <ProtectedRoute path="/documents/will" component={DocumentTemplatesPage} />
+      <ProtectedRoute path="/documents/personal-injury" component={DocumentTemplatesPage} />
       
       {/* Legal Domains - Static paths first, dynamic path last */}
       <ProtectedRoute path="/legal-domains" component={LegalDomainsPage} />
