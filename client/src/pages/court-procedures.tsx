@@ -764,11 +764,15 @@ const CourtProceduresPage: React.FC = () => {
                           <p className="text-muted-foreground mb-1">Total: {(procedureDetail.estimatedTimeframes as any).total || "Varies"}</p>
                           {(procedureDetail.estimatedTimeframes as any).phases && (
                             <div className="text-sm space-y-1">
-                              {Object.entries((procedureDetail.estimatedTimeframes as any).phases).map(([phase, time]) => (
-                                <p key={phase}>
-                                  <span className="text-muted-foreground">{phase}:</span> {time}
-                                </p>
-                              ))}
+                              {Object.entries((procedureDetail.estimatedTimeframes as any).phases).map((entry) => {
+                                const phase = entry[0];
+                                const time = String(entry[1]);
+                                return (
+                                  <p key={phase}>
+                                    <span className="text-muted-foreground">{phase}:</span> {time}
+                                  </p>
+                                );
+                              })}
                             </div>
                           )}
                         </>
@@ -789,11 +793,15 @@ const CourtProceduresPage: React.FC = () => {
                         </div>
                       ) : procedureDetail.courtFees && typeof procedureDetail.courtFees === 'object' ? (
                         <div className="text-sm space-y-1">
-                          {Object.entries(procedureDetail.courtFees as Record<string, string>).map(([fee, amount]) => (
-                            <p key={fee}>
-                              <span className="text-muted-foreground">{fee}:</span> {amount}
-                            </p>
-                          ))}
+                          {Object.entries(procedureDetail.courtFees as Record<string, string>).map((entry) => {
+                            const fee = entry[0];
+                            const amount = String(entry[1]);
+                            return (
+                              <p key={fee}>
+                                <span className="text-muted-foreground">{fee}:</span> {amount}
+                              </p>
+                            );
+                          })}
                         </div>
                       ) : (
                         <p className="text-muted-foreground mb-1">Fee information unavailable</p>
@@ -1061,14 +1069,18 @@ const CourtProceduresPage: React.FC = () => {
                         </div>
                       ) : typeof procedureDetail.relatedForms === 'object' ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {Object.entries(procedureDetail.relatedForms as Record<string, string>).map(([formId, formName]) => (
-                            <div key={formId} className="flex items-center">
-                              <FileText className="w-5 h-5 mr-2 text-primary" />
-                              <span>
-                                <strong>{formId}:</strong> {formName}
-                              </span>
-                            </div>
-                          ))}
+                          {Object.entries(procedureDetail.relatedForms as Record<string, string>).map((entry) => {
+                            const formId = entry[0];
+                            const formName = String(entry[1]);
+                            return (
+                              <div key={formId} className="flex items-center">
+                                <FileText className="w-5 h-5 mr-2 text-primary" />
+                                <span>
+                                  <strong>{formId}:</strong> {formName}
+                                </span>
+                              </div>
+                            );
+                          })}
                         </div>
                       ) : (
                         <p className="text-muted-foreground">Form information unavailable</p>
