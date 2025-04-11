@@ -222,7 +222,7 @@ const CourtProceduresPage: React.FC = () => {
 
   // Fetch procedures for selected category
   const { data: procedures, isLoading: proceduresLoading, error: proceduresError } = useQuery<Procedure[]>({
-    queryKey: ['/api/court-procedures/categories', selectedCategoryId, 'procedures'],
+    queryKey: [`/api/court-procedures/categories/${selectedCategoryId}/procedures`],
     enabled: !!selectedCategoryId && activeTab === "browse",
   });
 
