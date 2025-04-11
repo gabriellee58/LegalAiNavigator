@@ -230,6 +230,15 @@ const CourtProceduresPage: React.FC = () => {
   const { data: procedureDetail, isLoading: procedureDetailLoading, error: procedureDetailError } = useQuery<ProcedureDetail>({
     queryKey: ['/api/court-procedures/procedures', selectedProcedureId],
     enabled: !!selectedProcedureId,
+    retry: 3,
+    retryDelay: 1000,
+    onError: (error) => {
+      toast({
+        title: "Error Loading Procedure",
+        description: "Could not load procedure details. Please try again.",
+        variant: "destructive",
+      });
+    }
   });
 
   // Fetch user procedure detail
