@@ -15,7 +15,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const MODEL = "gpt-4o";
 
 // Maximum tokens to target for AI requests
-const MAX_TOKENS = 60000;  // Keep below DeepSeek's 65536 limit
+const MAX_TOKENS = 40000;  // Keep well below DeepSeek's 65536 limit to account for system messages and other content
 
 /**
  * Splits text into relatively equal-sized chunks based on paragraphs

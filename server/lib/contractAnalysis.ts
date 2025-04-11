@@ -80,59 +80,117 @@ export async function extractTextFromPdf(pdfBuffer: Buffer): Promise<string> {
  */
 function extractTextFromPdfFallback(pdfBuffer: Buffer): string {
   try {
-    // Convert buffer to string and look for text content
-    const pdfString = pdfBuffer.toString('utf-8', 0, Math.min(pdfBuffer.length, 5000000));
+    console.log('Starting enhanced fallback PDF extraction');
     
-    // Extract text between common PDF text markers
-    const textExtracted: string[] = [];
-    let textMode = false;
-    let currentText = '';
+    // Try multiple approaches to extract text
+    let extractedText = '';
     
-    // Simple parser to find text blocks - not comprehensive but works as fallback
-    const lines = pdfString.split(/[\r\n]+/);
-    
-    for (const line of lines) {
-      // Look for text object markers in PDF structure
-      if (line.includes('BT') || line.includes('/F')) {
-        textMode = true;
-      } else if (line.includes('ET')) {
-        if (currentText.trim()) {
-          textExtracted.push(currentText.trim());
-        }
-        currentText = '';
-        textMode = false;
-      } else if (textMode && line.includes('(') && line.includes(')')) {
-        // Extract text between parentheses which often contains actual text
-        const matches = line.match(/\((.*?)\)/g);
-        if (matches) {
-          for (const match of matches) {
-            currentText += ' ' + match.slice(1, -1);
+    // Method 1: Convert buffer to string and look for text content
+    try {
+      // Convert buffer to string and look for text content (limiting to avoid memory issues)
+      const pdfString = pdfBuffer.toString('utf-8', 0, Math.min(pdfBuffer.length, 2000000));
+      
+      // Extract text between common PDF text markers
+      const textExtracted: string[] = [];
+      let textMode = false;
+      let currentText = '';
+      
+      // Simple parser to find text blocks - not comprehensive but works as fallback
+      const lines = pdfString.split(/[\r\n]+/);
+      
+      for (const line of lines) {
+        // Look for text object markers in PDF structure
+        if (line.includes('BT') || line.includes('/F')) {
+          textMode = true;
+        } else if (line.includes('ET')) {
+          if (currentText.trim()) {
+            textExtracted.push(currentText.trim());
+          }
+          currentText = '';
+          textMode = false;
+        } else if (textMode && line.includes('(') && line.includes(')')) {
+          // Extract text between parentheses which often contains actual text
+          const matches = line.match(/\((.*?)\)/g);
+          if (matches) {
+            for (const match of matches) {
+              currentText += ' ' + match.slice(1, -1);
+            }
           }
         }
       }
+      
+      // Get ASCII text strings that might be embedded in the PDF - more aggressively
+      // Look for sequences of readable text at least 5 characters long
+      const asciiRegex = /[\x20-\x7E]{5,}/g;
+      const asciiMatches = pdfString.match(asciiRegex) || [];
+      
+      // Add meaningful ASCII matches to our extracted text
+      for (const match of asciiMatches) {
+        // Filter out binary data that might be accidentally matched
+        if (
+          match.length > 5 && 
+          !match.includes('\u0000') && 
+          !/^[0-9\s]+$/.test(match) && // avoid sequences of just numbers
+          !textExtracted.includes(match)
+        ) {
+          textExtracted.push(match);
+        }
+      }
+      
+      extractedText = textExtracted.join('\n\n');
+      console.log(`Method 1 extracted ${extractedText.length} characters`);
+    } catch (method1Error) {
+      console.error('PDF Extraction Method 1 failed:', method1Error);
     }
     
-    // Get ASCII text strings that might be embedded in the PDF
-    const asciiRegex = /[\x20-\x7E]{10,}/g;
-    const asciiMatches = pdfString.match(asciiRegex) || [];
-    
-    // Add these to our extracted text
-    for (const match of asciiMatches) {
-      if (match.length > 20 && !textExtracted.includes(match)) {
-        textExtracted.push(match);
+    // Method 2: Look for sequences that might be sentences
+    if (extractedText.length < 500) {
+      try {
+        // Convert to hex to better handle binary data
+        const hexString = pdfBuffer.toString('hex');
+        
+        // Look for sequences of letters that might be words
+        const asciiHexRegex = /(?:3[0-9]|4[1-9a-f]|5[0-9a]|6[1-9a-f]|7[0-9a]){20,}/gi;
+        const possibleTextBlocks = hexString.match(asciiHexRegex) || [];
+        
+        const decodedBlocks: string[] = [];
+        for (const block of possibleTextBlocks) {
+          try {
+            // Convert hex back to ascii
+            const bytes = [];
+            for (let i = 0; i < block.length; i += 2) {
+              bytes.push(parseInt(block.substring(i, i + 2), 16));
+            }
+            const decoded = Buffer.from(bytes).toString('utf-8');
+            
+            // Only keep if it looks like real text
+            if (decoded.length > 10 && /[a-zA-Z]{3,}/.test(decoded)) {
+              decodedBlocks.push(decoded);
+            }
+          } catch (blockError) {
+            // Skip invalid blocks
+          }
+        }
+        
+        if (decodedBlocks.length > 0) {
+          extractedText += '\n\n' + decodedBlocks.join('\n\n');
+          console.log(`Method 2 added ${decodedBlocks.join('\n\n').length} characters`);
+        }
+      } catch (method2Error) {
+        console.error('PDF Extraction Method 2 failed:', method2Error);
       }
     }
     
-    const result = textExtracted.join('\n\n');
-    
-    if (!result.trim()) {
-      throw new Error('No text content found in PDF');
+    // If we still don't have much text, return a message indicating PDF extraction difficulty
+    if (!extractedText.trim() || extractedText.trim().length < 200) {
+      console.log('All fallback extraction methods failed to get meaningful text');
+      return 'This PDF document does not contain readily extractable text. It may be scanned, encrypted, or contain only images.';
     }
     
-    return result;
+    return extractedText;
   } catch (error) {
-    console.error('Error in fallback PDF text extraction:', error);
-    throw new Error('Failed to extract text from PDF document with fallback method');
+    console.error('Error in PDF fallback extraction:', error);
+    return 'Failed to extract text from the PDF document using multiple fallback methods.';
   }
 }
 

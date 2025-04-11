@@ -531,25 +531,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Analyze the contract
-      const analysisResult = await analyzeContract(contractText, jurisdiction, contractType);
+      // Try to analyze the contract with robust error handling
+      let analysisResult;
+      try {
+        analysisResult = await analyzeContract(contractText, jurisdiction, contractType);
+      } catch (analysisError) {
+        console.error("Contract analysis failed, returning error result:", analysisError);
+        // Return a structured error response that matches the expected format
+        analysisResult = {
+          risks: [{ 
+            description: "Error analyzing contract", 
+            severity: "High", 
+            recommendation: "Please try again later",
+            clause: "Unknown",
+            issue: "Analysis service error",
+            category: "Error"
+          }],
+          suggestions: [],
+          summary: "An error occurred during contract analysis",
+          score: 0,
+          riskLevel: "high",
+        };
+      }
       
       // Save the analysis result if requested
-      if (save && title) {
-        const now = new Date();
-        
-        await storage.createContractAnalysis({
-          userId: req.user!.id,
-          contractContent: contractText,
-          contractTitle: title,
-          score: analysisResult.score,
-          riskLevel: analysisResult.riskLevel,
-          analysisResults: analysisResult as any,
-          jurisdiction,
-          contractType,
-          fileName: req.file.originalname,
-          updatedAt: now,
-          categories: analysisResult.clause_categories as any
-        });
+      if (save && title && analysisResult.score !== undefined) {
+        try {
+          const now = new Date();
+          
+          await storage.createContractAnalysis({
+            userId: req.user!.id,
+            contractContent: contractText,
+            contractTitle: title,
+            score: analysisResult.score || 0,
+            riskLevel: analysisResult.riskLevel || "high",
+            analysisResults: analysisResult as any,
+            jurisdiction,
+            contractType,
+            fileName: req.file.originalname,
+            updatedAt: now,
+            categories: analysisResult.clause_categories as any
+          });
+        } catch (saveError) {
+          console.error("Failed to save contract analysis:", saveError);
+          // Continue with response even if saving fails
+        }
       }
       
       res.json(analysisResult);
@@ -625,10 +651,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.warn("Failed to estimate token count:", estimateError);
       }
       
-      const comparison = await compareContracts(
-        parsed.data.firstContract,
-        parsed.data.secondContract
-      );
+      // Try to compare the contracts with robust error handling
+      let comparison;
+      try {
+        comparison = await compareContracts(
+          parsed.data.firstContract,
+          parsed.data.secondContract
+        );
+      } catch (comparisonError) {
+        console.error("Contract comparison failed, returning error result:", comparisonError);
+        // Return a structured error response that matches the expected format
+        comparison = {
+          differences: [{
+            section: "Error",
+            first: "Could not process document",
+            second: "Could not process document",
+            impact: "Unable to complete comparison due to technical error",
+          }],
+          summary: "Contract comparison failed due to a technical error. The documents may be too large or in an unsupported format.",
+          recommendation: "Try using smaller or more readable contract documents."
+        };
+      }
       
       res.json(comparison);
     } catch (error) {
