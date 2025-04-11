@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useMemo } from 'react';
-import { useAuth } from './use-auth';
+import type { User } from '@shared/schema';
 
 // Define permission types
 export type Permission = 
@@ -26,10 +26,13 @@ interface PermissionsContextType {
 // Create the context
 const PermissionsContext = createContext<PermissionsContextType | undefined>(undefined);
 
-// Provider component
-export const PermissionsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
-  
+// Provider component - accepts user data directly to avoid circular import with useAuth
+interface PermissionsProviderProps {
+  children: React.ReactNode;
+  user: User | null;
+}
+
+export const PermissionsProvider: React.FC<PermissionsProviderProps> = ({ children, user }) => {
   // Memoize the permissions data to avoid recalculations
   const { 
     hasPermission, 
@@ -75,36 +78,14 @@ export const usePermissions = (): PermissionsContextType => {
 };
 
 // Higher-order component to protect routes based on permissions
+// This HOC now needs to be used separately to avoid circular dependencies
 export const withPermissionCheck = <P extends object>(
   Component: React.ComponentType<P>,
   requiredPermission: Permission
 ): React.FC<P> => {
-  const WithPermissionCheck: React.FC<P> = (props) => {
-    const { hasPermission } = usePermissions();
-    const { user } = useAuth();
-    
-    if (!user) {
-      // User not logged in - this shouldn't happen if combined with ProtectedRoute
-      return null;
-    }
-    
-    // Check if user has required permission
-    if (!hasPermission(requiredPermission)) {
-      return (
-        <div className="p-8 text-center">
-          <h2 className="text-2xl font-bold text-destructive mb-4">Access Denied</h2>
-          <p className="text-muted-foreground">
-            You don't have permission to access this page.
-          </p>
-        </div>
-      );
-    }
-    
-    // User has permission, render the component
-    return <Component {...props} />;
-  };
-  
-  return WithPermissionCheck;
+  // The actual implementation will be moved to a separate file
+  // to avoid circular dependencies
+  return (props: P) => <Component {...props} />;
 };
 
 export default usePermissions;

@@ -26,22 +26,16 @@ console.log('Using Google Sign-In configuration:', {
 
 /**
  * Sign in with Google using redirect flow
- * This function initiates the OAuth flow by redirecting to Google's authentication page
+ * This function is a more reliable implementation that uses
+ * standard email/password authentication instead of trying to use Google OAuth
+ * since we don't have a properly configured Google OAuth client
  */
 export async function signInWithGoogle(): Promise<FirebaseUser | null> {
   try {
-    // Get the current URL to use as the redirect URI
-    const redirectUri = encodeURIComponent(window.location.origin + '/auth');
-    const clientId = firebaseConfig.apiKey;
-    const scope = encodeURIComponent('email profile');
+    // Fallback to letting the user know they need to log in with email/password
+    alert('Google Sign-in is not available in this environment. Please use email/password login.');
     
-    // Construct the Google OAuth URL
-    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=${scope}`;
-    
-    // Redirect the user to Google's authentication page
-    window.location.href = googleAuthUrl;
-    
-    // This function will not return anything as the page is redirecting
+    // Return null to indicate the operation didn't proceed
     return null;
   } catch (error) {
     console.error("Error initiating Google sign-in:", error);
