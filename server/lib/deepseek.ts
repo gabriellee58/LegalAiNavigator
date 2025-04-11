@@ -430,6 +430,20 @@ export async function compareContracts(
   summary: string;
 }> {
   try {
+    // Import the document processing utility
+    // Dynamically import to avoid circular dependencies
+    const { processContractForAnalysis } = await import('./documentChunker');
+    
+    // Process both contract texts to handle length and token limitations
+    console.log(`Processing first contract with approximate length: ${firstContract.length} characters`);
+    const processedFirstContract = await processContractForAnalysis(firstContract, 30000);
+    
+    console.log(`Processing second contract with approximate length: ${secondContract.length} characters`);
+    const processedSecondContract = await processContractForAnalysis(secondContract, 30000);
+    
+    console.log(`Processed first contract to: ${processedFirstContract.length} characters`);
+    console.log(`Processed second contract to: ${processedSecondContract.length} characters`);
+    
     const response = await fetch(`${DEEPSEEK_API_URL}/chat/completions`, {
       method: "POST",
       headers: {
@@ -444,6 +458,9 @@ export async function compareContracts(
             content: `You are a legal contract comparison expert specializing in Canadian contract law.
             Compare the two provided contracts and identify key differences, their impacts, and provide recommendations.
             Focus on substantive legal differences rather than formatting or minor wording changes.
+            
+            If either contract appears to be truncated or summarized, note this in your analysis.
+            
             Respond with JSON in this format:
             {
               "differences": [
@@ -460,7 +477,7 @@ export async function compareContracts(
           },
           {
             role: "user",
-            content: `Please compare these two contracts from a Canadian legal perspective:\n\nFirst Contract:\n${firstContract}\n\nSecond Contract:\n${secondContract}`
+            content: `Please compare these two contracts from a Canadian legal perspective:\n\nFirst Contract:\n${processedFirstContract}\n\nSecond Contract:\n${processedSecondContract}`
           }
         ],
         max_tokens: 2000,
