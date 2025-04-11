@@ -3,6 +3,7 @@ import { withPermissionCheck } from '@/hooks/use-permissions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CacheManager } from '@/components/admin/cache-manager';
 import { 
   Users, 
   FileText, 
@@ -10,7 +11,8 @@ import {
   Settings, 
   Database, 
   BarChart3, 
-  Bell
+  Bell,
+  Cpu
 } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
@@ -222,8 +224,22 @@ const AdminDashboard: React.FC = () => {
               <CardDescription>Configure system preferences and integrations</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-muted-foreground text-center p-8">
-                System settings interface will be implemented soon
+              <div className="grid grid-cols-1 gap-6">
+                <div className="space-y-2">
+                  <h3 className="text-lg font-medium">AI Services</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Monitor and manage AI service performance and configuration
+                  </p>
+                </div>
+                
+                <CacheManager />
+                
+                <div className="space-y-2 mt-6">
+                  <h3 className="text-lg font-medium">Additional Settings</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Other system settings will be implemented soon
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
