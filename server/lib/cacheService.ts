@@ -1,7 +1,7 @@
 import { createHash } from 'crypto';
 import { db } from '../db';
 import { aiResponseCache } from '@shared/schema';
-import { eq, and, lt } from 'drizzle-orm';
+import { eq, and, lt, gt, sql } from 'drizzle-orm';
 
 interface CachedResponse {
   response: string;
@@ -39,8 +39,12 @@ export class CacheService {
     expiryTimestamp.setHours(expiryTimestamp.getHours() - CACHE_TTL_HOURS);
     
     try {
-      await db.delete(aiResponseCache)
-        .where(lt(aiResponseCache.createdAt, expiryTimestamp));
+      // Delete entries older than the expiry timestamp (entries that were created before the expiry time)
+      const result = await db.delete(aiResponseCache)
+        .where(lt(aiResponseCache.createdAt, expiryTimestamp))
+        .returning({ deletedId: aiResponseCache.id });
+      
+      console.log(`Cleaned ${result.length} expired cache entries`);
     } catch (error) {
       console.error('Error cleaning expired cache entries:', error);
     }
@@ -59,12 +63,13 @@ export class CacheService {
     expiryTimestamp.setHours(expiryTimestamp.getHours() - CACHE_TTL_HOURS);
     
     try {
+      // Get cache entry that is NOT expired (created after expiry timestamp)
       const [cachedResponse] = await db.select()
         .from(aiResponseCache)
         .where(
           and(
             eq(aiResponseCache.cacheKey, cacheKey),
-            lt(aiResponseCache.createdAt, expiryTimestamp)
+            gt(aiResponseCache.createdAt, expiryTimestamp) // Compare correctly: entry is newer than expiry time
           )
         );
       

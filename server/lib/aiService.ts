@@ -14,6 +14,10 @@ import Anthropic from "@anthropic-ai/sdk";
 import { generateAIResponse as generateDeepSeekResponse } from "./deepseek";
 import { generateAIResponseClaude } from "./anthropic";
 import { generateAIResponse as generateOpenAIResponse } from "./openai";
+import { CacheService } from "./cacheService";
+import { db } from "../db";
+import { aiResponseCache } from "@shared/schema";
+import { eq, sql } from "drizzle-orm";
 
 // Feature flags
 export const aiFeatureFlags = {
@@ -110,12 +114,31 @@ export async function enhancedAIRequest<T>(
   // Generate cache key if caching is enabled
   const cacheKey = useCache ? (options.cacheKey || `${prompt}-${JSON.stringify(options)}`) : undefined;
 
-  // Check cache first if enabled
-  if (useCache && cacheKey && responseCache.has(cacheKey)) {
-    const cached = responseCache.get(cacheKey)!;
-    if (Date.now() - cached.timestamp < CACHE_TTL) {
-      console.log(`${logPrefix}: Cache hit for prompt (key=${cacheKey.substring(0, 20)}...)`);
-      return cached.response as T;
+  // Check database cache first if enabled
+  if (useCache && cacheKey) {
+    try {
+      // Try to get response from persistent cache
+      const cachedResponse = await CacheService.get(
+        options.model || 'default',
+        prompt,
+        options
+      );
+      
+      if (cachedResponse) {
+        console.log(`${logPrefix}: DB Cache hit for prompt (key=${cacheKey.substring(0, 20)}...)`);
+        return cachedResponse as unknown as T;
+      }
+      
+      // Fall back to memory cache if database cache misses
+      if (responseCache.has(cacheKey)) {
+        const cached = responseCache.get(cacheKey)!;
+        if (Date.now() - cached.timestamp < CACHE_TTL) {
+          console.log(`${logPrefix}: Memory cache hit for prompt (key=${cacheKey.substring(0, 20)}...)`);
+          return cached.response as T;
+        }
+      }
+    } catch (error) {
+      console.warn(`${logPrefix}: Cache lookup failed, continuing with live request`, error);
     }
   }
 
@@ -137,10 +160,23 @@ export async function enhancedAIRequest<T>(
       
       // Cache response if caching is enabled
       if (useCache && cacheKey) {
+        // Store in memory cache
         responseCache.set(cacheKey, {
           response,
           timestamp: Date.now()
         });
+        
+        // Store in database cache
+        try {
+          await CacheService.set(
+            options.model || 'default',
+            prompt,
+            response as string,
+            options
+          );
+        } catch (cacheError) {
+          console.warn(`${logPrefix}: Failed to store response in database cache`, cacheError);
+        }
       }
       
       return response;
@@ -258,20 +294,61 @@ export async function generateChatResponse(
 /**
  * Clear the AI response cache
  */
-export function clearResponseCache(): void {
+export async function clearResponseCache(): Promise<void> {
+  // Clear in-memory cache
   const cacheSize = responseCache.size;
   responseCache.clear();
-  console.log(`AI response cache cleared (${cacheSize} entries removed)`);
+  
+  // Clean expired entries from database cache
+  try {
+    await CacheService.cleanExpiredCache();
+    console.log(`AI response cache cleared: ${cacheSize} in-memory entries removed and database cache cleaned`);
+  } catch (error) {
+    console.error('Error cleaning database cache:', error);
+    console.log(`AI in-memory response cache cleared (${cacheSize} entries removed), but database cleanup failed`);
+  }
 }
 
 /**
  * Get cache statistics
  */
-export function getCacheStats(): { size: number, keys: string[] } {
-  return {
-    size: responseCache.size,
-    keys: Array.from(responseCache.keys())
+export async function getCacheStats(): Promise<{ 
+  memoryCache: { size: number, keys: string[] },
+  databaseCache?: { count: number, providers: Record<string, number> }
+}> {
+  // Get basic memory cache stats
+  const stats = {
+    memoryCache: {
+      size: responseCache.size,
+      keys: Array.from(responseCache.keys())
+    },
+    databaseCache: undefined
   };
+  
+  // Try to get database cache stats
+  try {
+    const dbStats = await db.select({
+      count: sql`count(*)`,
+      provider: aiResponseCache.provider
+    })
+    .from(aiResponseCache)
+    .groupBy(aiResponseCache.provider);
+    
+    // Organize stats by provider
+    const providers = dbStats.reduce((acc, item) => {
+      acc[item.provider] = Number(item.count);
+      return acc;
+    }, {} as Record<string, number>);
+    
+    // Calculate total count
+    const count = Object.values(providers).reduce((sum, val) => sum + val, 0);
+    
+    stats.databaseCache = { count, providers };
+  } catch (error) {
+    console.error('Error getting database cache stats:', error);
+  }
+  
+  return stats;
 }
 
 /**
