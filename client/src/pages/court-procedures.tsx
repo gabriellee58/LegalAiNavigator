@@ -4,7 +4,7 @@ import { useLocation, Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, ArrowRight, Info, FileText, GitPullRequest, List, CheckSquare, Clock, Eye, Download, AlertCircle } from 'lucide-react';
+import { Loader2, ArrowRight, ArrowDown, X, Info, FileText, GitPullRequest, List, CheckSquare, Clock, Eye, Download, AlertCircle, GitBranch } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { 
@@ -834,15 +834,24 @@ const CourtProceduresPage: React.FC = () => {
                   
                   {/* Interactive Flowchart - Toggled by the button above */}
                   {showFlowchart && procedureDetail.steps && (
-                    <Card className="mb-6 overflow-hidden">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-4">
+                    <Card className="mb-8 overflow-hidden border-2 border-primary/30">
+                      <CardHeader className="bg-muted/30">
+                        <CardTitle className="text-lg">
+                          Procedural Flowchart
+                        </CardTitle>
+                        <CardDescription>
+                          Visual representation of the procedure steps
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between mb-6">
                           <div className="flex items-center gap-2">
                             <Button 
                               variant={flowchartType === 'vertical' ? 'default' : 'outline'} 
                               size="sm"
                               onClick={() => setFlowchartType('vertical')}
                             >
+                              <ArrowDown className="h-4 w-4 mr-2" />
                               Vertical
                             </Button>
                             <Button 
@@ -850,6 +859,7 @@ const CourtProceduresPage: React.FC = () => {
                               size="sm"
                               onClick={() => setFlowchartType('horizontal')}
                             >
+                              <ArrowRight className="h-4 w-4 mr-2" />
                               Horizontal
                             </Button>
                             <Button 
@@ -857,50 +867,65 @@ const CourtProceduresPage: React.FC = () => {
                               size="sm"
                               onClick={() => setFlowchartType('branching')}
                             >
+                              <GitBranch className="h-4 w-4 mr-2" />
                               Branching
                             </Button>
                           </div>
-                          <div className="text-sm text-muted-foreground">
-                            {procedureDetail.steps.length} steps
+                          <div className="text-sm text-muted-foreground bg-muted/40 px-3 py-1 rounded-full">
+                            {procedureDetail.steps.length} steps in total
                           </div>
                         </div>
                         
-                        {/* Enhanced Interactive Flowchart */}
-                        <InteractiveFlowChart 
-                          nodes={procedureDetail.steps.map(step => ({
-                            id: step.id.toString(),
-                            label: step.title,
-                            description: step.description,
-                            status: (selectedStepId === step.id.toString() ? 'current' : 'pending') as 'pending' | 'current' | 'completed' | 'optional',
-                            type: (step.stepOrder === 1 ? 'start' : 
-                                  step.stepOrder === procedureDetail.steps.length ? 'end' :
-                                  step.isOptional ? 'optional' : 'process') as 'start' | 'end' | 'process' | 'decision' | 'document' | 'optional'
-                          }))} 
-                          connections={procedureDetail.steps.slice(0, -1).map((step, index) => ({
-                            fromId: step.id.toString(),
-                            toId: procedureDetail.steps[index + 1].id.toString(),
-                            direction: flowchartType === 'vertical' ? 'vertical' : 'horizontal'
-                          }))}
-                          currentNodeId={nullToUndefined(selectedStepId)}
-                          onNodeClick={(nodeId) => {
-                            setSelectedStepId(nodeId);
-                            // Auto-expand the corresponding step in the accordion
-                            setExpandedSteps(prev => 
-                              prev.includes(`step-${nodeId}`) 
-                                ? prev 
-                                : [...prev, `step-${nodeId}`]
-                            );
-                            // Scroll to the expanded step
-                            setTimeout(() => {
-                              const element = document.getElementById(`step-${nodeId}`);
-                              if (element) {
-                                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                              }
-                            }, 300);
-                          }}
-                          layout={flowchartType}
-                          className="mb-4"
-                        />
+                        <div className="bg-white dark:bg-slate-950 rounded-lg p-6 border border-muted-foreground/10 shadow-sm">
+                          {/* Enhanced Interactive Flowchart */}
+                          <InteractiveFlowChart 
+                            nodes={procedureDetail.steps.map(step => ({
+                              id: step.id.toString(),
+                              label: step.title,
+                              description: step.description,
+                              status: (selectedStepId === step.id.toString() ? 'current' : 'pending') as 'pending' | 'current' | 'completed' | 'optional',
+                              type: (step.stepOrder === 1 ? 'start' : 
+                                    step.stepOrder === procedureDetail.steps.length ? 'end' :
+                                    step.isOptional ? 'optional' : 'process') as 'start' | 'end' | 'process' | 'decision' | 'document' | 'optional'
+                            }))} 
+                            connections={procedureDetail.steps.slice(0, -1).map((step, index) => ({
+                              fromId: step.id.toString(),
+                              toId: procedureDetail.steps[index + 1].id.toString(),
+                              direction: flowchartType === 'vertical' ? 'vertical' : 'horizontal'
+                            }))}
+                            currentNodeId={nullToUndefined(selectedStepId)}
+                            onNodeClick={(nodeId) => {
+                              setSelectedStepId(nodeId);
+                              // Auto-expand the corresponding step in the accordion
+                              setExpandedSteps(prev => 
+                                prev.includes(`step-${nodeId}`) 
+                                  ? prev 
+                                  : [...prev, `step-${nodeId}`]
+                              );
+                              // Scroll to the expanded step
+                              setTimeout(() => {
+                                const element = document.getElementById(`step-${nodeId}`);
+                                if (element) {
+                                  element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                }
+                              }, 300);
+                            }}
+                            layout={flowchartType}
+                            className="mb-4"
+                          />
+                        </div>
+                        
+                        <div className="flex justify-end mt-4">
+                          <Button 
+                            variant="outline" 
+                            onClick={() => setShowFlowchart(false)}
+                            size="sm"
+                            className="gap-2"
+                          >
+                            <X className="h-4 w-4" />
+                            Close Flowchart
+                          </Button>
+                        </div>
                       </CardContent>
                     </Card>
                   )}
