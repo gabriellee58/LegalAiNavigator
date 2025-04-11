@@ -3,38 +3,60 @@ import OpenAI from "openai";
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+interface OpenAIOptions {
+  system?: string;
+  temperature?: number;
+  maxTokens?: number;
+  model?: string;
+}
+
 /**
  * Generate an AI response for a legal question
  * @param userMessage The user's message/question
+ * @param options Configuration options for the request
  * @returns AI generated response
  */
-export async function generateAIResponse(userMessage: string): Promise<string> {
+export async function generateAIResponse(userMessage: string, options: OpenAIOptions = {}): Promise<string> {
   try {
+    // Set up default options
+    const system = options.system || `You are an AI legal assistant specialized in Canadian law. 
+      Provide helpful, accurate information about Canadian legal topics. 
+      Always clarify that you are not providing legal advice and recommend consulting a qualified lawyer for specific legal issues.
+      Focus on Canadian legal frameworks, regulations, and precedents.
+      Be respectful, concise, and easy to understand.
+      Avoid excessive legalese, but maintain accuracy in legal concepts.`;
+    
+    const model = options.model || "gpt-4o"; // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
+    const temperature = options.temperature !== undefined ? options.temperature : 0.7;
+    const maxTokens = options.maxTokens || 800;
+    
+    console.log(`OpenAI request: model=${model}, temp=${temperature}, max_tokens=${maxTokens}`);
+    
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: model,
       messages: [
         {
           role: "system",
-          content: `You are an AI legal assistant specialized in Canadian law. 
-          Provide helpful, accurate information about Canadian legal topics. 
-          Always clarify that you are not providing legal advice and recommend consulting a qualified lawyer for specific legal issues.
-          Focus on Canadian legal frameworks, regulations, and precedents.
-          Be respectful, concise, and easy to understand.
-          Avoid excessive legalese, but maintain accuracy in legal concepts.`
+          content: system
         },
         {
           role: "user",
           content: userMessage
         }
       ],
-      max_tokens: 800
+      temperature: temperature,
+      max_tokens: maxTokens
     });
 
     const content = response.choices[0].message.content;
-    return content ? content : "I apologize, but I couldn't generate a response. Please try asking your question differently.";
+    if (!content) {
+      throw new Error("Empty response from OpenAI");
+    }
+    
+    return content;
   } catch (error) {
-    console.error("Error generating AI response:", error);
-    return "I'm sorry, but I encountered an error processing your request. Please try again later.";
+    console.error("Error generating AI response with OpenAI:", error);
+    throw error; // Let the caller handle the error (for proper fallback)
   }
 }
 

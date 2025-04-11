@@ -165,19 +165,20 @@ export async function enhancedAIRequest<T>(
 
   // Process request with fallback tiers
   async function processTieredRequest(): Promise<T> {
+    // Start with OpenAI for better reliability
     try {
-      // Try DeepSeek first (primary provider)
-      return await trackRequest("DeepSeek", async () => {
-        const response = await generateDeepSeekResponse(prompt);
+      return await trackRequest("OpenAI", async () => {
+        // Update the openai.ts implementation to match this signature
+        const response = await generateOpenAIResponse(prompt);
         return response as unknown as T;
       });
-    } catch (primaryError) {
-      // Log primary provider failure
-      console.warn(`${logPrefix}: Primary AI provider failed, trying fallback.`, primaryError);
+    } catch (openaiError) {
+      // Log OpenAI failure
+      console.warn(`${logPrefix}: OpenAI provider failed, trying Anthropic Claude.`, openaiError);
       
       // Skip fallback if disabled
       if (!aiFeatureFlags.fallbackEnabled || options.skipFallback) {
-        throw primaryError;
+        throw openaiError;
       }
       
       try {
@@ -186,20 +187,32 @@ export async function enhancedAIRequest<T>(
           const response = await generateAIResponseClaude(prompt);
           return response as unknown as T;
         });
-      } catch (secondaryError) {
-        // Log secondary provider failure
-        console.warn(`${logPrefix}: Secondary AI provider failed, trying final fallback.`, secondaryError);
+      } catch (claudeError) {
+        // Log Claude failure
+        console.warn(`${logPrefix}: Anthropic Claude failed, trying DeepSeek.`, claudeError);
         
-        // Final fallback to OpenAI
+        // Final fallback to DeepSeek
         try {
-          return await trackRequest("OpenAI", async () => {
-            const response = await generateOpenAIResponse(prompt);
+          return await trackRequest("DeepSeek", async () => {
+            const response = await generateDeepSeekResponse(prompt);
             return response as unknown as T;
           });
-        } catch (finalError) {
-          // All providers failed
-          console.error(`${logPrefix}: All AI providers failed.`, finalError);
-          throw new Error("All AI providers failed to process your request. Please try again later.");
+        } catch (deepseekError) {
+          // All providers failed - implement emergency fallback with direct response
+          console.error(`${logPrefix}: All AI providers failed.`, deepseekError);
+          
+          // Create an emergency fallback response
+          const fallbackResponse = "I apologize, but I'm currently experiencing technical difficulties processing your request. Our team has been notified of this issue. Please try again in a few moments, or contact support if this problem persists.";
+          
+          if (useCache && cacheKey) {
+            // Don't cache error responses for too long
+            responseCache.set(cacheKey, {
+              response: fallbackResponse as unknown as T,
+              timestamp: Date.now() - (CACHE_TTL - 60000) // Cache for just 1 minute
+            });
+          }
+          
+          return fallbackResponse as unknown as T;
         }
       }
     }
