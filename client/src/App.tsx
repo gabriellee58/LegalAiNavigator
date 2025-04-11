@@ -18,6 +18,7 @@ import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
 import ProfilePage from "@/pages/profile";
 import LogoutPage from "@/pages/logout";
+import PasswordResetPage from "@/pages/password-reset";
 
 // Import newly created pages
 import DisputeResolutionPage from "./pages/dispute-resolution";
@@ -171,6 +172,7 @@ function Router() {
       <ProtectedRoute path="/admin/feedback" component={AdminFeedbackPage} />
       
       <Route path="/auth" component={AuthPage} />
+      <Route path="/password-reset" component={PasswordResetPage} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>

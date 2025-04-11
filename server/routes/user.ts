@@ -75,7 +75,7 @@ router.patch('/profile', isAuthenticated, async (req: Request, res: Response) =>
 });
 
 // Request password reset
-router.post('/request-password-reset', async (req, res) => {
+router.post('/request-password-reset', async (req: Request, res: Response) => {
   try {
     const { username } = req.body;
     if (!username) {
@@ -111,7 +111,7 @@ router.post('/request-password-reset', async (req, res) => {
 });
 
 // Reset password using token
-router.post('/reset-password', async (req, res) => {
+router.post('/reset-password', async (req: Request, res: Response) => {
   try {
     const { token, newPassword } = req.body;
     if (!token || !newPassword) {

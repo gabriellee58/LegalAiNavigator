@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { z } from "zod";
 import { insertUserSchema } from "@shared/schema";
 import { useForm } from "react-hook-form";
@@ -134,7 +134,15 @@ export default function AuthPage() {
                               {...field} 
                             />
                           </FormControl>
-                          <FormMessage />
+                          <div className="flex justify-between mt-1">
+                            <FormMessage />
+                            <Link 
+                              href="/password-reset" 
+                              className="text-xs text-primary hover:underline"
+                            >
+                              {t("Forgot password?")}
+                            </Link>
+                          </div>
                         </FormItem>
                       )}
                     />
