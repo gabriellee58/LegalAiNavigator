@@ -26,6 +26,10 @@ import AdvancedProcedureView from '@/components/court-procedures/AdvancedProcedu
 import { VerticalFlowChart } from '@/components/court-procedures/FlowChart';
 import HorizontalFlowChart, { BranchingFlowChart } from '@/components/court-procedures/HorizontalFlowChart';
 
+// Helper function to safely convert possibly null values to undefined for props
+const nullToUndefined = <T,>(value: T | null): T | undefined => 
+  value === null ? undefined : value;
+
 // Court Procedure Types
 interface ProcedureCategory {
   id: number;
@@ -201,7 +205,7 @@ const CourtProceduresPage: React.FC = () => {
   const [expandedSteps, setExpandedSteps] = useState<string[]>([]);
   const [startProcedureDialogOpen, setStartProcedureDialogOpen] = useState<boolean>(false);
   const [flowchartType, setFlowchartType] = useState<'vertical' | 'horizontal' | 'branching'>('vertical');
-  const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
+  const [selectedStepId, setSelectedStepId] = useState<string | undefined>(undefined);
 
   // Fetch categories
   const { data: categories, isLoading: categoriesLoading, error: categoriesError } = useQuery<ProcedureCategory[]>({
