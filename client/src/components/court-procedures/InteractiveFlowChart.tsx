@@ -222,6 +222,76 @@ export const InteractiveFlowChart: React.FC<InteractiveFlowChartProps> = ({
   // Render the flowchart based on layout
   const renderFlowchart = () => {
     switch (layout) {
+      case 'vertical':
+        return (
+          <div className="flex flex-col items-center gap-4 pb-6 min-w-max">
+            {nodes.map((node, index) => (
+              <React.Fragment key={node.id}>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Card 
+                        className={cn(
+                          "w-full max-w-md cursor-pointer transition-all hover:shadow-md",
+                          currentNodeId === node.id ? 'ring-2 ring-primary' : '',
+                          getNodeTypeClass(node.type, isHighContrastMode),
+                          getStatusClass(node.status, isHighContrastMode)
+                        )}
+                        onClick={() => handleNodeClick(node)}
+                        onKeyDown={(e) => handleKeyNav(e, node.id)}
+                        tabIndex={0}
+                        role="button"
+                        aria-pressed={currentNodeId === node.id}
+                        aria-label={`Step ${index + 1}: ${node.label} (${node.status || 'pending'})`}
+                      >
+                        <CardContent className="pt-4 pb-3 px-4">
+                          <div className="flex items-start gap-3">
+                            <div className="mt-1 flex-shrink-0">
+                              {getStatusIcon(node.status)}
+                            </div>
+                            <div>
+                              <h3 className="font-medium text-sm mb-1">{node.label}</h3>
+                              {node.description && (
+                                <p className="text-xs text-muted-foreground line-clamp-2">{node.description}</p>
+                              )}
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-6 w-6 ml-auto"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedNode(node);
+                                setIsDialogOpen(true);
+                              }}
+                              aria-label="View details"
+                            >
+                              <Info className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="font-medium">{node.label}</p>
+                      {node.status && <p>Status: {node.status}</p>}
+                      <p>Click for more details</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                {/* Add arrow connector if not the last node */}
+                {index < nodes.length - 1 && (
+                  <ArrowDown className={cn(
+                    "h-6 w-6 flex-shrink-0",
+                    isHighContrastMode ? "text-black dark:text-white" : "text-gray-400"
+                  )} />
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+        );
+
       case 'horizontal':
         return (
           <div className="flex flex-row items-center gap-4 pb-6 min-w-max">

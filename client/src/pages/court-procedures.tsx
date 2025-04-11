@@ -333,6 +333,10 @@ const CourtProceduresPage: React.FC = () => {
   // Toggle flowchart visibility
   const toggleFlowchart = () => {
     setShowFlowchart(prev => !prev);
+    // Make sure flowchart layout is set
+    if (!flowchartType) {
+      setFlowchartType('vertical');
+    }
   };
 
   // Mark a step as completed
@@ -874,7 +878,7 @@ const CourtProceduresPage: React.FC = () => {
                             toId: procedureDetail.steps[index + 1].id.toString(),
                             direction: flowchartType === 'vertical' ? 'vertical' : 'horizontal'
                           }))}
-                          currentNodeId={selectedStepId}
+                          currentNodeId={nullToUndefined(selectedStepId)}
                           onNodeClick={(nodeId) => {
                             setSelectedStepId(nodeId);
                             // Auto-expand the corresponding step in the accordion
