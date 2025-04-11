@@ -34,7 +34,7 @@ import { FlowChartNode, FlowChartConnection } from './FlowChart';
 export interface InteractiveFlowChartProps {
   nodes: FlowChartNode[];
   connections: FlowChartConnection[];
-  currentNodeId?: string;
+  currentNodeId?: string | null;
   onNodeClick?: (nodeId: string) => void;
   layout?: 'vertical' | 'horizontal' | 'branching';
   className?: string;

@@ -865,16 +865,16 @@ const CourtProceduresPage: React.FC = () => {
                             label: step.title,
                             description: step.description,
                             status: (selectedStepId === step.id.toString() ? 'current' : 'pending') as 'pending' | 'current' | 'completed' | 'optional',
-                            type: (step.order === 1 ? 'start' : 
-                                  step.order === procedureDetail.steps.length ? 'end' :
-                                  !step.isRequired ? 'process' : 'process') as 'start' | 'end' | 'process' | 'decision' | 'document' | 'optional'
+                            type: (step.stepOrder === 1 ? 'start' : 
+                                  step.stepOrder === procedureDetail.steps.length ? 'end' :
+                                  step.isOptional ? 'optional' : 'process') as 'start' | 'end' | 'process' | 'decision' | 'document' | 'optional'
                           }))} 
                           connections={procedureDetail.steps.slice(0, -1).map((step, index) => ({
                             fromId: step.id.toString(),
                             toId: procedureDetail.steps[index + 1].id.toString(),
                             direction: flowchartType === 'vertical' ? 'vertical' : 'horizontal'
                           }))}
-                          currentNodeId={nullToUndefined(selectedStepId)}
+                          currentNodeId={selectedStepId}
                           onNodeClick={(nodeId) => {
                             setSelectedStepId(nodeId);
                             // Auto-expand the corresponding step in the accordion
