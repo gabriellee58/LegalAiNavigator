@@ -159,39 +159,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const googleSignInMutation = useMutation({
     mutationFn: async () => {
       try {
-        // Dynamically import Firebase functions to avoid circular dependencies
         const { signInWithGoogle, isConfigured } = await import('@/lib/firebase');
         
-        // Check if Firebase is properly configured before attempting sign-in
         if (!isConfigured) {
-          throw new Error("Google Sign-in is not configured. Please use email/password login.");
+          throw new Error("Google Sign-in is temporarily unavailable. Please use email/password login.");
         }
         
-        // Initiate Google sign-in process (will redirect the user if successful)
         const result = await signInWithGoogle();
         
-        // If we get here and result is null, the sign-in was canceled or failed
         if (!result) {
-          throw new Error("Google Sign-in was canceled or failed. Please try email/password login.");
+          throw new Error("Authentication was cancelled. Please try again or use email/password login.");
         }
+
+        // Handle successful Firebase auth
+        const res = await apiRequest("POST", "/api/google-auth", {
+          email: result.email,
+          displayName: result.displayName,
+          photoURL: result.photoURL,
+          uid: result.uid
+        });
         
-        // This code won't actually run due to the redirect, but we need to return something
-        // to satisfy TypeScript
-        return {} as User;
-      } catch (error) {
-        // Re-throw the error so it's caught by the onError handler
+        const userData = await res.json();
+        queryClient.setQueryData(["/api/user"], userData);
+        return userData;
+      } catch (error: any) {
+        // Handle specific Firebase errors
+        if (error.code === 'auth/popup-blocked') {
+          throw new Error("Pop-up was blocked. Please enable pop-ups and try again.");
+        } else if (error.code === 'auth/popup-closed-by-user') {
+          throw new Error("Sign-in window was closed. Please try again.");
+        } else if (error.code === 'auth/network-request-failed') {
+          throw new Error("Network error. Please check your connection and try again.");
+        }
         throw error;
       }
     },
     onError: (error: Error) => {
       toast({
-        title: "Google Sign-in Failed",
-        description: error.message || "Could not initiate Google sign-in. Please use email/password instead.",
+        title: "Authentication Error",
+        description: error.message || "An error occurred during sign-in. Please try again.",
         variant: "destructive",
       });
-      
-      // Log the error for debugging
-      console.error("Google Sign-in error:", error);
+      console.error("Authentication error:", error);
     },
   });
 

@@ -104,23 +104,33 @@ export default function AuthPage() {
           console.error("Login error:", error);
           
           const errorMessage = error?.response?.data?.message || error.message;
+          const status = error?.response?.status;
           
           switch(true) {
-            case errorMessage?.includes("Invalid credentials"):
+            case status === 401:
               setAuthError("Invalid username or password. Please try again.");
               break;
-            case errorMessage?.includes("not found"):
-              setAuthError("Account not found. Please check your username.");
+            case status === 404:
+              setAuthError("Account not found. Please check your username or register.");
               break;
-            case errorMessage?.includes("locked"):
-              setAuthError("Account temporarily locked. Please try again later.");
+            case status === 423:
+              setAuthError("Account temporarily locked. Please try again later or reset your password.");
+              break;
+            case status === 429:
+              setAuthError("Too many attempts. Please wait a few minutes before trying again.");
+              break;
+            case error.code === 'ECONNABORTED':
+              setAuthError("Request timed out. Please try again.");
               break;
             case error.message?.includes("Network Error"):
-              setAuthError("Connection error. Please check your internet connection.");
+              setAuthError("Connection error. Please check your internet connection and try again.");
               break;
             default:
-              setAuthError("Login failed. Please try again or contact support.");
+              setAuthError(errorMessage || "Authentication failed. Please try again.");
           }
+          
+          // Clear error after 5 seconds
+          setTimeout(() => setAuthError(null), 5000);
         }
       });
     } catch (error) {
@@ -182,17 +192,23 @@ export default function AuthPage() {
             </CardDescription>
             
             {/* Display auth errors from login/register mutations */}
-            {(loginMutation.isError || registerMutation.isError || authError) && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
-                {loginMutation.isError && (
-                  <p>{loginMutation.error?.message || "Login failed. Please check your credentials."}</p>
-                )}
-                {registerMutation.isError && (
-                  <p>{registerMutation.error?.message || "Registration failed. Please try again."}</p>
-                )}
-                {authError && (
-                  <p>{authError}</p>
-                )}
+            {(loginMutation.isError || registerMutation.isError || authError || googleSignInMutation.isError) && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm flex items-start">
+                <span className="material-icons text-red-500 mr-2 mt-0.5">error</span>
+                <div className="flex-1">
+                  {loginMutation.isError && (
+                    <p className="font-medium">{loginMutation.error?.message || "Login failed. Please check your credentials."}</p>
+                  )}
+                  {registerMutation.isError && (
+                    <p className="font-medium">{registerMutation.error?.message || "Registration failed. Please try again."}</p>
+                  )}
+                  {googleSignInMutation.isError && (
+                    <p className="font-medium">{googleSignInMutation.error?.message || "Google sign-in failed. Please try again or use email login."}</p>
+                  )}
+                  {authError && (
+                    <p className="font-medium">{authError}</p>
+                  )}
+                </div>
               </div>
             )}
             
