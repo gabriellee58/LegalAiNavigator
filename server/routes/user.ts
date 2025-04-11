@@ -1,140 +1,150 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { z } from 'zod';
 import { storage } from '../storage';
-import { scrypt, randomBytes, timingSafeEqual } from 'crypto';
-import { promisify } from 'util';
-import { asyncHandler } from '../utils/asyncHandler';
+import { isAuthenticated } from '../auth';
+import crypto from 'crypto';
 
 const router = express.Router();
-const scryptAsync = promisify(scrypt);
 
-// Helper function for password hashing
-async function hashPassword(password: string) {
-  const salt = randomBytes(16).toString('hex');
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString('hex')}.${salt}`;
+// Generate a random token
+function generateToken(): string {
+  return crypto.randomBytes(32).toString('hex');
 }
 
-// User profile update schema
+// Create custom expiration date (24 hours from now)
+function createExpirationDate(): Date {
+  const now = new Date();
+  const expiration = new Date(now);
+  expiration.setHours(now.getHours() + 24);
+  return expiration;
+}
+
+// Hash password using scrypt
+async function hashPassword(password: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const salt = crypto.randomBytes(16).toString('hex');
+    crypto.scrypt(password, salt, 64, (err, derivedKey) => {
+      if (err) reject(err);
+      resolve(`${derivedKey.toString('hex')}.${salt}`);
+    });
+  });
+}
+
+// Profile update schema
 const updateProfileSchema = z.object({
-  fullName: z.string().min(2).optional(),
-  password: z.string().min(8).optional(),
-  preferredLanguage: z.enum(['en', 'fr']).optional(),
+  fullName: z.string().optional(),
+  preferredLanguage: z.string().optional()
 });
 
 type UpdateProfileData = z.infer<typeof updateProfileSchema>;
 
-// Get current user
-router.get('/', (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ message: 'Not authenticated' });
+// Get current user profile
+router.get('/profile', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    // User data is already loaded in the session
+    res.json(req.user);
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    res.status(500).json({ message: 'Failed to retrieve user profile' });
   }
-  res.json(req.user);
 });
 
 // Update user profile
-router.put('/profile', asyncHandler(async (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ message: 'Not authenticated' });
-  }
-  
-  // Validate the request body
-  const validationResult = updateProfileSchema.safeParse(req.body);
-  if (!validationResult.success) {
-    return res.status(400).json({
-      message: 'Invalid data',
-      errors: validationResult.error.errors,
-    });
-  }
-  
-  const updateData: UpdateProfileData = validationResult.data;
-  const userId = req.user!.id;
-  
-  // If password is included, hash it
-  if (updateData.password) {
-    updateData.password = await hashPassword(updateData.password);
-  }
-  
-  // Update the user
-  const updatedUser = await storage.updateUser(userId, updateData);
-  
-  // Remove the password from the response
-  const { password, ...userWithoutPassword } = updatedUser;
-  
-  res.json(userWithoutPassword);
-}));
-
-// Password reset request
-router.post('/reset-password-request', asyncHandler(async (req, res) => {
-  const email = req.body.email;
-  
-  if (!email) {
-    return res.status(400).json({ message: 'Email is required' });
-  }
-  
-  // Check if user exists
-  const user = await storage.getUserByUsername(email);
-  if (!user) {
-    // Don't reveal if the user exists for security reasons
-    return res.status(200).json({ message: 'If your email is registered, you will receive a password reset link.' });
-  }
-  
-  // Generate token
-  const token = randomBytes(32).toString('hex');
-  const expiresAt = new Date();
-  expiresAt.setHours(expiresAt.getHours() + 1); // Token valid for 1 hour
-  
-  // Store token in the database
-  await storage.createPasswordResetToken(user.id, token, expiresAt);
-  
-  // In a real app, send an email with the reset link
-  // For this demo, just return the token in the response
-  res.status(200).json({
-    message: 'If your email is registered, you will receive a password reset link.',
-    // This would be removed in production
-    debug: {
-      token,
-      resetLink: `/auth/reset-password?token=${token}`
+router.patch('/profile', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const validationResult = updateProfileSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        message: 'Invalid profile data', 
+        errors: validationResult.error.errors 
+      });
     }
-  });
-}));
 
-// Reset password with token
-router.post('/reset-password', asyncHandler(async (req, res) => {
-  const { token, newPassword } = req.body;
-  
-  if (!token || !newPassword) {
-    return res.status(400).json({ message: 'Token and new password are required' });
+    const updateData: UpdateProfileData = validationResult.data;
+    const updatedUser = await storage.updateUser(req.user!.id, updateData);
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json(updatedUser);
+  } catch (error) {
+    console.error('Error updating user profile:', error);
+    res.status(500).json({ message: 'Failed to update user profile' });
   }
-  
-  // Validate password
-  if (newPassword.length < 8) {
-    return res.status(400).json({ message: 'Password must be at least 8 characters' });
+});
+
+// Request password reset
+router.post('/request-password-reset', async (req, res) => {
+  try {
+    const { username } = req.body;
+    if (!username) {
+      return res.status(400).json({ message: 'Username is required' });
+    }
+
+    const user = await storage.getUserByUsername(username);
+    if (!user) {
+      // Don't reveal if the user exists for security reasons
+      return res.status(200).json({ message: 'If a user with that username exists, a password reset email has been sent.' });
+    }
+
+    // Generate reset token
+    const token = generateToken();
+    const expiresAt = createExpirationDate();
+    
+    await storage.createPasswordResetToken(user.id, token, expiresAt);
+
+    // In a real application, you would send an email with the reset link
+    // For this demo, we'll just return the token directly
+    console.log(`Password reset requested for ${username}. Token: ${token}`);
+    
+    res.status(200).json({ 
+      message: 'If a user with that username exists, a password reset email has been sent.',
+      // Only including token in response for development purposes
+      // In production, this should be sent via email
+      token: token
+    });
+  } catch (error) {
+    console.error('Error requesting password reset:', error);
+    res.status(500).json({ message: 'Failed to process password reset request' });
   }
-  
-  // Find token in the database
-  const resetToken = await storage.getPasswordResetToken(token);
-  
-  if (!resetToken) {
-    return res.status(400).json({ message: 'Invalid or expired token' });
-  }
-  
-  // Check if token is expired
-  if (new Date() > resetToken.expiresAt) {
+});
+
+// Reset password using token
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) {
+      return res.status(400).json({ message: 'Token and new password are required' });
+    }
+
+    // Validate the token
+    const resetToken = await storage.getPasswordResetToken(token);
+    if (!resetToken) {
+      return res.status(400).json({ message: 'Invalid or expired token' });
+    }
+
+    // Check if token is expired
+    const now = new Date();
+    if (resetToken.expiresAt < now) {
+      await storage.deletePasswordResetToken(token);
+      return res.status(400).json({ message: 'Token has expired' });
+    }
+
+    // Update user's password
+    const hashedPassword = await hashPassword(newPassword);
+    await storage.updateUser(resetToken.userId, { 
+      password: hashedPassword 
+    });
+
+    // Delete the used token
     await storage.deletePasswordResetToken(token);
-    return res.status(400).json({ message: 'Token has expired' });
+
+    res.status(200).json({ message: 'Password has been reset successfully' });
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    res.status(500).json({ message: 'Failed to reset password' });
   }
-  
-  // Hash the new password
-  const hashedPassword = await hashPassword(newPassword);
-  
-  // Update the user's password
-  await storage.updateUser(resetToken.userId, { password: hashedPassword });
-  
-  // Delete the used token
-  await storage.deletePasswordResetToken(token);
-  
-  res.status(200).json({ message: 'Password has been reset successfully' });
-}));
+});
 
 export default router;

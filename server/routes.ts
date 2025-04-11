@@ -40,6 +40,7 @@ import { enhancedLegalResearch } from "./lib/researchService";
 import { registerAdminRoutes } from "./lib/adminRoutes";
 import complianceRouter from "./routes/compliance";
 import courtProceduresRouter from "./routes/courtProcedures";
+import userRouter from "./routes/user";
 
 // Set up multer for file uploads
 const storage_config = multer.memoryStorage();
@@ -80,6 +81,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register admin routes for AI service management
   registerAdminRoutes(app);
+  
+  // Register user routes
+  app.use('/api/user', userRouter);
   
   // Health check endpoint
   app.get("/api/health", (req: Request, res: Response) => {

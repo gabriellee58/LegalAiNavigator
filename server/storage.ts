@@ -234,13 +234,40 @@ export class DatabaseStorage implements IStorage {
     return newUser;
   }
   
-  async updateUser(id: number, userData: Partial<Omit<User, "id" | "password">>): Promise<User | undefined> {
+  async updateUser(id: number, userData: Partial<Omit<User, "id">>): Promise<User | undefined> {
     const [updatedUser] = await db
       .update(users)
       .set(userData)
       .where(eq(users.id, id))
       .returning();
     return updatedUser;
+  }
+  
+  // Password reset token operations
+  async createPasswordResetToken(userId: number, token: string, expiresAt: Date): Promise<PasswordResetToken> {
+    const [resetToken] = await db
+      .insert(passwordResetTokens)
+      .values({
+        userId,
+        token,
+        expiresAt
+      })
+      .returning();
+    return resetToken;
+  }
+  
+  async getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined> {
+    const [resetToken] = await db
+      .select()
+      .from(passwordResetTokens)
+      .where(eq(passwordResetTokens.token, token));
+    return resetToken;
+  }
+  
+  async deletePasswordResetToken(token: string): Promise<void> {
+    await db
+      .delete(passwordResetTokens)
+      .where(eq(passwordResetTokens.token, token));
   }
 
   // Chat message operations
