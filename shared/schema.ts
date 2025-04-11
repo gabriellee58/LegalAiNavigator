@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, uuid, json } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, uuid, json, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -1178,3 +1178,26 @@ export const disputeActivitiesRelations = relations(disputeActivities, ({ one })
     references: [users.id],
   }),
 }));
+
+// AI response cache schema for performance optimization
+export const aiResponseCache = pgTable("ai_response_cache", {
+  id: serial("id").primaryKey(),
+  cacheKey: varchar("cache_key", { length: 255 }).notNull().unique(),
+  provider: varchar("provider", { length: 50 }).notNull(), // 'anthropic', 'openai', 'deepseek'
+  modelName: varchar("model_name", { length: 100 }).notNull(),
+  prompt: text("prompt").notNull(),
+  response: text("response").notNull(),
+  options: jsonb("options").default({}),
+  accessCount: integer("access_count").notNull().default(1),
+  createdAt: timestamp("created_at").defaultNow(),
+  lastAccessed: timestamp("last_accessed").defaultNow(),
+});
+
+export const insertAiResponseCacheSchema = createInsertSchema(aiResponseCache).omit({
+  id: true,
+  createdAt: true,
+  lastAccessed: true,
+});
+
+export type InsertAiResponseCache = z.infer<typeof insertAiResponseCacheSchema>;
+export type AiResponseCache = typeof aiResponseCache.$inferSelect;
