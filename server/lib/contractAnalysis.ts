@@ -1,6 +1,10 @@
 import OpenAI from "openai";
 // Use standard import for Node.js compatibility
 import * as pdfjsLib from "pdfjs-dist";
+import { GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf';
+
+// Set worker path to prevent worker initialization error in Node.js environment
+GlobalWorkerOptions.workerSrc = ''; // Disable worker for Node.js environment
 
 // Create an OpenAI client instance
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -15,29 +19,122 @@ const MODEL = "gpt-4o";
  */
 export async function extractTextFromPdf(pdfBuffer: Buffer): Promise<string> {
   try {
-    // Load the PDF document
-    const loadingTask = pdfjsLib.getDocument({ data: pdfBuffer });
+    console.log('Attempting to extract text from PDF using PDF.js');
+    
+    // Set a higher maxImageSize to handle larger PDFs
+    const loadingTask = pdfjsLib.getDocument({
+      data: pdfBuffer,
+      disableFontFace: true,
+      ignoreErrors: true,
+      isEvalSupported: true,
+      cMapUrl: null,
+      standardFontDataUrl: null
+    });
+    
     const pdf = await loadingTask.promise;
+    console.log(`PDF loaded successfully with ${pdf.numPages} pages`);
     
     let extractedText = '';
     
     // Iterate through each page to extract text
     for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const textContent = await page.getTextContent();
-      
-      // Extract text from the text items
-      const pageText = textContent.items
-        .map((item: any) => item.str)
-        .join(' ');
-      
-      extractedText += pageText + '\n\n';
+      try {
+        console.log(`Processing page ${i}/${pdf.numPages}`);
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        
+        // Extract text from the text items
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(' ');
+        
+        extractedText += `Page ${i}:\n${pageText}\n\n`;
+      } catch (pageError) {
+        console.error(`Error extracting text from page ${i}:`, pageError);
+        extractedText += `[Error processing page ${i}]\n\n`;
+      }
+    }
+    
+    // If we didn't extract any meaningful text, try the fallback method
+    if (!extractedText.trim() || extractedText.trim().length < 100) {
+      console.log('Extracted text is too short, attempting secondary extraction method');
+      return extractTextFromPdfFallback(pdfBuffer);
     }
     
     return extractedText;
   } catch (error) {
-    console.error('Error extracting text from PDF:', error);
-    throw new Error('Failed to extract text from PDF document');
+    console.error('Error extracting text from PDF using primary method:', error);
+    
+    // Try fallback method
+    try {
+      console.log('Attempting fallback PDF extraction method');
+      return extractTextFromPdfFallback(pdfBuffer);
+    } catch (fallbackError) {
+      console.error('Error with fallback PDF extraction:', fallbackError);
+      throw new Error('Failed to extract text from PDF document using multiple methods');
+    }
+  }
+}
+
+/**
+ * Fallback method to extract text from PDF when the primary method fails
+ * Uses a simplified approach that works for some PDF types
+ */
+function extractTextFromPdfFallback(pdfBuffer: Buffer): string {
+  try {
+    // Convert buffer to string and look for text content
+    const pdfString = pdfBuffer.toString('utf-8', 0, Math.min(pdfBuffer.length, 5000000));
+    
+    // Extract text between common PDF text markers
+    const textExtracted: string[] = [];
+    let textMode = false;
+    let currentText = '';
+    
+    // Simple parser to find text blocks - not comprehensive but works as fallback
+    const lines = pdfString.split(/[\r\n]+/);
+    
+    for (const line of lines) {
+      // Look for text object markers in PDF structure
+      if (line.includes('BT') || line.includes('/F')) {
+        textMode = true;
+      } else if (line.includes('ET')) {
+        if (currentText.trim()) {
+          textExtracted.push(currentText.trim());
+        }
+        currentText = '';
+        textMode = false;
+      } else if (textMode && line.includes('(') && line.includes(')')) {
+        // Extract text between parentheses which often contains actual text
+        const matches = line.match(/\((.*?)\)/g);
+        if (matches) {
+          for (const match of matches) {
+            currentText += ' ' + match.slice(1, -1);
+          }
+        }
+      }
+    }
+    
+    // Get ASCII text strings that might be embedded in the PDF
+    const asciiRegex = /[\x20-\x7E]{10,}/g;
+    const asciiMatches = pdfString.match(asciiRegex) || [];
+    
+    // Add these to our extracted text
+    for (const match of asciiMatches) {
+      if (match.length > 20 && !textExtracted.includes(match)) {
+        textExtracted.push(match);
+      }
+    }
+    
+    const result = textExtracted.join('\n\n');
+    
+    if (!result.trim()) {
+      throw new Error('No text content found in PDF');
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Error in fallback PDF text extraction:', error);
+    throw new Error('Failed to extract text from PDF document with fallback method');
   }
 }
 
