@@ -578,27 +578,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.warn("Failed to estimate token count:", estimateError);
       }
       
-      // Analyze the contract
-      // Try to analyze the contract with robust error handling
+      // Analyze the contract with enhanced error handling
       let analysisResult;
       try {
         analysisResult = await analyzeContract(contractText, jurisdiction, contractType);
+        
+        // Check if we received an error object from the enhanced AI service
+        if (analysisResult && typeof analysisResult === 'object' && 'error' in analysisResult) {
+          const errorObj = analysisResult as { error: boolean; message: string; errorType: string; recovery?: string };
+          console.error(`Contract analysis error: Type=${errorObj.errorType}, Message="${errorObj.message}"`);
+          
+          // Convert to a user-friendly format that matches the expected contract analysis structure
+          analysisResult = {
+            risks: [{ 
+              description: errorObj.message, 
+              severity: "High", 
+              recommendation: errorObj.recovery || "Please try again later",
+              clause: "Unknown",
+              issue: errorObj.errorType,
+              category: "AI Service Error"
+            }],
+            suggestions: [],
+            summary: `Error: ${errorObj.message}. ${errorObj.recovery || 'Please try again later.'}`,
+            score: 0,
+            riskLevel: "high",
+            errorType: errorObj.errorType,
+          };
+        }
       } catch (analysisError) {
         console.error("Contract analysis failed, returning error result:", analysisError);
         // Return a structured error response that matches the expected format
         analysisResult = {
           risks: [{ 
-            description: "Error analyzing contract", 
+            description: analysisError instanceof Error ? analysisError.message : "Error analyzing contract", 
             severity: "High", 
-            recommendation: "Please try again later",
+            recommendation: "Please try again later or try with a smaller document",
             clause: "Unknown",
             issue: "Analysis service error",
             category: "Error"
           }],
           suggestions: [],
-          summary: "An error occurred during contract analysis",
+          summary: "An error occurred during contract analysis. This may be due to the size or complexity of the document.",
           score: 0,
           riskLevel: "high",
+          errorType: "unknown_error",
         };
       }
       
@@ -699,13 +722,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.warn("Failed to estimate token count:", estimateError);
       }
       
-      // Try to compare the contracts with robust error handling
+      // Try to compare the contracts with enhanced error handling
       let comparison;
       try {
         comparison = await compareContracts(
           parsed.data.firstContract,
           parsed.data.secondContract
         );
+        
+        // Check if we received an error object from the enhanced AI service
+        if (comparison && typeof comparison === 'object' && 'error' in comparison) {
+          const errorObj = comparison as { error: boolean; message: string; errorType: string; recovery?: string };
+          console.error(`Contract comparison error: Type=${errorObj.errorType}, Message="${errorObj.message}"`);
+          
+          // Convert to a user-friendly format that matches the expected contract comparison structure
+          comparison = {
+            differences: [{
+              section: "Error",
+              first: "Could not process document",
+              second: "Could not process document",
+              impact: errorObj.message,
+            }],
+            summary: `Error: ${errorObj.message}`,
+            recommendation: errorObj.recovery || "Try using smaller or more readable contract documents.",
+            errorType: errorObj.errorType
+          };
+        }
       } catch (comparisonError) {
         console.error("Contract comparison failed, returning error result:", comparisonError);
         // Return a structured error response that matches the expected format
@@ -717,7 +759,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             impact: "Unable to complete comparison due to technical error",
           }],
           summary: "Contract comparison failed due to a technical error. The documents may be too large or in an unsupported format.",
-          recommendation: "Try using smaller or more readable contract documents."
+          recommendation: "Try using smaller or more readable contract documents.",
+          errorType: "unknown_error"
         };
       }
       
@@ -751,11 +794,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } = parsed.data;
       
       // Perform research using enhanced AI service with built-in fallback
-      const results = await enhancedLegalResearch(
+      const response = await enhancedLegalResearch(
         query,
         jurisdiction,
         practiceArea
       );
+      
+      // Check if we received an error object from the enhanced AI service
+      let results;
+      let errorInfo = null;
+      
+      if (response && typeof response === 'object' && 'error' in response) {
+        // Handle structured error response
+        const errorObj = response as { error: boolean; message: string; errorType: string; recovery?: string };
+        console.error(`Legal research error: Type=${errorObj.errorType}, Message="${errorObj.message}"`);
+        
+        // Convert to a format that matches what the frontend expects for research results
+        results = {
+          citations: [],
+          analysis: `Error: ${errorObj.message}. ${errorObj.recovery || 'Please try again later.'}`,
+          errorType: errorObj.errorType
+        };
+        
+        errorInfo = {
+          type: errorObj.errorType,
+          message: errorObj.message,
+          recovery: errorObj.recovery
+        };
+      } else {
+        // Normal research results
+        results = response;
+      }
       
       // Save the research query with user ID and results
       const savedQuery = await storage.createResearchQuery({
@@ -766,9 +835,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         practiceArea
       });
       
+      // Return with error info if applicable
       res.status(201).json({
         ...savedQuery,
-        results // Return parsed results directly
+        results, // Return parsed results directly
+        error: errorInfo
       });
     } catch (error) {
       console.error("Research error:", error);
