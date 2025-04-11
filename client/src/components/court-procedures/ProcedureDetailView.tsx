@@ -22,7 +22,42 @@ import {
 } from 'lucide-react';
 import { VerticalFlowChart } from './FlowChart';
 import HorizontalFlowChart, { BranchingFlowChart } from './HorizontalFlowChart';
-import { useTranslation } from 'react-i18next';
+// import { useTranslation } from 'react-i18next';
+// Temporarily implementing translation function in-place
+const useTranslation = () => {
+  return {
+    t: (key: string, options?: any) => {
+      // Basic translation mapping
+      const translations: Record<string, string> = {
+        'courtProcedures.backToProcedures': 'Back to Procedures',
+        'courtProcedures.procedureFlow': 'Procedure Flow',
+        'courtProcedures.verticalView': 'Vertical',
+        'courtProcedures.horizontalView': 'Horizontal',
+        'courtProcedures.branchingView': 'Branching',
+        'courtProcedures.flowchartDescription': 'Visualize the steps of this court procedure in different formats.',
+        'courtProcedures.stepDescription': `Step ${options?.order || ''} of ${options?.total || ''}`,
+        'courtProcedures.description': 'Description',
+        'courtProcedures.requirements': 'Requirements',
+        'courtProcedures.estimatedTime': 'Estimated Time',
+        'courtProcedures.forms': 'Forms',
+        'courtProcedures.resources': 'Resources',
+        'courtProcedures.noForms': 'No forms required for this step.',
+        'courtProcedures.noResources': 'No additional resources for this step.',
+        'courtProcedures.procedureInfo': 'Procedure Information',
+        'courtProcedures.timeframe': 'Timeframe',
+        'courtProcedures.courtFees': 'Court Fees',
+        'courtProcedures.applicableLaws': 'Applicable Laws',
+        'courtProcedures.source': 'Source',
+        'courtProcedures.officialSource': 'Official Source',
+        'courtProcedures.startProcedure': 'Start Procedure',
+        'courtProcedures.relatedForms': 'Related Forms',
+        'courtProcedures.noRelatedForms': 'No related forms found for this procedure.'
+      };
+      
+      return translations[key] || key;
+    }
+  };
+};
 
 interface ProcedureStep {
   id: number;
@@ -77,17 +112,17 @@ const ProcedureDetailView: React.FC<ProcedureDetailViewProps> = ({
     id: step.id.toString(),
     label: step.title,
     description: step.description.substring(0, 60) + (step.description.length > 60 ? '...' : ''),
-    status: 'pending',
-    type: step.order === 1 ? 'start' : 
-           step.order === procedure.steps.length ? 'end' :
-           !step.isRequired ? 'optional' : 'process'
+    status: 'pending' as 'pending' | 'completed' | 'current' | 'optional',
+    type: step.order === 1 ? 'start' as const : 
+           step.order === procedure.steps.length ? 'end' as const :
+           !step.isRequired ? 'process' as const : 'process' as const
   }));
 
   // Create simple connections between steps
   const flowchartConnections = procedure.steps.slice(0, -1).map((step, index) => ({
     fromId: step.id.toString(),
     toId: procedure.steps[index + 1].id.toString(),
-    direction: 'horizontal'
+    direction: 'horizontal' as 'horizontal' | 'vertical'
   }));
 
   const selectedStep = procedure.steps.find(step => step.id === selectedStepId);

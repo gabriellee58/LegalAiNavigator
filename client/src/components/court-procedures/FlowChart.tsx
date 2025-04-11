@@ -8,7 +8,7 @@ export interface FlowChartNode {
   label: string;
   description?: string;
   status?: 'completed' | 'current' | 'pending' | 'optional';
-  type?: 'start' | 'end' | 'decision' | 'process' | 'document';
+  type?: 'start' | 'end' | 'decision' | 'process' | 'document' | 'optional';
 }
 
 export interface FlowChartConnection {
