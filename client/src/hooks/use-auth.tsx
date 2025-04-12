@@ -44,8 +44,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/login", credentials);
-      return await res.json();
+      // apiRequest already returns the parsed JSON, so we don't need to call json() on it
+      return await apiRequest("POST", "/api/login", credentials);
     },
     onSuccess: (user: User) => {
       toast({
@@ -55,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(["/api/user"], user);
     },
     onError: (error: Error) => {
+      console.error("Login error:", error);
       toast({
         title: "Login failed",
         description: error.message || "Invalid username or password",
@@ -65,8 +66,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (credentials: RegisterData) => {
-      const res = await apiRequest("POST", "/api/register", credentials);
-      return await res.json();
+      // apiRequest already returns the parsed JSON, so we don't need to call json() on it
+      return await apiRequest("POST", "/api/register", credentials);
     },
     onSuccess: (user: User) => {
       toast({
@@ -76,6 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(["/api/user"], user);
     },
     onError: (error: Error) => {
+      console.error("Registration error:", error);
       toast({
         title: "Registration failed",
         description: error.message || "Could not create account",
@@ -116,8 +118,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const updateProfileMutation = useMutation({
     mutationFn: async (profileData: UpdateProfileData) => {
-      const res = await apiRequest("PATCH", "/api/user", profileData);
-      return await res.json();
+      // apiRequest already returns the parsed JSON, so we don't need to call json() on it
+      return await apiRequest("PATCH", "/api/user", profileData);
     },
     onSuccess: (updatedUser: User) => {
       toast({
@@ -127,6 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(["/api/user"], updatedUser);
     },
     onError: (error: Error) => {
+      console.error("Profile update error:", error);
       toast({
         title: "Profile update failed",
         description: error.message || "Could not update profile",
@@ -137,8 +140,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const updatePasswordMutation = useMutation({
     mutationFn: async (passwordData: UpdatePasswordData) => {
-      const res = await apiRequest("PATCH", "/api/user/password", passwordData);
-      return await res.json();
+      // apiRequest already returns the parsed JSON, so we don't need to call json() on it
+      return await apiRequest("PATCH", "/api/user/password", passwordData);
     },
     onSuccess: () => {
       toast({
@@ -147,6 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
     onError: (error: Error) => {
+      console.error("Password update error:", error);
       toast({
         title: "Password update failed",
         description: error.message || "Could not update password",
@@ -172,14 +176,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         // Handle successful Firebase auth
-        const res = await apiRequest("POST", "/api/google-auth", {
+        const userData = await apiRequest("POST", "/api/google-auth", {
           email: result.email,
           displayName: result.displayName,
           photoURL: result.photoURL,
           uid: result.uid
         });
         
-        const userData = await res.json();
         queryClient.setQueryData(["/api/user"], userData);
         return userData;
       } catch (error: any) {
@@ -211,14 +214,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // login on our backend with the Firebase credentials
       if (firebaseUser && !user) {
         try {
-          const res = await apiRequest("POST", "/api/google-auth", {
+          const userData = await apiRequest("POST", "/api/google-auth", {
             email: firebaseUser.email,
             displayName: firebaseUser.displayName,
             photoURL: firebaseUser.photoURL,
             uid: firebaseUser.uid
           });
           
-          const userData = await res.json();
           queryClient.setQueryData(["/api/user"], userData);
         } catch (err) {
           console.error("Error synchronizing with Firebase auth:", err);
