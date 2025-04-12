@@ -177,10 +177,10 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen flex overflow-hidden">
+    <div className="min-h-screen flex flex-col md:flex-row overflow-hidden bg-gradient-to-b md:bg-gradient-to-r from-background to-background via-primary/5">
       {/* Auth Form */}
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
-        <Card className="w-full max-w-md">
+      <div className="w-full md:w-1/2 lg:w-2/5 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+        <Card className="w-full max-w-md shadow-lg">
           <CardHeader>
             <CardTitle className="text-2xl font-bold text-center">
               {activeTab === "login" ? t("Login") : t("Create an Account")}
@@ -188,7 +188,7 @@ export default function AuthPage() {
             <CardDescription className="text-center">
               {activeTab === "login" 
                 ? t("Access your legal assistant account") 
-                : t("Join LegalAI to access AI-powered legal tools")}
+                : t("Join CanadianLegalAI to access AI-powered legal tools")}
             </CardDescription>
             
             {/* Display auth errors from login/register mutations */}
@@ -479,50 +479,54 @@ export default function AuthPage() {
       </div>
 
       {/* Hero Section */}
-      <div className="hidden lg:flex lg:flex-1 bg-gradient-to-r from-primary/10 via-primary/5 to-background">
-        <div className="flex flex-col justify-center px-12 py-12">
-          <div className="space-y-6">
-            <h1 className="text-4xl font-extrabold tracking-tight">
-              <span className="block">LegalAI</span>
+      <div className="hidden md:flex md:w-1/2 lg:w-3/5 md:order-first bg-gradient-to-br from-background via-primary/5 to-primary/10 relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 w-72 h-72 -mt-12 -mr-12 bg-primary/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-64 h-64 -mb-12 -ml-12 bg-primary/5 rounded-full blur-3xl"></div>
+        
+        <div className="flex flex-col justify-center px-8 md:px-10 lg:px-16 py-8 lg:py-12 w-full relative z-10">
+          <div className="space-y-6 max-w-xl mx-auto lg:mx-0">
+            <h1 className="text-3xl lg:text-4xl font-extrabold tracking-tight">
+              <span className="block">CanadianLegalAI</span>
               <span className="block bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
                 {t("Your AI-Powered Legal Assistant")}
               </span>
             </h1>
-            <p className="text-lg text-muted-foreground max-w-lg">
+            <p className="text-base lg:text-lg text-muted-foreground">
               {t("Access expert legal assistance with our AI-powered tools. Generate legal documents, get answers to legal questions, and perform legal research in seconds.")}
             </p>
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
                 <div className="bg-primary/10 p-2 rounded-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 md:h-6 md:w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <span>{t("Generate legal documents in minutes")}</span>
+                <span className="text-sm md:text-base">{t("Generate legal documents in minutes")}</span>
               </div>
               <div className="flex items-center space-x-3">
                 <div className="bg-primary/10 p-2 rounded-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 md:h-6 md:w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <span>{t("Get instant answers to legal questions")}</span>
+                <span className="text-sm md:text-base">{t("Get instant answers to legal questions")}</span>
               </div>
               <div className="flex items-center space-x-3">
                 <div className="bg-primary/10 p-2 rounded-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 md:h-6 md:w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <span>{t("Perform legal research with AI assistance")}</span>
+                <span className="text-sm md:text-base">{t("Perform legal research with AI assistance")}</span>
               </div>
               <div className="flex items-center space-x-3">
                 <div className="bg-primary/10 p-2 rounded-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 md:h-6 md:w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <span>{t("Bilingual support in English and French")}</span>
+                <span className="text-sm md:text-base">{t("Bilingual support in English and French")}</span>
               </div>
             </div>
           </div>
