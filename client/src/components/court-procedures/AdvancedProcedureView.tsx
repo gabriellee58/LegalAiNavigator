@@ -1,10 +1,22 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { CalendarDays, FileText, StickyNote, ChevronUp, ChevronDown } from 'lucide-react';
+import { CalendarDays, FileText, StickyNote, ChevronUp, ChevronDown, FileDigit, GitBranch } from 'lucide-react';
 import TimelineVisualization from './TimelineVisualization';
 import DocumentManagement from './DocumentManagement';
 import Personalization from './Personalization';
+import ProcedureDescription, { ProcedureDescriptionData } from './ProcedureDescription';
+import { 
+  civilProcedureDescription, 
+  criminalProcedureDescription, 
+  familyCourtProcedureDescription, 
+  smallClaimsProcedureDescription,
+  administrativeTribunalsProcedureDescription,
+  ontarioSmallClaimsProcedureDescription,
+  ontarioCivilProcedureDescription,
+  ontarioFamilyCourtProcedureDescription,
+  humanRightsTribunalProcedureDescription
+} from '@/data/court-procedures';
 
 // Import types directly from court-procedures.tsx until we properly migrate them
 interface EstimatedTimeframe {
@@ -92,6 +104,50 @@ interface AdvancedProcedureViewProps {
   userId?: number;
 }
 
+// Helper function to determine which procedure description to use based on the procedure details
+const getProcedureDescriptionData = (procedureDetail: ProcedureDetail) => {
+  const categoryId = procedureDetail.categoryId;
+  const name = procedureDetail.name.toLowerCase();
+  const jurisdiction = procedureDetail.jurisdiction.toLowerCase();
+  
+  // Match based on category and jurisdiction
+  if (categoryId === 1 || name.includes('civil')) {
+    // Civil procedures
+    if (jurisdiction.includes('ontario')) {
+      return <ProcedureDescription data={ontarioCivilProcedureDescription} />;
+    }
+    return <ProcedureDescription data={civilProcedureDescription} />;
+  }
+  
+  if (categoryId === 2 || name.includes('criminal')) {
+    return <ProcedureDescription data={criminalProcedureDescription} />;
+  }
+  
+  if (categoryId === 3 || name.includes('family')) {
+    if (jurisdiction.includes('ontario')) {
+      return <ProcedureDescription data={ontarioFamilyCourtProcedureDescription} />;
+    }
+    return <ProcedureDescription data={familyCourtProcedureDescription} />;
+  }
+  
+  if (categoryId === 4 || name.includes('small claims')) {
+    if (jurisdiction.includes('ontario')) {
+      return <ProcedureDescription data={ontarioSmallClaimsProcedureDescription} />;
+    }
+    return <ProcedureDescription data={smallClaimsProcedureDescription} />;
+  }
+  
+  if (categoryId === 5 || name.includes('administrative') || name.includes('tribunal')) {
+    if (name.includes('human rights')) {
+      return <ProcedureDescription data={humanRightsTribunalProcedureDescription} />;
+    }
+    return <ProcedureDescription data={administrativeTribunalsProcedureDescription} />;
+  }
+  
+  // Default case - return the generic civil procedure
+  return <ProcedureDescription data={civilProcedureDescription} />;
+};
+
 export const AdvancedProcedureView: React.FC<AdvancedProcedureViewProps> = ({
   procedureDetail,
   userProcedureDetail,
@@ -137,11 +193,16 @@ export const AdvancedProcedureView: React.FC<AdvancedProcedureViewProps> = ({
       {isExpanded && (
         <>
           <Tabs defaultValue="timeline" value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-3 w-full">
+            <TabsList className="grid grid-cols-4 w-full">
               <TabsTrigger value="timeline" className="flex items-center gap-1">
                 <CalendarDays className="h-4 w-4" />
                 <span className="hidden sm:inline">Timeline</span>
                 <span className="sm:hidden">Timeline</span>
+              </TabsTrigger>
+              <TabsTrigger value="flow-chart" className="flex items-center gap-1">
+                <GitBranch className="h-4 w-4" />
+                <span className="hidden sm:inline">Flow Chart</span>
+                <span className="sm:hidden">Flow</span>
               </TabsTrigger>
               <TabsTrigger value="documents" className="flex items-center gap-1">
                 <FileText className="h-4 w-4" />
@@ -164,6 +225,11 @@ export const AdvancedProcedureView: React.FC<AdvancedProcedureViewProps> = ({
                 completedSteps={completedSteps}
                 currentStepId={currentStepId}
               />
+            </TabsContent>
+            
+            {/* Flow Chart Description Tab */}
+            <TabsContent value="flow-chart" className="space-y-6 mt-6">
+              {getProcedureDescriptionData(procedureDetail)}
             </TabsContent>
             
             {/* Documents Tab */}
