@@ -29,7 +29,7 @@ function Header() {
         <Sheet>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" className="p-2 rounded-md text-white focus:outline-none hover:bg-white/10">
-              <span className="material-icons">menu</span>
+              <span className="material-icons">Menu</span>
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-64 p-0">
@@ -39,7 +39,7 @@ function Header() {
         
         <Link href="/" className="ml-2 flex items-center">
           <div className="bg-white rounded-lg w-7 h-7 flex items-center justify-center mr-2">
-            <span className="material-icons text-primary text-sm">balance</span>
+            <span className="material-icons text-primary text-sm">Balance</span>
           </div>
           <h1 className="font-heading font-bold text-lg text-white">LegalAI</h1>
         </Link>
@@ -49,7 +49,7 @@ function Header() {
       <div className="hidden md:flex items-center">
         <Link href="/" className="flex items-center">
           <div className="bg-white rounded-lg w-8 h-8 flex items-center justify-center mr-2">
-            <span className="material-icons text-primary text-md">balance</span>
+            <span className="material-icons text-primary text-md">Balance</span>
           </div>
           <h1 className="font-heading font-bold text-xl text-white">LegalAI</h1>
         </Link>
@@ -77,7 +77,7 @@ function Header() {
       {/* Search bar */}
       <form onSubmit={handleSearch} className="hidden md:flex flex-1 mx-4 md:mx-0 max-w-xs relative ml-auto mr-4">
         <span className="absolute left-3 top-3 text-neutral-400">
-          <span className="material-icons text-sm">search</span>
+          <span className="material-icons text-sm">Search</span>
         </span>
         <Input
           type="text"
@@ -91,7 +91,7 @@ function Header() {
       {/* User profile and actions */}
       <div className="flex items-center ml-auto md:ml-0">
         <Button variant="ghost" size="icon" className="p-2 rounded-full text-white hover:bg-white/10 focus:outline-none relative">
-          <span className="material-icons">notifications</span>
+          <span className="material-icons">Notifications</span>
           <span className="absolute top-1 right-1 w-2 h-2 bg-white rounded-full"></span>
         </Button>
         
@@ -104,7 +104,7 @@ function Header() {
               <span className="ml-2 text-sm font-medium hidden md:block">
                 {user?.fullName || user?.username || 'User'}
               </span>
-              <span className="material-icons text-sm ml-1">arrow_drop_down</span>
+              <span className="material-icons text-sm ml-1">Arrow_Drop_Down</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -141,7 +141,7 @@ function MobileSidebar() {
       <div className="purple-gradient-bg p-5 flex items-center justify-between">
         <div className="flex items-center">
           <div className="bg-white rounded-lg w-8 h-8 flex items-center justify-center mr-2">
-            <span className="material-icons text-primary text-lg">balance</span>
+            <span className="material-icons text-primary text-lg">Balance</span>
           </div>
           <h1 className="font-heading font-bold text-xl text-white">LegalAI</h1>
         </div>
@@ -164,19 +164,19 @@ function MobileSidebar() {
           <ul className="space-y-2">
             <li>
               <Link href="/legal-assistant" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
-                <span className="material-icons mr-3 text-primary">smart_toy</span>
+                <span className="material-icons mr-3 text-primary">Smart_Toy</span>
                 <span className="font-medium">{t("legal_assistant")}</span>
               </Link>
             </li>
             <li>
               <Link href="/document-generator" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
-                <span className="material-icons mr-3 text-primary">description</span>
+                <span className="material-icons mr-3 text-primary">Description</span>
                 <span className="font-medium">{t("document_generator")}</span>
               </Link>
             </li>
             <li>
               <Link href="/legal-research" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
-                <span className="material-icons mr-3 text-primary">search</span>
+                <span className="material-icons mr-3 text-primary">Search</span>
                 <span className="font-medium">{t("legal_research")}</span>
               </Link>
             </li>
