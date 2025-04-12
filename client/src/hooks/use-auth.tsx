@@ -7,29 +7,40 @@ import {
 import { insertUserSchema, User, InsertUser } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { signInWithGoogle, signOutUser, onAuthChange, FirebaseUser } from "@/lib/firebase";
+import { onAuthChange } from "@/lib/firebase";
 
-type AuthContextType = {
+// Define all types here
+interface AuthContextInterface {
   user: User | null;
   isLoading: boolean;
   error: Error | null;
-  loginMutation: UseMutationResult<User, Error, LoginData>;
+  loginMutation: UseMutationResult<User, Error, LoginDataType>;
   logoutMutation: UseMutationResult<void, Error, void>;
-  registerMutation: UseMutationResult<User, Error, RegisterData>;
-  updateProfileMutation: UseMutationResult<User, Error, UpdateProfileData>;
-  updatePasswordMutation: UseMutationResult<{ message: string }, Error, UpdatePasswordData>;
+  registerMutation: UseMutationResult<User, Error, RegisterDataType>;
+  updateProfileMutation: UseMutationResult<User, Error, UpdateProfileDataType>;
+  updatePasswordMutation: UseMutationResult<{ message: string }, Error, UpdatePasswordDataType>;
   googleSignInMutation: UseMutationResult<User, Error, void>;
-};
+}
 
-export type LoginData = Pick<User, "username" | "password">;
-export type RegisterData = typeof insertUserSchema._type;
-export type UpdateProfileData = Pick<User, "fullName" | "preferredLanguage">;
-export type UpdatePasswordData = {
+// Define data types
+type LoginDataType = Pick<User, "username" | "password">;
+type RegisterDataType = typeof insertUserSchema._type;
+type UpdateProfileDataType = Pick<User, "fullName" | "preferredLanguage">;
+type UpdatePasswordDataType = {
   currentPassword: string;
   newPassword: string;
 };
 
-export const AuthContext = createContext<AuthContextType | null>(null);
+// Export types for external use
+export type LoginData = LoginDataType;
+export type RegisterData = RegisterDataType;
+export type UpdateProfileData = UpdateProfileDataType;
+export type UpdatePasswordData = UpdatePasswordDataType;
+export type AuthContextType = AuthContextInterface;
+
+// Create context
+const AuthContext = createContext<AuthContextInterface | null>(null);
+export { AuthContext };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
