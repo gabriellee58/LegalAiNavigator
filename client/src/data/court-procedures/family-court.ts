@@ -1,7 +1,7 @@
 import { CourtProcedureData } from "./types";
 
 export const familyCourtData: CourtProcedureData = {
-  id: "family",
+  id: "family-court",
   title: "Family Court",
   description: "The process for resolving family law matters including divorce, custody and support",
   icon: "home",

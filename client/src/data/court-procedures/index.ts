@@ -1,11 +1,17 @@
 import { CourtProcedureData, ProcedureDataMap } from './types';
 import civilProcedureData from './civil-procedure';
 import criminalProcedureData from './criminal-procedure';
+import { familyCourtData } from './family-court';
+import { smallClaimsData } from './small-claims';
+import { administrativeData } from './administrative';
 
 // Create a map of all procedure data for easy lookup
 export const procedureDataMap: ProcedureDataMap = {
   [civilProcedureData.id]: civilProcedureData,
   [criminalProcedureData.id]: criminalProcedureData,
+  'family-court': familyCourtData,
+  'small-claims': smallClaimsData,
+  'administrative-tribunals': administrativeData,
 };
 
 /**
@@ -36,4 +42,10 @@ export function getProceduresByCategory(category: string): CourtProcedureData[] 
   );
 }
 
-export { civilProcedureData, criminalProcedureData };
+export { 
+  civilProcedureData, 
+  criminalProcedureData, 
+  familyCourtData, 
+  smallClaimsData, 
+  administrativeData 
+};

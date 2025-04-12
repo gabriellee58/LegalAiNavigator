@@ -1,7 +1,7 @@
 import { CourtProcedureData } from "./types";
 
 export const administrativeData: CourtProcedureData = {
-  id: "administrative",
+  id: "administrative-tribunals",
   title: "Administrative Tribunals",
   description: "Specialized procedures for resolving disputes related to government agencies and regulations",
   icon: "building",
