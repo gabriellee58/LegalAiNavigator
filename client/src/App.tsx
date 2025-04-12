@@ -16,6 +16,7 @@ import LegalResearchPage from "@/pages/legal-research";
 import ContractAnalysisPage from "@/pages/contract-analysis";
 import DocumentNavigatorPage from "@/pages/document-navigator";
 import TimelineEstimatorPage from "@/pages/timeline-estimator";
+import CostEstimatorPage from "@/pages/cost-estimator";
 import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
 import ProfilePage from "@/pages/profile";
@@ -118,6 +119,7 @@ function Router() {
       <ProtectedRoute path="/court-procedures" component={CourtProceduresPage} />
       <ProtectedRoute path="/document-navigator" component={DocumentNavigatorPage} />
       <ProtectedRoute path="/timeline-estimator" component={TimelineEstimatorPage} />
+      <ProtectedRoute path="/cost-estimator" component={CostEstimatorPage} />
       
       {/* Document Templates */}
       <ProtectedRoute path="/documents/all" component={DocumentTemplatesPage} />

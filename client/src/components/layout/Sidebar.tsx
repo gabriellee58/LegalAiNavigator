@@ -11,6 +11,7 @@ export function Sidebar() {
   const [isCourtProceduresRoute] = useRoute("/court-procedures");
   const [isDocumentNavigatorRoute] = useRoute("/document-navigator");
   const [isTimelineEstimatorRoute] = useRoute("/timeline-estimator");
+  const [isCostEstimatorRoute] = useRoute("/cost-estimator");
   const [isLegalDomainsRoute] = useRoute("/legal-domains");
   
   // Document template routes
@@ -106,6 +107,14 @@ export function Sidebar() {
                 <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isTimelineEstimatorRoute ? 'bg-blue-50 text-primary' : ''}`}>
                   <span className={`material-icons mr-3 ${isTimelineEstimatorRoute ? 'text-primary' : 'text-neutral-500'}`}>schedule</span>
                   <span>Timeline Estimator</span>
+                </div>
+              </Link>
+            </li>
+            <li>
+              <Link href="/cost-estimator">
+                <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isCostEstimatorRoute ? 'bg-blue-50 text-primary' : ''}`}>
+                  <span className={`material-icons mr-3 ${isCostEstimatorRoute ? 'text-primary' : 'text-neutral-500'}`}>payments</span>
+                  <span>Cost Estimator</span>
                 </div>
               </Link>
             </li>
