@@ -205,25 +205,25 @@ function DocumentGeneratorPage() {
             
             {/* Legal domain quick links */}
             <div className="bg-white border border-gray-100 rounded-lg p-4 shadow-sm">
-              <h3 className="font-medium text-primary mb-3">Browse by Legal Domain</h3>
+              <h3 className="font-medium text-primary mb-3">{t("browse_by_legal_domain")}</h3>
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" size="sm" asChild>
-                  <a href="/legal-domains/family-law">Family Law</a>
+                  <a href="/legal-domains/family-law">{t("family_law")}</a>
                 </Button>
                 <Button variant="outline" size="sm" asChild>
-                  <a href="/legal-domains/real-estate">Real Estate</a>
+                  <a href="/legal-domains/real-estate">{t("real_estate")}</a>
                 </Button>
                 <Button variant="outline" size="sm" asChild>
-                  <a href="/legal-domains/business">Business</a>
+                  <a href="/legal-domains/business">{t("business")}</a>
                 </Button>
                 <Button variant="outline" size="sm" asChild>
-                  <a href="/legal-domains/employment">Employment</a>
+                  <a href="/legal-domains/employment">{t("employment")}</a>
                 </Button>
                 <Button variant="outline" size="sm" asChild>
-                  <a href="/legal-domains/immigration">Immigration</a>
+                  <a href="/legal-domains/immigration">{t("immigration")}</a>
                 </Button>
                 <Button variant="outline" size="sm" asChild>
-                  <a href="/legal-domains/personal-injury">Personal Injury</a>
+                  <a href="/legal-domains/personal-injury">{t("personal_injury")}</a>
                 </Button>
               </div>
             </div>
@@ -236,10 +236,10 @@ function DocumentGeneratorPage() {
             >
               <div className="flex justify-between items-center mb-4">
                 <TabsList>
-                  <TabsTrigger value="templates">My Templates</TabsTrigger>
+                  <TabsTrigger value="templates">{t("my_templates")}</TabsTrigger>
                   <TabsTrigger value="external">
                     <span className="material-icons mr-1 text-sm">cloud_download</span>
-                    External Templates
+                    {t("external_templates")}
                   </TabsTrigger>
                 </TabsList>
                 
@@ -271,9 +271,9 @@ function DocumentGeneratorPage() {
                   <div className="space-y-4">
                     <Alert variant="destructive">
                       <AlertCircle className="h-4 w-4" />
-                      <AlertTitle>Error loading templates</AlertTitle>
+                      <AlertTitle>{t("error_loading_templates")}</AlertTitle>
                       <AlertDescription>
-                        We couldn't load the document templates. This could be due to a network issue or a server problem.
+                        {t("error_loading_templates_description")}
                       </AlertDescription>
                     </Alert>
                     <div className="flex justify-center">
@@ -283,7 +283,7 @@ function DocumentGeneratorPage() {
                         className="flex items-center gap-2"
                       >
                         <RefreshCw className="h-4 w-4" />
-                        Retry loading templates
+                        {t("retry_loading_templates")}
                       </Button>
                     </div>
                   </div>
@@ -291,16 +291,16 @@ function DocumentGeneratorPage() {
                   <div className="space-y-4">
                     <Alert>
                       <Info className="h-4 w-4" />
-                      <AlertTitle>No templates available</AlertTitle>
+                      <AlertTitle>{t("no_templates_available")}</AlertTitle>
                       <AlertDescription>
-                        There are currently no templates available for the selected language. Try switching to another language or check back later.
+                        {t("no_templates_available_description")}
                       </AlertDescription>
                     </Alert>
                   </div>
                 ) : (
                   <Tabs defaultValue="all" className="w-full">
                     <TabsList className="mb-4 flex overflow-x-auto pb-2 scrollbar-hide">
-                      <TabsTrigger value="all">All Templates</TabsTrigger>
+                      <TabsTrigger value="all">{t("all_templates")}</TabsTrigger>
                       {Object.keys(templatesByType).map((type) => (
                         <TabsTrigger key={type} value={type}>
                           {type.charAt(0).toUpperCase() + type.slice(1)}s
