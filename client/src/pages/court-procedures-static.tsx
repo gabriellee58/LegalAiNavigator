@@ -65,6 +65,7 @@ const CourtProceduresStaticPage: React.FC = () => {
 
   // If a procedure is selected, show its detail view
   if (selectedProcedure) {
+    console.log("Rendering selected procedure:", selectedProcedure.id, selectedProcedure.title);
     return <ProcedureDetail procedure={selectedProcedure} onBack={() => setSelectedProcedure(null)} />;
   }
 

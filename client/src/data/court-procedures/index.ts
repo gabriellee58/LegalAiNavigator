@@ -9,10 +9,16 @@ import { administrativeData } from './administrative';
 export const procedureDataMap: ProcedureDataMap = {
   [civilProcedureData.id]: civilProcedureData,
   [criminalProcedureData.id]: criminalProcedureData,
-  'family-court': familyCourtData,
-  'small-claims': smallClaimsData,
-  'administrative-tribunals': administrativeData,
+  [familyCourtData.id]: familyCourtData,
+  [smallClaimsData.id]: smallClaimsData,
+  [administrativeData.id]: administrativeData,
 };
+
+// Debug log to see what IDs are in the map
+console.log("Procedure data map keys:", Object.keys(procedureDataMap));
+console.log("Family court procedure ID:", familyCourtData.id);
+console.log("Small claims procedure ID:", smallClaimsData.id);
+console.log("Administrative procedure ID:", administrativeData.id);
 
 /**
  * Get a specific procedure by its ID
