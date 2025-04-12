@@ -8,7 +8,7 @@ export const smallClaimsData: CourtProcedureData = {
   overview: {
     summary: "Small Claims Court provides a streamlined, accessible process for resolving civil disputes involving claims below a specific monetary threshold, which varies by province.",
     purpose: "To provide an efficient, less formal, and less expensive forum for resolving disputes involving relatively modest sums without requiring legal representation.",
-    applicability: "Applied to a wide range of civil disputes including unpaid debts, property damage, consumer issues, minor contract disputes, and landlord-tenant matters.",
+    applicability: ["Applied to a wide range of civil disputes including unpaid debts, property damage, consumer issues, minor contract disputes, and landlord-tenant matters."],
     mainFeatures: [
       "Simplified procedures with less formal rules of evidence and procedure",
       "Lower filing fees than superior courts",
@@ -23,7 +23,11 @@ export const smallClaimsData: CourtProcedureData = {
       title: "1. Pre-Filing Considerations",
       description: "Evaluating whether Small Claims Court is appropriate for your dispute.",
       details: "Before filing, evaluate if your claim falls within the monetary and subject matter jurisdiction of Small Claims Court, and consider demand letters or negotiation.",
-      timeframe: "1-4 weeks",
+      timeline: {
+        minDays: 7,
+        maxDays: 28,
+        description: "1-4 weeks"
+      },
       documents: [
         {
           name: "Demand Letter",
@@ -71,7 +75,11 @@ export const smallClaimsData: CourtProcedureData = {
       title: "2. Filing a Claim",
       description: "Preparing and submitting the formal court documents to initiate your case.",
       details: "To start a case, you must complete the appropriate claim form (typically called a Plaintiff's Claim or Statement of Claim), pay the filing fee, and file with the court.",
-      timeframe: "1-2 hours to prepare; 1-5 days to process",
+      timeline: {
+        minDays: 5,
+        maxDays: 5,
+        description: "1-2 hours to prepare; 1-5 days to process"
+      },
       documents: [
         {
           name: "Plaintiff's Claim Form",
@@ -119,7 +127,11 @@ export const smallClaimsData: CourtProcedureData = {
       title: "3. Serving the Defendant",
       description: "Legally delivering claim documents to the defendant.",
       details: "After filing, you must deliver a copy of the claim and any supporting documents to each defendant according to specific service rules.",
-      timeframe: "1-30 days",
+      timeline: {
+        minDays: 30,
+        maxDays: 30,
+        description: "1-30 days"
+      },
       documents: [
         {
           name: "Affidavit of Service",
@@ -167,7 +179,11 @@ export const smallClaimsData: CourtProcedureData = {
       title: "4. Defendant's Response",
       description: "The defendant's formal reply to the claim.",
       details: "The defendant must respond within a specified timeframe, either disputing the claim, admitting it, or proposing a payment plan.",
-      timeframe: "Typically 20-30 days after service",
+      timeline: {
+        minDays: 30,
+        maxDays: 30,
+        description: "Typically 20-30 days after service"
+      },
       documents: [
         {
           name: "Defence Form",
@@ -215,7 +231,11 @@ export const smallClaimsData: CourtProcedureData = {
       title: "5. Pre-Trial Procedures",
       description: "Settlement conferences, mediation, and trial preparation steps.",
       details: "Most small claims jurisdictions have mandatory settlement discussions or mediation before trial to encourage resolution.",
-      timeframe: "1-3 months",
+      timeline: {
+        minDays: 30,
+        maxDays: 90,
+        description: "1-3 months"
+      },
       documents: [
         {
           name: "Settlement Conference Brief",
@@ -263,7 +283,11 @@ export const smallClaimsData: CourtProcedureData = {
       title: "6. Trial",
       description: "The formal hearing where evidence is presented and a decision is made.",
       details: "If settlement efforts fail, the case proceeds to trial where each party presents evidence and arguments before a judge or adjudicator.",
-      timeframe: "Typically 1-3 hours; complex cases may take a full day",
+      timeline: {
+        minDays: 7,
+        maxDays: 30,
+        description: "Typically 1-3 hours; complex cases may take a full day"
+      },
       documents: [
         {
           name: "Trial Evidence",
@@ -311,7 +335,11 @@ export const smallClaimsData: CourtProcedureData = {
       title: "7. Judgment and Enforcement",
       description: "Receiving the court's decision and collecting on a successful claim.",
       details: "After trial, the judge issues a decision. If successful, you may need to take additional steps to collect the judgment amount.",
-      timeframe: "Judgment: immediately to 3 months; Enforcement: weeks to years",
+      timeline: {
+        minDays: 7,
+        maxDays: 30,
+        description: "Judgment: immediately to 3 months; Enforcement: weeks to years"
+      },
       documents: [
         {
           name: "Judgment Order",

@@ -8,7 +8,7 @@ export const administrativeData: CourtProcedureData = {
   overview: {
     summary: "Administrative tribunals are specialized quasi-judicial bodies that resolve disputes arising from government regulations, social benefits, and specific regulated sectors.",
     purpose: "To provide efficient, accessible, and specialized adjudication of disputes in specific regulated domains outside traditional courts.",
-    applicability: "Applied to areas including employment standards, human rights, landlord-tenant relations, immigration, social benefits, professional regulation, and other specialized domains.",
+    applicability: ["Applied to areas including employment standards, human rights, landlord-tenant relations, immigration, social benefits, professional regulation, and other specialized domains."],
     mainFeatures: [
       "More informal and expeditious process than courts",
       "Lower costs and typically more accessible procedures",
@@ -23,7 +23,11 @@ export const administrativeData: CourtProcedureData = {
       title: "1. Determining Jurisdiction",
       description: "Identifying the appropriate tribunal for your specific dispute.",
       details: "Before filing, determine which administrative tribunal has authority over your specific type of dispute, as jurisdiction is strictly defined by enabling legislation.",
-      timeframe: "1-2 weeks for research and consultation",
+      timeline: {
+        minDays: 7,
+        maxDays: 14,
+        description: "1-2 weeks for research and consultation"
+      },
       documents: [
         {
           name: "Enabling Legislation",
@@ -71,7 +75,11 @@ export const administrativeData: CourtProcedureData = {
       title: "2. Pre-Application Procedures",
       description: "Required steps before formally filing with the tribunal.",
       details: "Many tribunals require preliminary steps such as internal reviews, complaints to regulatory bodies, or mandatory mediation before a formal application.",
-      timeframe: "1-6 months",
+      timeline: {
+        minDays: 30,
+        maxDays: 180,
+        description: "1-6 months"
+      },
       documents: [
         {
           name: "Internal Complaint Documentation",
@@ -119,7 +127,11 @@ export const administrativeData: CourtProcedureData = {
       title: "3. Filing an Application",
       description: "Formally initiating the tribunal process with the proper documentation.",
       details: "Applications must be filed on prescribed forms with supporting documentation within strict timelines, often with filing fees.",
-      timeframe: "1-2 weeks to prepare; 1-4 weeks to process",
+      timeline: {
+        minDays: 7,
+        maxDays: 14,
+        description: "1-2 weeks to prepare; 1-4 weeks to process"
+      },
       documents: [
         {
           name: "Application Form",
@@ -167,7 +179,11 @@ export const administrativeData: CourtProcedureData = {
       title: "4. Respondent's Reply",
       description: "The opposing party's formal response to the application.",
       details: "After notification, respondents must file a formal reply addressing the allegations and providing their own supporting documentation.",
-      timeframe: "Typically 14-30 days after notification",
+      timeline: {
+        minDays: 30,
+        maxDays: 30,
+        description: "Typically 14-30 days after notification"
+      },
       documents: [
         {
           name: "Response Form",
@@ -215,7 +231,11 @@ export const administrativeData: CourtProcedureData = {
       title: "5. Case Management and Mediation",
       description: "Pre-hearing processes to narrow issues and attempt resolution.",
       details: "Most tribunals have case management conferences to clarify issues and procedures, and many offer or mandate mediation before proceeding to hearing.",
-      timeframe: "1-3 months",
+      timeline: {
+        minDays: 30,
+        maxDays: 90,
+        description: "1-3 months"
+      },
       documents: [
         {
           name: "Case Management Directions",
@@ -268,7 +288,11 @@ export const administrativeData: CourtProcedureData = {
       title: "6. Disclosure and Evidence Exchange",
       description: "Sharing of relevant documents and information before the hearing.",
       details: "Parties must exchange all relevant documents and witness information according to tribunal rules before the hearing.",
-      timeframe: "1-2 months before hearing",
+      timeline: {
+        minDays: 30,
+        maxDays: 60,
+        description: "1-2 months before hearing"
+      },
       documents: [
         {
           name: "Document Disclosure List",
@@ -321,7 +345,11 @@ export const administrativeData: CourtProcedureData = {
       title: "7. Hearing",
       description: "The formal presentation of evidence and arguments before the tribunal.",
       details: "During the hearing, parties present evidence, examine witnesses, and make legal arguments. Procedures are typically less formal than courts.",
-      timeframe: "Half-day to multiple days depending on complexity",
+      timeline: {
+        minDays: 7,
+        maxDays: 30,
+        description: "Half-day to multiple days depending on complexity"
+      },
       documents: [
         {
           name: "Hearing Brief",
@@ -374,7 +402,11 @@ export const administrativeData: CourtProcedureData = {
       title: "8. Decision and Remedies",
       description: "The tribunal's ruling and orders addressing the dispute.",
       details: "After the hearing, the tribunal issues a written decision with reasons and any remedial orders or directions.",
-      timeframe: "2 weeks to 6 months after hearing",
+      timeline: {
+        minDays: 7,
+        maxDays: 30,
+        description: "2 weeks to 6 months after hearing"
+      },
       documents: [
         {
           name: "Written Decision",
@@ -427,7 +459,11 @@ export const administrativeData: CourtProcedureData = {
       title: "9. Appeals and Judicial Review",
       description: "Challenging tribunal decisions in courts.",
       details: "Tribunal decisions may be appealed (if legislation permits) or challenged through judicial review based on jurisdictional or procedural errors.",
-      timeframe: "Appeal/review applications typically due within 30 days; process takes 6-18 months",
+      timeline: {
+        minDays: 30,
+        maxDays: 30,
+        description: "Appeal/review applications typically due within 30 days; process takes 6-18 months"
+      },
       documents: [
         {
           name: "Notice of Appeal",

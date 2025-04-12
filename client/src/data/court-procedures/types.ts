@@ -36,6 +36,14 @@ export interface ProcedureStep {
   };
   tips?: string[];
   forms?: ProcedureForm[];
+  documents?: { name: string; description: string; required: boolean }[];
+  considerations?: string[];
+  provinceSpecific?: {
+    [province: string]: {
+      notes: string;
+      resources: string[];
+    };
+  };
 }
 
 export interface ProcedureForm {

@@ -8,7 +8,7 @@ export const familyCourtData: CourtProcedureData = {
   overview: {
     summary: "Family court procedures govern how family legal matters such as divorce, separation, child custody, and support are resolved in Canadian courts.",
     purpose: "To resolve family disputes in a manner that prioritizes the best interests of children and fair outcomes for all parties involved.",
-    applicability: "Applied in cases involving marriage dissolution, parenting arrangements, child and spousal support, division of property, and protection orders.",
+    applicability: ["Applied in cases involving marriage dissolution, parenting arrangements, child and spousal support, division of property, and protection orders."],
     mainFeatures: [
       "Strong emphasis on negotiation, mediation, and alternative dispute resolution",
       "Focus on the 'best interests of the child' principle",
@@ -22,7 +22,11 @@ export const familyCourtData: CourtProcedureData = {
       title: "1. Initial Application",
       description: "The formal start of family court proceedings through filing of application documents.",
       details: "Initiating documents outline what the applicant is seeking from the court and the facts supporting their position.",
-      timeframe: "1-4 weeks to prepare and file documents",
+      timeline: {
+        minDays: 7,
+        maxDays: 28,
+        description: "1-4 weeks to prepare and file documents"
+      },
       documents: [
         {
           name: "Application (General)",
@@ -75,7 +79,11 @@ export const familyCourtData: CourtProcedureData = {
       title: "2. Service and Response",
       description: "Process of legally delivering court documents to the other party and their formal response.",
       details: "After filing, documents must be properly served on the other party, who then has the opportunity to respond with their position.",
-      timeframe: "Respondent typically has 30 days to respond after service",
+      timeline: {
+        minDays: 30,
+        maxDays: 30,
+        description: "Respondent typically has 30 days to respond after service"
+      },
       documents: [
         {
           name: "Affidavit of Service",
@@ -128,7 +136,11 @@ export const familyCourtData: CourtProcedureData = {
       title: "3. Alternative Dispute Resolution",
       description: "Processes to resolve family disputes outside traditional courtroom litigation.",
       details: "Most family court systems strongly encourage or require parties to attempt resolution through negotiation, mediation, or other collaborative approaches.",
-      timeframe: "1-3 months",
+      timeline: {
+        minDays: 30,
+        maxDays: 90,
+        description: "1-3 months"
+      },
       documents: [
         {
           name: "Mediation Brief",
@@ -181,7 +193,11 @@ export const familyCourtData: CourtProcedureData = {
       title: "4. Interim Motions and Case Conferences",
       description: "Procedures for establishing temporary arrangements and managing the case before final resolution.",
       details: "Interim motions address immediate issues while the case proceeds, and case conferences help manage the case efficiently and explore settlement.",
-      timeframe: "1-6 months",
+      timeline: {
+        minDays: 30,
+        maxDays: 180,
+        description: "1-6 months"
+      },
       documents: [
         {
           name: "Notice of Motion",
@@ -234,7 +250,11 @@ export const familyCourtData: CourtProcedureData = {
       title: "5. Disclosure and Discovery",
       description: "Exchange of financial and personal information relevant to family law issues.",
       details: "Parties must disclose relevant financial and personal information to ensure informed decision-making and fair outcomes.",
-      timeframe: "2-6 months",
+      timeline: {
+        minDays: 60,
+        maxDays: 180,
+        description: "2-6 months"
+      },
       documents: [
         {
           name: "Financial Statement",
@@ -287,7 +307,11 @@ export const familyCourtData: CourtProcedureData = {
       title: "6. Trial Preparation and Trial",
       description: "Final preparation and formal hearing of evidence and arguments.",
       details: "If settlement is not reached, the case proceeds to trial where evidence is presented, witnesses testify, and a judge makes final determinations.",
-      timeframe: "Trial preparation: 2-6 months; Trial: 1-10 days (occasionally longer)",
+      timeline: {
+        minDays: 10,
+        maxDays: 10,
+        description: "Trial preparation: 2-6 months; Trial: 1-10 days (occasionally longer)"
+      },
       documents: [
         {
           name: "Trial Record",
@@ -340,7 +364,11 @@ export const familyCourtData: CourtProcedureData = {
       title: "7. Judgment and Enforcement",
       description: "The court's final decision and processes to ensure compliance.",
       details: "After trial, the judge issues a decision resolving all issues. The decision is formalized in orders, which can be enforced if not followed.",
-      timeframe: "Judgment: 1-3 months after trial; Enforcement: ongoing as needed",
+      timeline: {
+        minDays: 30,
+        maxDays: 90,
+        description: "Judgment: 1-3 months after trial; Enforcement: ongoing as needed"
+      },
       documents: [
         {
           name: "Final Order",
