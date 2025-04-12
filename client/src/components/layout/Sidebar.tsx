@@ -10,6 +10,7 @@ export function Sidebar() {
   const [isComplianceCheckerRoute] = useRoute("/compliance-checker");
   const [isCourtProceduresRoute] = useRoute("/court-procedures");
   const [isDocumentNavigatorRoute] = useRoute("/document-navigator");
+  const [isTimelineEstimatorRoute] = useRoute("/timeline-estimator");
   const [isLegalDomainsRoute] = useRoute("/legal-domains");
   
   // Document template routes
@@ -97,6 +98,14 @@ export function Sidebar() {
                 <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isDocumentNavigatorRoute ? 'bg-blue-50 text-primary' : ''}`}>
                   <span className={`material-icons mr-3 ${isDocumentNavigatorRoute ? 'text-primary' : 'text-neutral-500'}`}>find_in_page</span>
                   <span>Document Navigator</span>
+                </div>
+              </Link>
+            </li>
+            <li>
+              <Link href="/timeline-estimator">
+                <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isTimelineEstimatorRoute ? 'bg-blue-50 text-primary' : ''}`}>
+                  <span className={`material-icons mr-3 ${isTimelineEstimatorRoute ? 'text-primary' : 'text-neutral-500'}`}>schedule</span>
+                  <span>Timeline Estimator</span>
                 </div>
               </Link>
             </li>
