@@ -1,22 +1,25 @@
 export interface CourtProcedureData {
   id: string;
-  slug: string;
+  slug?: string;
   title: string;
   description: string;
-  category: string;
+  category?: string;
+  icon?: string;
   overview: ProcedureOverview;
   steps: ProcedureStep[];
-  requiredDocuments: RequiredDocument[];
-  faqs: FAQ[];
+  requiredDocuments?: RequiredDocument[];
+  faqs?: FAQ[];
 }
 
 export interface ProcedureOverview {
   summary: string;
+  purpose?: string;
   applicability: string[];
-  jurisdiction: string;
-  timeframe: string;
-  costRange: string;
-  resources: Resource[];
+  jurisdiction?: string;
+  timeframe?: string;
+  costRange?: string;
+  mainFeatures?: string[];
+  resources?: Resource[];
 }
 
 export interface Resource {

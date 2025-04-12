@@ -4,6 +4,7 @@ export const smallClaimsData: CourtProcedureData = {
   id: "small-claims",
   title: "Small Claims Court",
   description: "The simplified process for resolving minor civil disputes with limited monetary value",
+  category: "civil",
   icon: "coins",
   overview: {
     summary: "Small Claims Court provides a streamlined, accessible process for resolving civil disputes involving claims below a specific monetary threshold, which varies by province.",

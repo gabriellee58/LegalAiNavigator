@@ -4,6 +4,7 @@ export const familyCourtData: CourtProcedureData = {
   id: "family-court",
   title: "Family Court",
   description: "The process for resolving family law matters including divorce, custody and support",
+  category: "family",
   icon: "home",
   overview: {
     summary: "Family court procedures govern how family legal matters such as divorce, separation, child custody, and support are resolved in Canadian courts.",

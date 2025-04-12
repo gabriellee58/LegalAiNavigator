@@ -4,6 +4,7 @@ export const administrativeData: CourtProcedureData = {
   id: "administrative-tribunals",
   title: "Administrative Tribunals",
   description: "Specialized procedures for resolving disputes related to government agencies and regulations",
+  category: "administrative",
   icon: "building",
   overview: {
     summary: "Administrative tribunals are specialized quasi-judicial bodies that resolve disputes arising from government regulations, social benefits, and specific regulated sectors.",
