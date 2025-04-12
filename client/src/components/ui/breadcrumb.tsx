@@ -112,6 +112,43 @@ const BreadcrumbEllipsis = ({
 )
 BreadcrumbEllipsis.displayName = "BreadcrumbEllipsis"
 
+// Higher-order component to add breadcrumbs to a page
+interface BreadcrumbItem {
+  href: string;
+  label: string;
+}
+
+const withBreadcrumbs = <P extends object>(
+  Component: React.ComponentType<P>,
+  items: BreadcrumbItem[]
+) => {
+  const WithBreadcrumbs = (props: P) => {
+    return (
+      <div className="space-y-6">
+        <Breadcrumb>
+          <BreadcrumbList>
+            {items.map((item, index) => (
+              <React.Fragment key={item.href}>
+                <BreadcrumbItem>
+                  {index === items.length - 1 ? (
+                    <BreadcrumbPage>{item.label}</BreadcrumbPage>
+                  ) : (
+                    <BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>
+                  )}
+                </BreadcrumbItem>
+                {index < items.length - 1 && <BreadcrumbSeparator />}
+              </React.Fragment>
+            ))}
+          </BreadcrumbList>
+        </Breadcrumb>
+        <Component {...props} />
+      </div>
+    );
+  };
+
+  return WithBreadcrumbs;
+};
+
 export {
   Breadcrumb,
   BreadcrumbList,
@@ -120,4 +157,5 @@ export {
   BreadcrumbPage,
   BreadcrumbSeparator,
   BreadcrumbEllipsis,
+  withBreadcrumbs
 }

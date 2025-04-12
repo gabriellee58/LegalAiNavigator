@@ -4,175 +4,279 @@ const civilProcedureData: CourtProcedureData = {
   id: 'civil-procedure',
   slug: 'civil-procedure',
   title: 'Civil Court Procedure',
-  description: 'A comprehensive guide to navigating civil litigation in Canadian courts.',
+  description: 'A guide to understanding civil litigation procedure in Canadian courts.',
   category: 'Civil',
   overview: {
-    summary: 'Civil procedure in Canada governs how non-criminal disputes between parties are resolved through the court system. These procedures establish the rules and standards for bringing a lawsuit, gathering evidence, conducting trials, and appealing decisions.',
+    summary: 'Civil procedure in Canada governs disputes between individual parties, companies, or organizations. It provides a structured process for resolving conflicts through the court system when parties cannot reach an agreement on their own.',
     applicability: [
-      'Contract disputes',
-      'Property damage claims',
-      'Personal injury cases',
+      'Breach of contract disputes',
+      'Personal injury claims',
+      'Property disputes',
+      'Debt collection',
       'Professional negligence claims',
-      'Debt collection matters'
+      'Employment disputes'
     ],
-    jurisdiction: 'Provincial and territorial superior courts across Canada',
-    timeframe: 'Typically 1-3 years from filing to trial',
-    costRange: 'CAD $10,000 - $100,000+ depending on complexity and duration',
+    jurisdiction: 'Provincial/territorial superior courts and small claims courts across Canada',
+    timeframe: 'From several months to 3+ years depending on complexity',
+    costRange: 'Small claims: CAD $1,000-$15,000; Superior court: CAD $15,000-$100,000+',
     resources: [
       {
-        name: 'Rules of Civil Procedure (Ontario)',
-        url: 'https://www.ontario.ca/laws/regulation/900194'
+        name: 'Rules of Civil Procedure',
+        url: 'https://www.canlii.org/en/on/laws/regu/rro-1990-reg-194/latest/rro-1990-reg-194.html'
       },
       {
-        name: 'Supreme Court Civil Rules (British Columbia)',
-        url: 'https://www.bclaws.gov.bc.ca/civix/document/id/complete/statreg/168_2009_00'
+        name: 'Self-Help Guide for Civil Claims',
+        url: 'https://www.justice.gc.ca/eng/rp-pr/csj-sjc/just/11160/'
       }
     ]
   },
   steps: [
     {
-      id: 'pre-action',
-      title: 'Pre-Action Considerations',
-      description: 'Steps to take before initiating a lawsuit',
-      details: 'Before filing a lawsuit, parties should explore alternative dispute resolution methods such as negotiation or mediation, gather relevant evidence, assess the strength of their case, consider limitation periods, and determine the appropriate court and jurisdiction for filing.',
+      id: 'pre-filing',
+      title: 'Pre-Filing Considerations',
+      description: 'Evaluating your case before starting legal proceedings',
+      details: 'Before filing a civil claim, evaluate the legal and factual basis of your case, consider alternative dispute resolution options, and ensure you\'re within the limitation period (typically 2 years for most claims).',
       timeline: {
-        minDays: 30,
+        minDays: 1,
         maxDays: 90,
-        description: 'Time needed to gather evidence, attempt resolution, and consult with legal counsel'
+        description: 'Varies based on case complexity and urgency'
       },
       tips: [
-        'Send a demand letter outlining your claim and proposed resolution',
-        'Research limitation periods that may apply to your claim',
-        'Consult with a lawyer to assess the merits of your case'
+        'Consider sending a demand letter before filing a claim',
+        'Consult with a lawyer to evaluate the merits of your case',
+        'Gather all relevant documents and evidence'
       ]
     },
     {
       id: 'pleadings',
-      title: 'Pleadings Stage',
-      description: 'Filing and responding to the initial court documents',
-      details: 'The pleadings stage begins when the plaintiff files a Statement of Claim (or Notice of Civil Claim in BC) which outlines the basis of their case, the relief sought, and the material facts. The defendant then files a Statement of Defence within the prescribed time limit (usually 20-30 days).',
-      requirements: [
-        'Statement of Claim/Notice of Civil Claim',
-        'Statement of Defence',
-        'Reply (if applicable)'
-      ],
+      title: 'Pleadings',
+      description: 'Filing initial court documents to start the case',
+      details: 'The pleadings stage begins with the plaintiff filing a Statement of Claim or Notice of Civil Claim (varies by province) outlining the facts, legal basis, and remedy sought. The defendant must file a Statement of Defence within a specified time (typically 20-30 days).',
+      timeline: {
+        minDays: 20,
+        maxDays: 60,
+        description: 'Approximately 1-2 months for initial pleadings exchange'
+      },
       forms: [
         {
           id: 'statement-of-claim',
           name: 'Statement of Claim',
-          description: 'The document that initiates a lawsuit',
-          url: 'https://www.ontariocourtforms.on.ca/forms/civil/'
+          description: 'Document that initiates a lawsuit, outlining the plaintiff\'s claims',
+          url: 'https://www.ontariocourts.ca/scj/civil/'
+        },
+        {
+          id: 'statement-of-defence',
+          name: 'Statement of Defence',
+          description: 'Document responding to the claims made against the defendant',
+          url: 'https://www.ontariocourts.ca/scj/civil/'
         }
-      ],
-      timeline: {
-        minDays: 30,
-        maxDays: 60,
-        description: 'Time from filing claim to receiving defence'
-      }
+      ]
     },
     {
       id: 'discovery',
-      title: 'Discovery Process',
+      title: 'Discovery',
       description: 'Exchange of information and evidence between parties',
-      details: 'The discovery process involves the exchange of relevant documents, written questions (interrogatories), and oral examinations under oath (examinations for discovery/depositions). This allows parties to discover facts, narrow issues, and assess the strength of the opposing case.',
+      details: 'The discovery phase includes document disclosure (affidavit of documents), written discovery (interrogatories), and examinations for discovery (depositions). Parties must disclose all relevant documents and information, even if unfavorable to their case.',
       timeline: {
-        minDays: 90,
+        minDays: 60,
         maxDays: 365,
-        description: 'Can vary greatly depending on case complexity and cooperation between parties'
-      }
+        description: 'Typically 3-12 months depending on complexity'
+      },
+      forms: [
+        {
+          id: 'affidavit-of-documents',
+          name: 'Affidavit of Documents',
+          description: 'Sworn statement listing all relevant documents in a party\'s possession',
+          url: 'https://www.ontariocourts.ca/scj/civil/'
+        }
+      ]
+    },
+    {
+      id: 'mediation',
+      title: 'Mediation',
+      description: 'Attempt to resolve the dispute with a neutral third party',
+      details: 'In many Canadian jurisdictions, mandatory mediation is required before proceeding to trial. A neutral mediator helps parties negotiate a settlement. While not binding, agreements reached can be formalized into court orders.',
+      timeline: {
+        minDays: 1,
+        maxDays: 180,
+        description: 'Usually scheduled within 6 months of pleadings completion'
+      },
+      tips: [
+        'Prepare a mediation brief outlining your position',
+        'Consider your BATNA (Best Alternative To a Negotiated Agreement)',
+        'Be prepared to compromise'
+      ]
     },
     {
       id: 'pre-trial',
-      title: 'Pre-Trial Procedures',
-      description: 'Final preparations before trial',
-      details: 'Pre-trial procedures include mediation (mandatory in some jurisdictions), pre-trial conferences with a judge, and the exchange of expert reports. These steps aim to narrow issues, encourage settlement, and ensure trial readiness.',
+      title: 'Pre-Trial Conference',
+      description: 'Meeting with a judge to prepare for trial',
+      details: 'The pre-trial conference is a meeting with a judge to discuss settlement possibilities, narrow issues for trial, address procedural matters, and estimate trial length. Parties must prepare a pre-trial conference brief summarizing their position.',
       timeline: {
-        minDays: 60,
-        maxDays: 180,
-        description: 'Typically occurs 2-6 months before trial date'
-      }
+        minDays: 1,
+        maxDays: 1,
+        description: 'Usually a single day, scheduled several months before trial'
+      },
+      forms: [
+        {
+          id: 'pre-trial-conference-brief',
+          name: 'Pre-Trial Conference Brief',
+          description: 'Document summarizing the case and issues for the pre-trial judge',
+          url: 'https://www.ontariocourts.ca/scj/civil/'
+        }
+      ]
+    },
+    {
+      id: 'trial-preparation',
+      title: 'Trial Preparation',
+      description: 'Final preparations before the court hearing',
+      details: 'Trial preparation includes finalizing witness lists, preparing witnesses, organizing exhibits, researching legal issues, preparing opening and closing statements, and finalizing a trial brief or trial record.',
+      timeline: {
+        minDays: 30,
+        maxDays: 90,
+        description: '1-3 months before trial date'
+      },
+      forms: [
+        {
+          id: 'trial-record',
+          name: 'Trial Record',
+          description: 'Collection of pleadings and other key documents for the trial',
+          url: 'https://www.ontariocourts.ca/scj/civil/'
+        }
+      ]
     },
     {
       id: 'trial',
       title: 'Trial',
-      description: 'Formal court hearing to decide the dispute',
-      details: 'The trial involves opening statements, presentation of evidence, examination and cross-examination of witnesses, closing arguments, and finally the judge\'s decision. Most civil trials are heard by a judge alone, though jury trials are possible in some circumstances.',
+      description: 'Formal court hearing to determine the case outcome',
+      details: 'At trial, each party presents evidence through witnesses and documents. The trial follows a structured format: opening statements, plaintiff\'s case, defendant\'s case, and closing arguments. The judge (or jury in some cases) renders a decision based on the evidence presented.',
       timeline: {
         minDays: 1,
-        maxDays: 60,
-        description: 'From one day to several weeks depending on complexity'
-      }
+        maxDays: 30,
+        description: 'From half a day for simple matters to weeks for complex cases'
+      },
+      tips: [
+        'Be professional and respectful in court',
+        'Speak clearly and directly when called as a witness',
+        'Address the judge as "Your Honour"'
+      ]
     },
     {
       id: 'judgment',
-      title: 'Judgment and Appeals',
-      description: 'Decision and potential review by higher courts',
-      details: 'After trial, the judge renders a decision with reasons. The prevailing party typically receives a cost award. Either party may appeal the decision to a higher court if there are grounds to believe the trial judge made an error of law.',
+      title: 'Judgment',
+      description: 'Court\'s decision on the case',
+      details: 'The judgment is the court\'s decision on the case, which may be delivered immediately after trial or reserved for a later date. The judgment will determine liability and any damages or other remedies awarded.',
       timeline: {
-        minDays: 30,
-        maxDays: 730,
-        description: 'Appeals can take 1-2 years to resolve'
+        minDays: 1,
+        maxDays: 180,
+        description: 'Immediate to 6 months after trial completion'
       }
     },
     {
-      id: 'enforcement',
-      title: 'Enforcement of Judgment',
-      description: 'Collecting on a successful judgment',
-      details: 'If the losing party doesn\'t voluntarily comply with the judgment, the successful party can use various enforcement mechanisms including garnishment of wages or bank accounts, liens on property, seizure and sale of assets, or examination in aid of execution.',
+      id: 'costs',
+      title: 'Costs Assessment',
+      description: 'Determining who pays the legal costs',
+      details: 'In Canada, the losing party typically pays a portion of the winning party\'s legal costs. The court assesses costs based on factors such as success in the litigation, reasonableness of costs, and conduct of the parties.',
       timeline: {
         minDays: 30,
-        maxDays: 365,
-        description: 'Can be quick if the debtor has accessible assets, or lengthy if enforcement is challenging'
-      }
+        maxDays: 90,
+        description: '1-3 months after judgment'
+      },
+      forms: [
+        {
+          id: 'bill-of-costs',
+          name: 'Bill of Costs',
+          description: 'Itemized statement of legal costs incurred by a party',
+          url: 'https://www.ontariocourts.ca/scj/civil/'
+        }
+      ]
+    },
+    {
+      id: 'enforcement',
+      title: 'Judgment Enforcement',
+      description: 'Collecting on the judgment if the losing party doesn\'t pay',
+      details: 'If the losing party doesn\'t voluntarily comply with the judgment, the winning party can use enforcement mechanisms such as garnishment of wages or bank accounts, liens on property, seizure and sale of assets, or examination in aid of execution.',
+      timeline: {
+        minDays: 30,
+        maxDays: 730,
+        description: 'From 1 month to several years depending on complexity'
+      },
+      forms: [
+        {
+          id: 'writ-of-seizure',
+          name: 'Writ of Seizure and Sale',
+          description: 'Court order allowing the seizure and sale of the debtor\'s property',
+          url: 'https://www.ontariocourts.ca/scj/civil/'
+        }
+      ]
+    },
+    {
+      id: 'appeal',
+      title: 'Appeals',
+      description: 'Challenging the judgment in a higher court',
+      details: 'If there are grounds for appeal (typically errors of law or procedure), a party may appeal to a higher court. Appeals must be filed within strict time limits (usually 30 days from judgment) and are not a re-trial of the case but a review of the lower court\'s decision.',
+      timeline: {
+        minDays: 30,
+        maxDays: 730,
+        description: 'Notice of appeal usually within 30 days; appeal process 1-2 years'
+      },
+      forms: [
+        {
+          id: 'notice-of-appeal',
+          name: 'Notice of Appeal',
+          description: 'Document initiating an appeal, outlining grounds for appeal',
+          url: 'https://www.ontariocourts.ca/coa/en/'
+        }
+      ]
     }
   ],
   requiredDocuments: [
     {
-      name: 'Statement of Claim',
-      description: 'The initiating document that sets out the plaintiff\'s claim and the relief sought.',
-      source: 'Prepared by plaintiff\'s counsel'
+      name: 'Statement of Claim/Notice of Civil Claim',
+      description: 'The document that initiates a lawsuit, setting out the facts, legal basis, and remedy sought by the plaintiff.',
+      source: 'Prepared by plaintiff or plaintiff\'s lawyer'
     },
     {
       name: 'Statement of Defence',
-      description: 'The defendant\'s response to the claim, setting out their version of events and any defences.',
-      source: 'Prepared by defendant\'s counsel'
+      description: 'The defendant\'s response to the Statement of Claim, addressing each allegation and stating any defences.',
+      source: 'Prepared by defendant or defendant\'s lawyer'
     },
     {
       name: 'Affidavit of Documents',
-      description: 'A sworn statement listing all relevant documents in a party\'s possession or control.',
-      source: 'Prepared by each party\'s legal team'
+      description: 'A sworn statement listing all documents in a party\'s possession relevant to the issues in the litigation.',
+      source: 'Both parties must prepare'
     },
     {
       name: 'Expert Reports',
       description: 'Written opinions from qualified experts on technical or specialized matters relevant to the case.',
-      source: 'Commissioned from independent experts'
+      source: 'Commissioned by either party'
     },
     {
-      name: 'Pre-Trial Conference Memorandum',
-      description: 'A document summarizing the issues, evidence, and positions of each party before trial.',
-      source: 'Prepared by each party\'s legal team'
+      name: 'Trial Brief',
+      description: 'A document summarizing the facts, issues, and legal arguments for the trial judge.',
+      source: 'Prepared by each party\'s lawyer'
     }
   ],
   faqs: [
     {
-      question: 'How long do I have to file a civil lawsuit?',
-      answer: 'Limitation periods vary by province and type of claim. In most provinces, the basic limitation period is 2 years from the date the claim was discovered, but some claims have shorter periods.'
+      question: 'What is the difference between small claims court and superior court?',
+      answer: 'Small claims court handles cases with lower monetary values (limits vary by province, typically $5,000-$50,000) with simplified procedures, while superior courts handle cases of higher monetary value and more complex legal issues. Small claims courts are designed to be more accessible for self-represented litigants.'
     },
     {
-      question: 'What\'s the difference between Small Claims Court and Superior Court?',
-      answer: 'Small Claims Court handles cases with lower monetary values (typically up to $25,000-$50,000 depending on the province) with simplified procedures. Superior Court handles claims of any value and more complex matters.'
+      question: 'How long does a civil lawsuit typically take in Canada?',
+      answer: 'The duration varies significantly based on complexity, jurisdiction, and court backlog. Simple small claims matters might be resolved in 6-12 months, while complex superior court cases can take 2-5 years from filing to judgment, especially if there are appeals.'
     },
     {
-      question: 'Can I represent myself in civil court?',
-      answer: 'Yes, you can represent yourself (appear as a "self-represented litigant"), but civil procedure is complex. If your case is significant, consulting with a lawyer is recommended, even if only for limited assistance.'
+      question: 'What are the costs involved in civil litigation?',
+      answer: 'Costs include court filing fees, lawyer fees, expert witness fees, copying and document preparation, and potentially a portion of the opposing party\'s costs if you lose. Lawyer fees often represent the largest expense, typically ranging from $250-$600 per hour depending on experience and location.'
     },
     {
-      question: 'What costs might I have to pay if I lose my case?',
-      answer: 'The unsuccessful party typically pays a portion of the successful party\'s legal costs (usually 30-60% of actual costs). This is in addition to your own legal fees and disbursements.'
+      question: 'What is the limitation period for filing a civil claim?',
+      answer: 'Most civil claims in Canada have a limitation period of 2 years from when the claim was discovered. Some claims have different periods (e.g., 6 years for some contracts in certain provinces). Once the limitation period expires, you may lose your right to sue.'
     },
     {
-      question: 'Is alternative dispute resolution mandatory?',
-      answer: 'In some provinces, certain types of cases require mandatory mediation before trial. Even when not mandatory, courts strongly encourage parties to attempt settlement through negotiation, mediation, or arbitration.'
+      question: 'Can I represent myself in a civil case?',
+      answer: 'Yes, you can represent yourself (called being a "self-represented litigant") in any civil proceeding. However, the complexity of civil procedure and rules of evidence makes self-representation challenging in superior court. Consider consulting with a lawyer even if you plan to represent yourself.'
     }
   ]
 };

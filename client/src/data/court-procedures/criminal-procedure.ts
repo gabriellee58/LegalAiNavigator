@@ -1,6 +1,6 @@
 import { CourtProcedureData } from './types';
 
-export const criminalProcedureData: CourtProcedureData = {
+const criminalProcedureData: CourtProcedureData = {
   id: 'criminal-procedure',
   slug: 'criminal-procedure',
   title: 'Criminal Court Procedure',
@@ -25,10 +25,6 @@ export const criminalProcedureData: CourtProcedureData = {
       {
         name: 'Canadian Charter of Rights and Freedoms',
         url: 'https://laws-lois.justice.gc.ca/eng/const/page-12.html'
-      },
-      {
-        name: 'Legal Aid Ontario',
-        url: 'https://www.legalaid.on.ca/services/criminal-legal-issues/'
       }
     ]
   },
@@ -37,7 +33,7 @@ export const criminalProcedureData: CourtProcedureData = {
       id: 'investigation',
       title: 'Investigation',
       description: 'Police gather evidence about a potential crime',
-      details: 'The criminal process typically begins with a police investigation. This can be triggered by a complaint, observation of criminal activity, or as part of ongoing investigative work. Police may interview witnesses, collect physical evidence, execute search warrants, and conduct surveillance. This stage concludes when police either determine there is insufficient evidence to proceed or decide they have reasonable grounds to believe an offence has been committed.',
+      details: 'The criminal process typically begins with a police investigation. This can be triggered by a complaint, observation of criminal activity, or as part of ongoing investigative work.',
       timeline: {
         minDays: 1,
         maxDays: 365,
@@ -45,263 +41,126 @@ export const criminalProcedureData: CourtProcedureData = {
       },
       tips: [
         'You have the right to remain silent when questioned by police',
-        'You have the right to speak to a lawyer if detained or arrested',
-        'Police must follow legal requirements for searches and seizures'
-      ],
-      warnings: [
-        'Do not interfere with police investigations',
-        'False statements to police can lead to additional charges',
-        'Evidence obtained improperly may still be used if courts deem its inclusion would not bring the administration of justice into disrepute'
+        'You have the right to speak to a lawyer if detained or arrested'
       ]
     },
     {
       id: 'arrest-charge',
       title: 'Arrest and Charge',
-      description: 'Official detention and formal accusation',
-      details: 'If police have reasonable grounds to believe a person has committed an offence, they may arrest the individual or issue a summons to appear in court. Following arrest, the accused must be informed of the reason for arrest, the right to counsel, and be given the opportunity to speak with a lawyer. Police may release the accused with conditions or hold them for a bail hearing. Crown prosecutors review the evidence and determine whether to proceed with charges.',
-      requirements: [
-        'Proper arrest procedure and Charter rights notification',
-        'Access to legal counsel',
-        'Formal charging document'
-      ],
+      description: 'Formal accusation of criminal conduct',
+      details: 'If police believe there are reasonable and probable grounds that you committed an offence, they may arrest you. After arrest, the Crown prosecutor decides whether to lay charges based on the likelihood of conviction and public interest in prosecution.',
       timeline: {
         minDays: 1,
         maxDays: 7,
-        description: 'Usually within 24 hours for bail hearing following arrest'
+        description: 'Charges are typically laid shortly after arrest'
       },
       forms: [
         {
           id: 'information',
           name: 'Information',
-          description: 'The formal charging document that initiates criminal proceedings'
-        },
-        {
-          id: 'promise-to-appear',
-          name: 'Promise to Appear',
-          description: 'Document issued when police release an accused with an obligation to appear in court'
+          description: 'The formal document that starts a criminal proceeding',
+          url: 'https://www.justice.gc.ca/eng/cj-jp/victims-victimes/court-tribunaux/charges.html'
         }
-      ],
-      warnings: [
-        'Failure to appear in court as required will result in additional charges',
-        'Violation of release conditions can result in detention until trial'
       ]
     },
     {
-      id: 'bail-hearing',
+      id: 'bail',
       title: 'Bail Hearing',
-      description: 'Determination of pre-trial release or detention',
-      details: 'If not released by police, the accused must be brought before a judge or justice of the peace within 24 hours for a bail hearing (also called a "show cause" or "judicial interim release" hearing). The Crown must show cause why the accused should remain in custody, except for certain serious offences where the accused must justify why they should be released. The court may order release with conditions, release with a surety, or detention until trial.',
-      requirements: [
-        'Bail hearing within 24 hours of arrest',
-        'Legal representation (duty counsel available if needed)',
-        'Potential surety (person who vouches for accused)'
-      ],
+      description: 'Determination if accused should be released before trial',
+      details: 'A bail hearing (also called a "show cause hearing") determines whether you will be released while awaiting trial, and under what conditions. The onus is usually on the Crown to show why you should be detained.',
       timeline: {
         minDays: 1,
         maxDays: 3,
-        description: 'Initial hearing within 24 hours; may be adjourned briefly to arrange sureties'
-      },
-      costs: [
-        {
-          description: 'Bail amount (if applicable)',
-          amount: 'Varies widely based on offence and risk factors'
-        }
-      ],
-      warnings: [
-        'Some serious charges carry a reverse onus where the accused must show why they should be released',
-        'Violation of bail conditions can result in immediate re-arrest'
-      ]
+        description: 'Must occur within 24 hours of arrest (excluding holidays and weekends)'
+      }
     },
     {
       id: 'first-appearance',
       title: 'First Appearance',
-      description: 'Initial court proceeding',
-      details: 'The first appearance is typically administrative in nature. The accused is formally advised of the charges, and matters regarding disclosure of evidence and legal representation are addressed. For less serious offences, the accused may be asked to enter a plea at this stage. For indictable (more serious) offences, the plea typically comes later. This appearance may be adjourned to allow time for the accused to review disclosure and obtain legal advice.',
-      requirements: [
-        'Appearance in person or by counsel',
-        'Review of charges'
-      ],
+      description: 'Initial court appearance to address procedural matters',
+      details: 'At the first appearance, you will be informed of the charges against you and may be asked how you plead. Often, this is adjourned to allow time to retain a lawyer, review disclosure, or discuss resolution with the Crown.',
       timeline: {
         minDays: 1,
         maxDays: 30,
-        description: 'Usually within 1-4 weeks after arrest/summons'
-      },
-      tips: [
-        'Consider applying for legal aid if you cannot afford a lawyer',
-        'Do not enter a plea until you have reviewed disclosure and obtained legal advice',
-        'Ask about diversion programs if eligible'
-      ]
+        description: 'Typically within days or weeks of charge'
+      }
     },
     {
       id: 'disclosure',
       title: 'Disclosure',
-      description: 'Crown provides evidence to the defence',
-      details: 'The Crown has a constitutional obligation to provide the defence with all relevant evidence in its possession, whether favorable or unfavorable to the accused. This includes witness statements, police notes, scientific reports, video recordings, and any other material relevant to the case. Disclosure is an ongoing process, and the Crown must continue to provide new evidence as it becomes available. The defence reviews this material to prepare the case.',
-      requirements: [
-        'Crown must provide all relevant evidence',
-        'Defence must follow confidentiality rules regarding disclosure'
-      ],
+      description: 'Receipt of evidence the Crown has against the accused',
+      details: 'The Crown must provide all relevant evidence they have against you, including potentially exculpatory evidence. This includes police reports, witness statements, videos, etc.',
       timeline: {
         minDays: 30,
-        maxDays: 120,
-        description: 'Initial disclosure within 4-8 weeks; ongoing as needed'
-      },
-      tips: [
-        'Review disclosure carefully with your lawyer',
-        'Identify any missing evidence and request it formally',
-        'Look for inconsistencies or Charter violations'
-      ]
+        maxDays: 180,
+        description: 'Initial disclosure before plea, continuing obligation thereafter'
+      }
     },
     {
-      id: 'election-plea',
-      title: 'Election and Plea',
-      description: 'Choosing trial type and formally responding to charges',
-      details: 'For hybrid or indictable offences, the accused must make an election regarding the type of trial: provincial court judge alone, superior court judge alone, or superior court judge and jury. After reviewing disclosure and obtaining legal advice, the accused enters a plea of guilty or not guilty. A guilty plea results in proceeding to sentencing, while a not guilty plea leads to trial scheduling.',
-      requirements: [
-        'Understanding of election options',
-        'Informed decision on plea'
-      ],
+      id: 'plea',
+      title: 'Plea',
+      description: 'Formal response to the charges',
+      details: 'After reviewing disclosure, you will be asked to enter a plea of guilty or not guilty. If you plead guilty, the process moves to sentencing. If not guilty, the process continues to trial.',
       timeline: {
         minDays: 1,
-        maxDays: 60,
-        description: 'Usually after sufficient time to review disclosure'
-      },
-      tips: [
-        'Consider the practical implications of different trial options',
-        'A guilty plea typically results in a more lenient sentence than if convicted after trial',
-        'Discuss all options thoroughly with your lawyer before making decisions'
-      ]
+        maxDays: 1,
+        description: 'Takes place during a court appearance'
+      }
     },
     {
-      id: 'preliminary-inquiry',
-      title: 'Preliminary Inquiry',
-      description: 'Pre-trial hearing to determine if sufficient evidence exists',
-      details: 'For certain indictable offences where the accused has elected trial in superior court, a preliminary inquiry may be held. This is a hearing before a provincial court judge to determine if there is sufficient evidence for the case to proceed to trial. The Crown presents evidence, and the defence may cross-examine witnesses. If the judge finds sufficient evidence, the accused is committed to stand trial.',
-      requirements: [
-        'Request for preliminary inquiry',
-        'Statement of issues to be explored'
-      ],
-      timeline: {
-        minDays: 60,
-        maxDays: 180,
-        description: 'Typically 2-6 months after election'
-      },
-      tips: [
-        'Use the preliminary inquiry to test Crown evidence',
-        'Witnesses\' testimony under oath may be used at trial if they change their story',
-        'Consider whether a preliminary inquiry serves your defence strategy'
-      ],
-      warnings: [
-        'Preliminary inquiries are now limited in scope and availability following recent legal reforms'
-      ]
-    },
-    {
-      id: 'pre-trial-motions',
-      title: 'Pre-Trial Motions',
-      description: 'Legal arguments before trial begins',
-      details: 'Before trial, either side may bring motions to address legal issues. Common pre-trial motions include Charter applications to exclude evidence obtained in violation of the accused\'s rights, disclosure motions seeking specific evidence, and third-party records applications. These motions may significantly impact the evidence available at trial and sometimes result in charges being dismissed.',
-      requirements: [
-        'Written motion materials',
-        'Legal arguments and case law',
-        'Supporting evidence'
-      ],
+      id: 'pre-trial',
+      title: 'Pre-Trial Proceedings',
+      description: 'Preparation and procedural matters before trial',
+      details: 'Pre-trial proceedings may include judicial pre-trials (meetings between judge, Crown, and defence), preliminary inquiries (for indictable offences to determine if there is sufficient evidence to proceed to trial), and Charter applications (to challenge aspects of the case).',
       timeline: {
         minDays: 30,
-        maxDays: 120,
-        description: 'Typically heard 1-4 months before trial'
-      },
-      tips: [
-        'Identify potential Charter violations early',
-        'File motions within prescribed timelines',
-        'Prepare thorough written materials to support your position'
-      ]
+        maxDays: 365,
+        description: 'Varies greatly depending on complexity of case'
+      }
     },
     {
       id: 'trial',
       title: 'Trial',
-      description: 'Formal hearing to determine guilt or innocence',
-      details: 'The trial is where the Crown presents its case against the accused, who is presumed innocent until proven guilty beyond a reasonable doubt. The process includes opening statements, Crown evidence, defence evidence (if any), closing arguments, and the judge\'s decision or jury verdict. The Crown bears the burden of proving all elements of the offence. The accused has the right to remain silent and is not required to testify or call evidence.',
-      requirements: [
-        'Thorough trial preparation',
-        'Witness preparation if applicable',
-        'Legal arguments on admissibility of evidence'
-      ],
+      description: 'Formal court process to determine guilt or innocence',
+      details: 'At trial, the Crown presents evidence to prove guilt beyond a reasonable doubt. The defence may challenge this evidence and/or present its own evidence. For serious offences, you may have the right to a jury trial.',
       timeline: {
         minDays: 1,
-        maxDays: 120,
-        description: 'From hours for simple cases to months for complex ones'
-      },
-      costs: [
-        {
-          description: 'Legal representation at trial',
-          amount: 'CAD $1,500-10,000+ per trial day'
-        },
-        {
-          description: 'Expert witness fees (if applicable)',
-          amount: 'CAD $2,000-5,000 per day'
-        }
-      ],
-      tips: [
-        'Maintain professional demeanor in court',
-        'Focus on reasonable doubt in the Crown\'s case',
-        'Prepare thoroughly for potential cross-examination if testifying'
-      ]
+        maxDays: 90,
+        description: 'From half a day for simple matters to weeks or months for complex cases'
+      }
+    },
+    {
+      id: 'verdict',
+      title: 'Verdict',
+      description: 'Decision on guilt or innocence',
+      details: 'After hearing all evidence, the judge or jury renders a verdict of guilty or not guilty. A finding of not guilty results in acquittal. A guilty verdict moves the process to sentencing.',
+      timeline: {
+        minDays: 1,
+        maxDays: 30,
+        description: 'Immediately after trial or after a period of deliberation'
+      }
     },
     {
       id: 'sentencing',
       title: 'Sentencing',
-      description: 'Determination of penalty following conviction',
-      details: 'If the accused pleads guilty or is found guilty after trial, the court proceeds to sentencing. Both Crown and defence make submissions on the appropriate sentence, considering factors such as the severity of the offence, the offender\'s criminal record, aggravating and mitigating circumstances, and relevant sentencing principles. The judge determines the sentence, which may include discharge, probation, fines, imprisonment, or a combination of these.',
-      requirements: [
-        'Pre-sentence report (in some cases)',
-        'Victim impact statements (if provided)',
-        'Sentencing submissions'
-      ],
+      description: 'Determination of punishment if found guilty',
+      details: 'If convicted, the judge determines the appropriate sentence considering factors such as the severity of the offence, your criminal record, mitigating factors, aggravating factors, and sentencing principles in the Criminal Code.',
       timeline: {
         minDays: 1,
         maxDays: 90,
-        description: 'May occur immediately after conviction or be adjourned for preparation'
-      },
-      tips: [
-        'Gather character references and evidence of rehabilitation',
-        'Address factors like remorse, rehabilitation prospects, and root causes',
-        'Consider alternative or restorative justice options if appropriate'
-      ]
+        description: 'May occur immediately after verdict or at a later date'
+      }
     },
     {
       id: 'appeal',
-      title: 'Appeal',
-      description: 'Challenging conviction or sentence in a higher court',
-      details: 'Either the Crown or defence may appeal a verdict or sentence under certain circumstances. Appeals must be filed within strict time limits (typically 30 days). Grounds for appeal may include errors of law, misapprehension of evidence, or unreasonable verdict. The appeal court may uphold the decision, order a new trial, or modify the sentence. Further appeals to the Supreme Court of Canada require leave (permission) and typically involve important questions of law.',
-      requirements: [
-        'Notice of appeal within time limit',
-        'Grounds of appeal',
-        'Transcripts of proceedings'
-      ],
+      title: 'Appeals',
+      description: 'Challenging the verdict or sentence',
+      details: 'If there are legal grounds, you may appeal your conviction and/or sentence to a higher court. Appeals are typically based on errors of law or procedure, not simply disagreement with the outcome.',
       timeline: {
-        minDays: 180,
-        maxDays: 540,
-        description: 'Typically 6-18 months from filing to hearing'
-      },
-      costs: [
-        {
-          description: 'Appeal filing fees',
-          amount: 'CAD $200-500'
-        },
-        {
-          description: 'Transcript costs',
-          amount: 'CAD $2,000-10,000'
-        },
-        {
-          description: 'Legal fees for appeal',
-          amount: 'CAD $5,000-25,000+'
-        }
-      ],
-      warnings: [
-        'Appeals are limited to errors of law or serious errors of fact',
-        'Crown can also appeal acquittals on questions of law',
-        'The "fresh evidence" rule strictly limits introduction of new evidence on appeal'
-      ]
+        minDays: 30,
+        maxDays: 730,
+        description: 'Notice of appeal usually must be filed within 30 days; appeal process may take 1-2 years'
+      }
     }
   ],
   requiredDocuments: [
@@ -312,58 +171,45 @@ export const criminalProcedureData: CourtProcedureData = {
     },
     {
       name: 'Disclosure Package',
-      description: 'All relevant evidence in the Crown\'s possession related to the case.',
+      description: 'All relevant evidence the Crown has related to the charges, including police reports, witness statements, and other evidence.',
       source: 'Crown prosecutor\'s office'
     },
     {
-      name: 'Notice of Constitutional Challenge',
-      description: 'Document filed when the defence intends to challenge the constitutionality of a law or seek exclusion of evidence based on Charter violations.',
-      source: 'Prepared by defence counsel'
-    },
-    {
-      name: 'Pre-Trial Conference Report',
-      description: 'Summary of issues for trial, estimated length, and other procedural matters.',
-      source: 'Jointly prepared by Crown and defence'
-    },
-    {
-      name: 'Election Form',
-      description: 'Document recording the accused\'s choice of trial type (provincial court, superior court judge alone, or judge and jury).',
+      name: 'Bail Order',
+      description: 'Document outlining the conditions of release while awaiting trial, if bail is granted.',
       source: 'Court registry'
     },
     {
+      name: 'Notice of Application',
+      description: 'Filed by defence counsel to make pre-trial applications, such as Charter challenges.',
+      source: 'Prepared by defence counsel'
+    },
+    {
       name: 'Notice of Appeal',
-      description: 'Document initiating an appeal, stating grounds and relief sought.',
-      source: 'Prepared by appellant\'s counsel'
+      description: 'Document filed to initiate an appeal of conviction or sentence.',
+      source: 'Prepared by defence counsel'
     }
   ],
   faqs: [
     {
       question: 'What is the difference between summary and indictable offences?',
-      answer: 'Summary offences are less serious crimes with simpler procedures, lower maximum penalties (generally up to two years less a day imprisonment), and typically heard in provincial court. Indictable offences are more serious, often have higher maximum penalties, and may be tried in either provincial or superior court, sometimes with a jury. Many offences are "hybrid," meaning the Crown can elect to proceed summarily or by indictment.'
+      answer: 'Summary offences are less serious, with simpler procedures and lesser maximum penalties (generally up to 2 years imprisonment). Indictable offences are more serious, often with higher penalties, and may include the right to a jury trial. Some offences are "hybrid," meaning the Crown can elect to proceed either way.'
     },
     {
       question: 'Do I need a lawyer for a criminal case?',
-      answer: 'While not legally required, it is strongly recommended to have legal representation in criminal matters due to the complexity of the law and the serious potential consequences. If you cannot afford a lawyer, you may qualify for legal aid. At minimum, consider consulting duty counsel (free lawyers available at courthouses) for initial advice.'
+      answer: 'While you have the right to represent yourself, it\'s strongly recommended to have legal representation for criminal matters due to the complexity of criminal law and the potential serious consequences. If you cannot afford a lawyer, you may qualify for legal aid.'
     },
     {
-      question: 'What is a conditional discharge?',
-      answer: 'A conditional discharge is a sentence where you are found guilty but not convicted if you comply with certain conditions for a specified period. After successfully completing the conditions and waiting period, the discharge should be automatically removed from your criminal record. This sentence is not available for offences with minimum penalties or those with maximum penalties of 14 years or more.'
+      question: 'What happens if I can\'t afford bail?',
+      answer: 'If you cannot afford bail, you may remain in custody until your trial. In some provinces, there are bail verification and supervision programs that can provide support. You may also be able to have a surety (someone who promises to supervise you) help secure your release.'
     },
     {
-      question: 'Can the police search me or my property without a warrant?',
-      answer: 'Police can conduct searches without a warrant in limited circumstances: with your informed consent, incident to a lawful arrest, in emergency situations where evidence might be destroyed, during traffic stops in some circumstances, and where there are "exigent circumstances." If police conduct an illegal search, the evidence may still be admissible if the court decides that excluding it would bring the administration of justice into disrepute.'
+      question: 'What rights do I have when arrested?',
+      answer: 'Under the Charter of Rights and Freedoms, you have the right to be informed of the reason for arrest, to speak to a lawyer without delay, to remain silent, to be brought before a justice within 24 hours, and to a fair trial. You also have the right to be protected from unreasonable search and seizure.'
     },
     {
-      question: 'What happens if I violate my bail conditions?',
-      answer: 'Violating bail conditions is a separate criminal offence that can result in arrest, new charges, and detention until trial on both the original and new charges. Courts treat bail violations seriously as they represent a breach of trust, making it harder to get bail in the future.'
-    },
-    {
-      question: 'Will my criminal record ever be cleared?',
-      answer: 'Canada has a record suspension (formerly pardon) system. After a waiting period (5 years for summary offences, 10 years for indictable) following completion of your sentence, you can apply to have your record suspended if you\'ve been of good conduct. This doesn\'t erase the record but sets it apart from active records. Some serious offences are ineligible for record suspensions.'
-    },
-    {
-      question: 'What is diversion or alternative measures?',
-      answer: 'These programs allow eligible first-time or low-risk offenders to take responsibility for their actions outside the formal court process. Requirements may include community service, counseling, restitution, or apology letters. Upon successful completion, charges are withdrawn or stayed. Typically available for non-violent, less serious offences, particularly for youth and first-time offenders.'
+      question: 'What is a conditional sentence or discharge?',
+      answer: 'A conditional discharge means you\'re found guilty but no conviction is registered if you fulfill certain conditions. An absolute discharge means you\'re found guilty but no conviction is registered and no conditions are imposed. A conditional sentence is a jail sentence served in the community under strict conditions.'
     }
   ]
 };
