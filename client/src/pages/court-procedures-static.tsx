@@ -37,7 +37,7 @@ const CourtProceduresStaticPage: React.FC = () => {
     ? procedures.filter(p => 
         p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.category.toLowerCase().includes(searchQuery.toLowerCase())
+        (p.category && p.category.toLowerCase().includes(searchQuery.toLowerCase()))
       )
     : procedures;
 
@@ -266,7 +266,9 @@ const ProcedureDetail: React.FC<ProcedureDetailProps> = ({ procedure, onBack }) 
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="rounded-full bg-primary/10 p-2">
-                {procedure.category === 'Civil' ? <Scale className="h-5 w-5" /> : <Gavel className="h-5 w-5" />}
+                {procedure.category && procedure.category.toLowerCase() === 'civil' ? 
+                  <Scale className="h-5 w-5" /> : <Gavel className="h-5 w-5" />
+                }
               </div>
               <div>
                 <CardTitle>{procedure.title}</CardTitle>
@@ -452,13 +454,16 @@ const ProcedureDetail: React.FC<ProcedureDetailProps> = ({ procedure, onBack }) 
               <TabsContent value="faqs" className="space-y-4">
                 <div className="space-y-4">
                   {procedure.faqs && procedure.faqs.length > 0 ? (
-                    procedure.faqs.map((faq, index) => (
-                      <div key={index} className="space-y-2">
-                        <h3 className="font-medium text-lg">Q: {faq.question}</h3>
-                        <p className="text-muted-foreground">{faq.answer}</p>
-                        {index < procedure.faqs.length - 1 && <Separator className="my-3" />}
-                      </div>
-                    ))
+                    procedure.faqs.map((faq, index) => {
+                      const isLastItem = index === procedure.faqs!.length - 1;
+                      return (
+                        <div key={index} className="space-y-2">
+                          <h3 className="font-medium text-lg">Q: {faq.question}</h3>
+                          <p className="text-muted-foreground">{faq.answer}</p>
+                          {!isLastItem && <Separator className="my-3" />}
+                        </div>
+                      );
+                    })
                   ) : (
                     <div className="text-center py-6 text-muted-foreground">
                       No frequently asked questions available.

@@ -38,7 +38,7 @@ export function getAllProcedures(): CourtProcedureData[] {
  */
 export function getProceduresByCategory(category: string): CourtProcedureData[] {
   return Object.values(procedureDataMap).filter(
-    (procedure) => procedure.category.toLowerCase() === category.toLowerCase()
+    (procedure) => procedure.category && procedure.category.toLowerCase() === category.toLowerCase()
   );
 }
 
