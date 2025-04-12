@@ -182,19 +182,19 @@ function MobileSidebar() {
             </li>
             <li>
               <Link href="/contract-analysis" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
-                <span className="material-icons mr-3 text-primary">insert_drive_file</span>
+                <span className="material-icons mr-3 text-primary">Insert_Drive_File</span>
                 <span className="font-medium">Contract Analysis</span>
               </Link>
             </li>
             <li>
               <Link href="/dispute-resolution" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
-                <span className="material-icons mr-3 text-primary">gavel</span>
+                <span className="material-icons mr-3 text-primary">Gavel</span>
                 <span className="font-medium">{t("dispute_resolution")}</span>
               </Link>
             </li>
             <li>
               <Link href="/compliance-checker" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
-                <span className="material-icons mr-3 text-primary">verified</span>
+                <span className="material-icons mr-3 text-primary">Verified</span>
                 <span className="font-medium">{t("compliance_checker")}</span>
               </Link>
             </li>
@@ -206,7 +206,7 @@ function MobileSidebar() {
           <ul className="space-y-2">
             <li>
               <Link href="/documents/contracts" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
-                <span className="material-icons mr-3 text-primary">assignment</span>
+                <span className="material-icons mr-3 text-primary">Assignment</span>
                 <span className="font-medium">{t("contracts")}</span>
               </Link>
             </li>
