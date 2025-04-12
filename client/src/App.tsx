@@ -118,9 +118,9 @@ function Router() {
       <ProtectedRoute path="/dispute-resolution" component={DisputeResolutionPage} />
       <ProtectedRoute path="/dispute/:id" component={DisputeDetailPage} />
       <ProtectedRoute path="/compliance-checker" component={ComplianceCheckerPage} />
-      <ProtectedRoute path="/court-procedures" component={CourtProceduresStaticPage} />
-      <ProtectedRoute path="/court-procedures/:id" component={CourtProcedureDetailPage} />
-      <ProtectedRoute path="/court-procedures-old" component={CourtProceduresPage} />
+      <Route path="/court-procedures" component={CourtProceduresStaticPage} />
+      <Route path="/court-procedures/:id" component={CourtProcedureDetailPage} />
+      <Route path="/court-procedures-old" component={CourtProceduresPage} />
       <ProtectedRoute path="/document-navigator" component={DocumentNavigatorPage} />
       <ProtectedRoute path="/timeline-estimator" component={TimelineEstimatorPage} />
       <ProtectedRoute path="/cost-estimator" component={CostEstimatorPage} />
