@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="620" viewBox="0 0 800 620" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .box {
+      fill: #fff;
+      stroke: #a855f7;
+      stroke-width: 2;
+      rx: 8;
+      ry: 8;
+    }
+    .box-alt {
+      fill: #f3e8ff;
+      stroke: #d8b4fe;
+      stroke-width: 2;
+      rx: 8;
+      ry: 8;
+    }
+    .arrow {
+      fill: none;
+      stroke: #a855f7;
+      stroke-width: 2;
+      marker-end: url(#arrowhead);
+    }
+    .arrow-dashed {
+      fill: none;
+      stroke: #d8b4fe;
+      stroke-width: 2;
+      stroke-dasharray: 5,5;
+      marker-end: url(#arrowhead);
+    }
+    .title {
+      font-family: 'Arial', sans-serif;
+      font-size: 14px;
+      font-weight: bold;
+      fill: #111827;
+    }
+    .desc {
+      font-family: 'Arial', sans-serif;
+      font-size: 11px;
+      fill: #4b5563;
+    }
+    text {
+      dominant-baseline: middle;
+      text-anchor: middle;
+    }
+  </style>
+  
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7" />
+    </marker>
+  </defs>
+  
+  <rect width="100%" height="100%" fill="#fff" />
+  
+  <text x="400" y="30" font-family="Arial" font-size="20" font-weight="bold" text-anchor="middle" fill="#111827">Administrative Tribunals Procedure in Canada</text>
+  <text x="400" y="55" font-family="Arial" font-size="14" text-anchor="middle" fill="#4b5563">Process for specialized administrative law disputes (e.g., labor, immigration)</text>
+  
+  <!-- Main flow boxes -->
+  <g>
+    <!-- Box 1 -->
+    <rect class="box" x="300" y="80" width="200" height="60" />
+    <text x="400" y="100" class="title">Administrative Law Issue Arises</text>
+    <text x="400" y="120" class="desc">Dispute or application within</text>
+    <text x="400" y="135" class="desc">a tribunal's jurisdiction</text>
+    
+    <!-- Arrow 1-2 -->
+    <path class="arrow" d="M 400 140 L 400 165" />
+    
+    <!-- Box 2 -->
+    <rect class="box" x="300" y="165" width="200" height="60" />
+    <text x="400" y="185" class="title">Applicant Files Application</text>
+    <text x="400" y="205" class="desc">Claimant submits required forms</text>
+    <text x="400" y="220" class="desc">or complaint to the tribunal</text>
+    
+    <!-- Arrow 2-3 -->
+    <path class="arrow" d="M 400 225 L 400 250" />
+    
+    <!-- Box 3 -->
+    <rect class="box" x="300" y="250" width="200" height="60" />
+    <text x="400" y="270" class="title">Notice to Respondent</text>
+    <text x="400" y="290" class="desc">The tribunal notifies the other</text>
+    <text x="400" y="305" class="desc">party of the proceedings</text>
+    
+    <!-- Arrow 3-4 -->
+    <path class="arrow" d="M 400 310 L 400 335" />
+    
+    <!-- Box 4 -->
+    <rect class="box" x="300" y="335" width="200" height="60" />
+    <text x="400" y="355" class="title">Respondent Files Response</text>
+    <text x="400" y="375" class="desc">The respondent submits their</text>
+    <text x="400" y="390" class="desc">position or defense</text>
+    
+    <!-- Arrow 4-5 -->
+    <path class="arrow" d="M 400 395 L 400 420" />
+    
+    <!-- Box 5 -->
+    <rect class="box" x="300" y="420" width="200" height="60" />
+    <text x="400" y="440" class="title">Pre-Hearing Procedures</text>
+    <text x="400" y="460" class="desc">Document disclosure, witness lists,</text>
+    <text x="400" y="475" class="desc">or motions to prepare for hearing</text>
+    
+    <!-- Mediation Box (Alternative Path) -->
+    <rect class="box-alt" x="580" y="420" width="170" height="60" />
+    <text x="665" y="440" class="title">Alternative: Mediation</text>
+    <text x="665" y="460" class="desc">Many tribunals offer or require</text>
+    <text x="665" y="475" class="desc">mediation before hearing</text>
+    
+    <!-- Arrow to mediation -->
+    <path class="arrow-dashed" d="M 500 450 L 570 450" />
+    
+    <!-- Arrow mediation-hearing (if failed) -->
+    <path class="arrow-dashed" d="M 665 480 L 665 535 L 510 535" />
+    
+    <!-- Arrow 5-6 -->
+    <path class="arrow" d="M 400 480 L 400 505" />
+    
+    <!-- Box 6 -->
+    <rect class="box" x="300" y="505" width="200" height="60" />
+    <text x="400" y="525" class="title">Hearing</text>
+    <text x="400" y="545" class="desc">Both parties present evidence</text>
+    <text x="400" y="560" class="desc">and arguments before the tribunal</text>
+    
+    <!-- Arrow 6-7 -->
+    <path class="arrow" d="M 400 565 L 400 590" />
+    
+    <!-- Box 7 -->
+    <rect class="box" x="300" y="590" width="200" height="60" />
+    <text x="400" y="610" class="title">Decision and Appeal Options</text>
+    <text x="400" y="630" class="desc">Tribunal issues ruling; parties may request</text>
+    <text x="400" y="645" class="desc">internal review or appeal to court</text>
+  </g>
+</svg>

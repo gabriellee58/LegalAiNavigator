@@ -6,6 +6,7 @@ import TimelineVisualization from './TimelineVisualization';
 import DocumentManagement from './DocumentManagement';
 import Personalization from './Personalization';
 import ProcedureDescription, { ProcedureDescriptionData } from './ProcedureDescription';
+import ProcedureFlowchartView from './ProcedureFlowchartView';
 import { 
   civilProcedureDescription, 
   criminalProcedureDescription, 

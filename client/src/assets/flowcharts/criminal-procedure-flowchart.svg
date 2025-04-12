@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="890" viewBox="0 0 800 890" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .box {
+      fill: #fff;
+      stroke: #a855f7;
+      stroke-width: 2;
+      rx: 8;
+      ry: 8;
+    }
+    .box-alt {
+      fill: #f3e8ff;
+      stroke: #d8b4fe;
+      stroke-width: 2;
+      rx: 8;
+      ry: 8;
+    }
+    .arrow {
+      fill: none;
+      stroke: #a855f7;
+      stroke-width: 2;
+      marker-end: url(#arrowhead);
+    }
+    .arrow-dashed {
+      fill: none;
+      stroke: #d8b4fe;
+      stroke-width: 2;
+      stroke-dasharray: 5,5;
+      marker-end: url(#arrowhead);
+    }
+    .title {
+      font-family: 'Arial', sans-serif;
+      font-size: 14px;
+      font-weight: bold;
+      fill: #111827;
+    }
+    .desc {
+      font-family: 'Arial', sans-serif;
+      font-size: 11px;
+      fill: #4b5563;
+    }
+    text {
+      dominant-baseline: middle;
+      text-anchor: middle;
+    }
+  </style>
+  
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7" />
+    </marker>
+  </defs>
+  
+  <rect width="100%" height="100%" fill="#fff" />
+  
+  <text x="400" y="30" font-family="Arial" font-size="20" font-weight="bold" text-anchor="middle" fill="#111827">Criminal Procedure in Canada</text>
+  <text x="400" y="55" font-family="Arial" font-size="14" text-anchor="middle" fill="#4b5563">Process governed by the Criminal Code of Canada</text>
+  
+  <!-- Main flow boxes -->
+  <g>
+    <!-- Box 1 -->
+    <rect class="box" x="300" y="80" width="200" height="60" />
+    <text x="400" y="100" class="title">Crime Committed</text>
+    <text x="400" y="120" class="desc">The process starts with the occurrence</text>
+    <text x="400" y="135" class="desc">of an alleged criminal act</text>
+    
+    <!-- Arrow 1-2 -->
+    <path class="arrow" d="M 400 140 L 400 165" />
+    
+    <!-- Box 2 -->
+    <rect class="box" x="300" y="165" width="200" height="60" />
+    <text x="400" y="185" class="title">Police Investigation</text>
+    <text x="400" y="205" class="desc">Law enforcement gathers evidence</text>
+    <text x="400" y="220" class="desc">to identify suspect</text>
+    
+    <!-- Arrow 2-3 -->
+    <path class="arrow" d="M 400 225 L 400 250" />
+    
+    <!-- Box 3 -->
+    <rect class="box" x="300" y="250" width="200" height="60" />
+    <text x="400" y="270" class="title">Charges Laid</text>
+    <text x="400" y="290" class="desc">Crown prosecutor authorizes</text>
+    <text x="400" y="305" class="desc">charges against the accused</text>
+    
+    <!-- Arrow 3-4 -->
+    <path class="arrow" d="M 400 310 L 400 335" />
+    
+    <!-- Box 4 -->
+    <rect class="box" x="300" y="335" width="200" height="60" />
+    <text x="400" y="355" class="title">Accused Arrested or Summoned</text>
+    <text x="400" y="375" class="desc">The accused is either arrested</text>
+    <text x="400" y="390" class="desc">or issued a summons to appear</text>
+    
+    <!-- Arrow 4-5 -->
+    <path class="arrow" d="M 400 395 L 400 420" />
+    
+    <!-- Box 5 -->
+    <rect class="box" x="300" y="420" width="200" height="60" />
+    <text x="400" y="440" class="title">First Court Appearance</text>
+    <text x="400" y="460" class="desc">Charges are read, accused</text>
+    <text x="400" y="475" class="desc">may enter a plea</text>
+    
+    <!-- Arrow 5-6 -->
+    <path class="arrow" d="M 400 480 L 400 505" />
+    
+    <!-- Box 6 -->
+    <rect class="box" x="300" y="505" width="200" height="60" />
+    <text x="400" y="525" class="title">Bail Hearing (If Applicable)</text>
+    <text x="400" y="545" class="desc">Court decides if accused</text>
+    <text x="400" y="560" class="desc">remains in custody</text>
+    
+    <!-- Arrow 6-7 -->
+    <path class="arrow" d="M 400 565 L 400 590" />
+    
+    <!-- Box 7 (Main Path) -->
+    <rect class="box" x="300" y="590" width="200" height="60" />
+    <text x="400" y="610" class="title">Trial</text>
+    <text x="400" y="630" class="desc">Case heard by judge or jury,</text>
+    <text x="400" y="645" class="desc">evidence presented</text>
+    
+    <!-- Preliminary Inquiry Box (Optional) -->
+    <rect class="box-alt" x="580" y="505" width="170" height="60" />
+    <text x="665" y="525" class="title">Preliminary Inquiry</text>
+    <text x="665" y="545" class="desc">For indictable offenses,</text>
+    <text x="665" y="560" class="desc">determines if evidence is sufficient</text>
+    
+    <!-- Arrow to preliminary inquiry -->
+    <path class="arrow-dashed" d="M 500 535 L 570 535" />
+    
+    <!-- Arrow from preliminary inquiry to trial -->
+    <path class="arrow-dashed" d="M 665 565 L 665 620 L 510 620" />
+    
+    <!-- Plea Bargain Box (Alternative Path) -->
+    <rect class="box-alt" x="580" y="590" width="170" height="60" />
+    <text x="665" y="610" class="title">Alternative: Plea Bargain</text>
+    <text x="665" y="630" class="desc">Accused pleads guilty,</text>
+    <text x="665" y="645" class="desc">often to a lesser charge</text>
+    
+    <!-- Arrow 7-plea bargain -->
+    <path class="arrow-dashed" d="M 500 620 L 570 620" />
+    
+    <!-- Arrow plea bargain-9 -->
+    <path class="arrow-dashed" d="M 665 650 L 665 760 L 510 760" />
+    
+    <!-- Arrow 7-8 -->
+    <path class="arrow" d="M 400 650 L 400 675" />
+    
+    <!-- Box 8 -->
+    <rect class="box" x="300" y="675" width="200" height="60" />
+    <text x="400" y="695" class="title">Verdict</text>
+    <text x="400" y="715" class="desc">Court determines guilt</text>
+    <text x="400" y="730" class="desc">or innocence</text>
+    
+    <!-- Arrow 8-9 -->
+    <path class="arrow" d="M 400 735 L 400 760" />
+    
+    <!-- Box 9 -->
+    <rect class="box" x="300" y="760" width="200" height="60" />
+    <text x="400" y="780" class="title">Sentencing (If Guilty)</text>
+    <text x="400" y="800" class="desc">Court determines punishment</text>
+    <text x="400" y="815" class="desc">(jail, fine, etc.)</text>
+    
+    <!-- Arrow 9-10 -->
+    <path class="arrow" d="M 400 820 L 400 845" />
+    
+    <!-- Box 10 -->
+    <rect class="box" x="300" y="845" width="200" height="60" />
+    <text x="400" y="865" class="title">Appeals (Optional)</text>
+    <text x="400" y="885" class="desc">Either party may appeal</text>
+    <text x="400" y="900" class="desc">to a higher court</text>
+  </g>
+</svg>

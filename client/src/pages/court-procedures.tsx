@@ -26,6 +26,7 @@ import AdvancedProcedureView from '@/components/court-procedures/AdvancedProcedu
 import { VerticalFlowChart } from '@/components/court-procedures/FlowChart';
 import HorizontalFlowChart, { BranchingFlowChart } from '@/components/court-procedures/HorizontalFlowChart';
 import InteractiveFlowChart from '@/components/court-procedures/InteractiveFlowChart';
+import ProcedureFlowchartView from '@/components/court-procedures/ProcedureFlowchartView';
 
 // Helper function to safely convert possibly null values to undefined for props
 const nullToUndefined = <T,>(value: T | null): T | undefined => 
