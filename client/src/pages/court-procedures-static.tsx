@@ -170,7 +170,10 @@ const CourtProceduresStaticPage: React.FC = () => {
               {/* Content can be expanded here */}
             </CardContent>
             <CardFooter>
-              <Button className="w-full bg-purple-500 hover:bg-purple-600">
+              <Button 
+                className="w-full bg-purple-500 hover:bg-purple-600"
+                onClick={() => handleProcedureSelect('family-court')}
+              >
                 Browse Procedures <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </CardFooter>
@@ -191,7 +194,10 @@ const CourtProceduresStaticPage: React.FC = () => {
               {/* Content can be expanded here */}
             </CardContent>
             <CardFooter>
-              <Button className="w-full bg-purple-500 hover:bg-purple-600">
+              <Button 
+                className="w-full bg-purple-500 hover:bg-purple-600"
+                onClick={() => handleProcedureSelect('small-claims')}
+              >
                 Browse Procedures <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </CardFooter>
@@ -212,7 +218,10 @@ const CourtProceduresStaticPage: React.FC = () => {
               {/* Content can be expanded here */}
             </CardContent>
             <CardFooter>
-              <Button className="w-full bg-purple-500 hover:bg-purple-600">
+              <Button 
+                className="w-full bg-purple-500 hover:bg-purple-600"
+                onClick={() => handleProcedureSelect('administrative-tribunals')}
+              >
                 Browse Procedures <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </CardFooter>
