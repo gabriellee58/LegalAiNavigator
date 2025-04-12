@@ -7,19 +7,10 @@ import DocumentManagement from './DocumentManagement';
 import Personalization from './Personalization';
 import ProcedureDescription, { ProcedureDescriptionData } from './ProcedureDescription';
 import ProcedureFlowchartView from './ProcedureFlowchartView';
-import { 
-  civilProcedureDescription, 
-  criminalProcedureDescription, 
-  familyCourtProcedureDescription, 
-  smallClaimsProcedureDescription,
-  administrativeTribunalsProcedureDescription,
-  ontarioSmallClaimsProcedureDescription,
-  ontarioCivilProcedureDescription,
-  ontarioFamilyCourtProcedureDescription,
-  humanRightsTribunalProcedureDescription
-} from '@/data/court-procedures';
+import { getProcedureById } from '@/data/court-procedures';
+import { CourtProcedureData } from '@/data/court-procedures/types';
 
-// Import types directly from court-procedures.tsx until we properly migrate them
+// Legacy types for compatibility with existing components
 interface EstimatedTimeframe {
   stepId?: number;
   phaseName?: string;
@@ -28,7 +19,7 @@ interface EstimatedTimeframe {
   factors?: { factor: string; impact: string }[];
 }
 
-interface ProcedureStep {
+interface LegacyProcedureStep {
   id: number;
   procedureId: number;
   title: string;
@@ -68,7 +59,7 @@ interface ProcedureDetail {
   name: string;
   description: string;
   jurisdiction: string;
-  steps: ProcedureStep[];
+  steps: LegacyProcedureStep[];
   flowchartData: FlowchartData;
   estimatedTimeframes: EstimatedTimeframe[];
   courtFees: any[];
@@ -94,8 +85,8 @@ interface UserProcedureDetail {
   expectedCompletionDate?: string | null;
   completedAt?: string | null;
   procedure: ProcedureDetail;
-  steps: ProcedureStep[];
-  currentStep: ProcedureStep;
+  steps: LegacyProcedureStep[];
+  currentStep: LegacyProcedureStep;
   caseSpecificData?: any;
 }
 
@@ -107,46 +98,17 @@ interface AdvancedProcedureViewProps {
 
 // Helper function to determine which procedure description to use based on the procedure details
 const getProcedureDescriptionData = (procedureDetail: ProcedureDetail) => {
-  const categoryId = procedureDetail.categoryId;
-  const name = procedureDetail.name.toLowerCase();
-  const jurisdiction = procedureDetail.jurisdiction.toLowerCase();
+  // Create a simple description data object from procedure details
+  const descriptionData: ProcedureDescriptionData = {
+    title: procedureDetail.name,
+    overview: procedureDetail.description,
+    steps: procedureDetail.steps.map(step => ({
+      title: step.title,
+      description: step.description,
+    })),
+  };
   
-  // Match based on category and jurisdiction
-  if (categoryId === 1 || name.includes('civil')) {
-    // Civil procedures
-    if (jurisdiction.includes('ontario')) {
-      return <ProcedureDescription data={ontarioCivilProcedureDescription} />;
-    }
-    return <ProcedureDescription data={civilProcedureDescription} />;
-  }
-  
-  if (categoryId === 2 || name.includes('criminal')) {
-    return <ProcedureDescription data={criminalProcedureDescription} />;
-  }
-  
-  if (categoryId === 3 || name.includes('family')) {
-    if (jurisdiction.includes('ontario')) {
-      return <ProcedureDescription data={ontarioFamilyCourtProcedureDescription} />;
-    }
-    return <ProcedureDescription data={familyCourtProcedureDescription} />;
-  }
-  
-  if (categoryId === 4 || name.includes('small claims')) {
-    if (jurisdiction.includes('ontario')) {
-      return <ProcedureDescription data={ontarioSmallClaimsProcedureDescription} />;
-    }
-    return <ProcedureDescription data={smallClaimsProcedureDescription} />;
-  }
-  
-  if (categoryId === 5 || name.includes('administrative') || name.includes('tribunal')) {
-    if (name.includes('human rights')) {
-      return <ProcedureDescription data={humanRightsTribunalProcedureDescription} />;
-    }
-    return <ProcedureDescription data={administrativeTribunalsProcedureDescription} />;
-  }
-  
-  // Default case - return the generic civil procedure
-  return <ProcedureDescription data={civilProcedureDescription} />;
+  return <ProcedureDescription data={descriptionData} />;
 };
 
 export const AdvancedProcedureView: React.FC<AdvancedProcedureViewProps> = ({
