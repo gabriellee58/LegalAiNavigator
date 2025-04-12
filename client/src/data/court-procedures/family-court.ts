@@ -418,7 +418,7 @@ export const familyCourtData: CourtProcedureData = {
       }
     }
   ],
-  faq: [
+  faqs: [
     {
       question: "What is the difference between divorce and separation?",
       answer: "Separation is the act of living apart with the intention of ending the relationship, with no formal legal process required. Divorce is the legal dissolution of marriage, requiring a court application and order. In Canada, you must be separated for at least one year before finalizing a divorce, though you can resolve issues like support and parenting during separation."

@@ -513,7 +513,7 @@ export const administrativeData: CourtProcedureData = {
       }
     }
   ],
-  faq: [
+  faqs: [
     {
       question: "What is the difference between a tribunal and a court?",
       answer: "Administrative tribunals are specialized bodies created by legislation to resolve disputes in specific domains. Unlike courts, tribunals have limited jurisdiction, more flexible procedures, typically lower costs, and decision-makers with subject-matter expertise rather than judges. Their procedures are less formal, they can act more proactively in investigations, and they often emphasize accessibility for self-represented parties."

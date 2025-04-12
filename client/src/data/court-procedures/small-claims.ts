@@ -389,7 +389,7 @@ export const smallClaimsData: CourtProcedureData = {
       }
     }
   ],
-  faq: [
+  faqs: [
     {
       question: "Do I need a lawyer for Small Claims Court?",
       answer: "No, Small Claims Court is designed to be accessible without legal representation. Many people successfully represent themselves. However, you may benefit from consulting a lawyer for initial advice or in more complex cases. Some provinces (like Quebec) actually prohibit lawyer representation in Small Claims hearings."

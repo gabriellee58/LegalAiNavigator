@@ -313,20 +313,22 @@ const ProcedureDetail: React.FC<ProcedureDetailProps> = ({ procedure, onBack }) 
                 
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Resources</h3>
-                  <ul className="list-disc pl-5 space-y-1">
-                    {procedure.overview.resources.map((resource, index) => (
-                      <li key={index}>
-                        <a 
-                          href={resource.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline"
-                        >
-                          {resource.name}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
+                  {procedure.overview.resources && procedure.overview.resources.length > 0 && (
+                    <ul className="list-disc pl-5 space-y-1">
+                      {procedure.overview.resources.map((resource, index) => (
+                        <li key={index}>
+                          <a 
+                            href={resource.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline"
+                          >
+                            {resource.name}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               </TabsContent>
               
@@ -413,43 +415,55 @@ const ProcedureDetail: React.FC<ProcedureDetailProps> = ({ procedure, onBack }) 
                   The following documents are typically required for {procedure.title.toLowerCase()}:
                 </p>
                 
-                {procedure.requiredDocuments.map((doc) => (
-                  <Card key={doc.name} className="overflow-hidden">
-                    <div className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <FileText className="h-5 w-5 text-primary" />
-                        <div>
-                          <h3 className="font-medium">{doc.name}</h3>
-                          <p className="text-sm text-muted-foreground">{doc.description}</p>
-                          <div className="mt-1">
-                            <Badge variant="outline">Source: {doc.source}</Badge>
-                            {doc.url && (
-                              <a 
-                                href={doc.url}
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-primary ml-2 text-sm hover:underline"
-                              >
-                                View template
-                              </a>
-                            )}
+                {procedure.requiredDocuments && procedure.requiredDocuments.length > 0 ? (
+                  procedure.requiredDocuments.map((doc) => (
+                    <Card key={doc.name} className="overflow-hidden">
+                      <div className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <FileText className="h-5 w-5 text-primary" />
+                          <div>
+                            <h3 className="font-medium">{doc.name}</h3>
+                            <p className="text-sm text-muted-foreground">{doc.description}</p>
+                            <div className="mt-1">
+                              <Badge variant="outline">Source: {doc.source}</Badge>
+                              {doc.url && (
+                                <a 
+                                  href={doc.url}
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-primary ml-2 text-sm hover:underline"
+                                >
+                                  View template
+                                </a>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </Card>
-                ))}
+                    </Card>
+                  ))
+                ) : (
+                  <div className="text-center py-6 text-muted-foreground">
+                    No document information available.
+                  </div>
+                )}
               </TabsContent>
               
               <TabsContent value="faqs" className="space-y-4">
                 <div className="space-y-4">
-                  {procedure.faqs.map((faq, index) => (
-                    <div key={index} className="space-y-2">
-                      <h3 className="font-medium text-lg">Q: {faq.question}</h3>
-                      <p className="text-muted-foreground">{faq.answer}</p>
-                      {index < procedure.faqs.length - 1 && <Separator className="my-3" />}
+                  {procedure.faqs && procedure.faqs.length > 0 ? (
+                    procedure.faqs.map((faq, index) => (
+                      <div key={index} className="space-y-2">
+                        <h3 className="font-medium text-lg">Q: {faq.question}</h3>
+                        <p className="text-muted-foreground">{faq.answer}</p>
+                        {index < procedure.faqs.length - 1 && <Separator className="my-3" />}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-6 text-muted-foreground">
+                      No frequently asked questions available.
                     </div>
-                  ))}
+                  )}
                 </div>
               </TabsContent>
             </Tabs>
