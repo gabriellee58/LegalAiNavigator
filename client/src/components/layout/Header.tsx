@@ -183,7 +183,7 @@ function MobileSidebar() {
             <li>
               <Link href="/contract-analysis" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
                 <span className="material-icons mr-3 text-primary">Insert_Drive_File</span>
-                <span className="font-medium">Contract Analysis</span>
+                <span className="font-medium">{t("contract_analysis")}</span>
               </Link>
             </li>
             <li>
@@ -225,13 +225,13 @@ function MobileSidebar() {
             <li>
               <Link href="/documents/wills-estates" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
                 <span className="material-icons mr-3 text-primary">Account_Balance</span>
-                <span className="font-medium">Wills & Estates</span>
+                <span className="font-medium">{t("wills_estates")}</span>
               </Link>
             </li>
             <li>
               <Link href="/documents/business" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
                 <span className="material-icons mr-3 text-primary">Business</span>
-                <span className="font-medium">Business</span>
+                <span className="font-medium">{t("business")}</span>
               </Link>
             </li>
           </ul>
@@ -245,7 +245,7 @@ function MobileSidebar() {
         </Link>
         <Link href="/profile" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
           <span className="material-icons mr-3 text-primary">Person</span>
-          <span className="font-medium">Profile</span>
+          <span className="font-medium">{t("profile")}</span>
         </Link>
         <Link href="/settings" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
           <span className="material-icons mr-3 text-primary">Settings</span>
@@ -253,7 +253,7 @@ function MobileSidebar() {
         </Link>
         <Link href="/logout" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
           <span className="material-icons mr-3 text-primary">Logout</span>
-          <span className="font-medium">Logout</span>
+          <span className="font-medium">{t("logout")}</span>
         </Link>
       </div>
     </div>
