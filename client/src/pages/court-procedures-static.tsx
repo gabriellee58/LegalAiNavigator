@@ -42,7 +42,9 @@ const CourtProceduresStaticPage: React.FC = () => {
     : procedures;
 
   const handleProcedureSelect = (procedureId: string) => {
+    console.log("Selecting procedure with ID:", procedureId);
     const procedure = getProcedureById(procedureId);
+    console.log("Retrieved procedure:", procedure);
     setSelectedProcedure(procedure || null);
   };
 
