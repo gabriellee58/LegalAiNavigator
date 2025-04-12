@@ -420,7 +420,7 @@ const CourtProceduresPage: React.FC = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="categories">
               <span className="flex items-center gap-2">
                 <List className="h-4 w-4" />
@@ -431,6 +431,12 @@ const CourtProceduresPage: React.FC = () => {
               <span className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />
                 Procedures
+              </span>
+            </TabsTrigger>
+            <TabsTrigger value="flowcharts">
+              <span className="flex items-center gap-2">
+                <GitBranch className="h-4 w-4" />
+                Flowcharts
               </span>
             </TabsTrigger>
             <TabsTrigger value="my-procedures">
@@ -594,6 +600,19 @@ const CourtProceduresPage: React.FC = () => {
                 ))}
               </div>
             )}
+          </TabsContent>
+          
+          {/* Flowcharts Tab */}
+          <TabsContent value="flowcharts" className="space-y-4">
+            <div className="bg-muted/30 p-4 rounded-lg mb-4">
+              <h2 className="text-xl font-semibold mb-2">Interactive Court Procedure Flowcharts</h2>
+              <p className="text-muted-foreground">
+                Visualize the steps involved in different Canadian court procedures with these interactive flowcharts. 
+                Select a procedure type below to view its detailed process flow.
+              </p>
+            </div>
+            
+            <ProcedureFlowchartView />
           </TabsContent>
 
           {/* My Procedures Tab */}

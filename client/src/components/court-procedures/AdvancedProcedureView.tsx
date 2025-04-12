@@ -228,9 +228,24 @@ export const AdvancedProcedureView: React.FC<AdvancedProcedureViewProps> = ({
               />
             </TabsContent>
             
-            {/* Flow Chart Description Tab */}
+            {/* Flow Chart Tab */}
             <TabsContent value="flow-chart" className="space-y-6 mt-6">
-              {getProcedureDescriptionData(procedureDetail)}
+              <div className="space-y-6">
+                {/* Interactive SVG Flowchart */}
+                <ProcedureFlowchartView initialFlowchartId={
+                  procedureDetail.categoryId === 1 ? 'civil' :
+                  procedureDetail.categoryId === 2 ? 'criminal' :
+                  procedureDetail.categoryId === 3 ? 'family' :
+                  procedureDetail.categoryId === 4 ? 'small-claims' :
+                  procedureDetail.categoryId === 5 ? 'administrative' : 'civil'
+                } />
+                
+                {/* Detailed Text Description */}
+                <div className="mt-8 pt-6 border-t">
+                  <h3 className="text-lg font-medium mb-4">Detailed Process Description</h3>
+                  {getProcedureDescriptionData(procedureDetail)}
+                </div>
+              </div>
             </TabsContent>
             
             {/* Documents Tab */}
