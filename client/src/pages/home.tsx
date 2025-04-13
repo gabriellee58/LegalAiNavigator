@@ -8,25 +8,24 @@ function HomePage() {
   return (
     <MainLayout>
       <div className="p-4 md:p-6">
-        {/* Hero section */}
-        <div className="hero-section mb-12 md:mb-16 rounded-2xl overflow-hidden">
-          <div className="max-w-4xl p-8 md:p-12">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6">
-              Build a <span className="underline decoration-4 decoration-white/70">team</span> <br/>
-              you can trust
+        {/* Welcome section */}
+        <div className="welcome-section mb-8 md:mb-12">
+          <div className="max-w-4xl">
+            <h1 className="text-3xl md:text-4xl font-bold mb-4 gradient-text">
+              Canadian Legal AI Platform
             </h1>
-            <p className="text-lg md:text-xl text-white/90 mb-8 max-w-2xl">
-              Access comprehensive legal support through advanced AI technology and an expanding template library covering all major Canadian legal domains.
+            <p className="text-lg text-muted-foreground mb-6 max-w-2xl">
+              Access comprehensive legal support through advanced AI technology and tools specifically designed for Canadian legal domains.
             </p>
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-4 mb-6">
               <Link href="/legal-assistant">
-                <Button className="primary-button bg-white text-primary hover:bg-white/90 py-3 px-6 text-base font-bold">
+                <Button className="bg-primary hover:bg-primary/90 py-2.5 px-5">
                   <span className="material-icons mr-2">smart_toy</span>
                   Chat with Legal AI
                 </Button>
               </Link>
               <Link href="/document-generator">
-                <Button variant="outline" className="secondary-button bg-primary/20 text-white border-white/30 hover:bg-primary/30 py-3 px-6 text-base font-bold">
+                <Button variant="outline" className="border-primary/30 hover:bg-primary/5 py-2.5 px-5">
                   <span className="material-icons mr-2">description</span>
                   Generate Documents
                 </Button>

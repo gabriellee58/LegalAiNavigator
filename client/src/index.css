@@ -40,8 +40,8 @@
     @apply bg-gradient-to-r from-primary to-purple-600;
   }
 
-  .hero-section {
-    @apply purple-gradient-bg text-white rounded-lg p-8 shadow-lg;
+  .welcome-section {
+    @apply bg-background py-6 border-b border-border;
   }
 
   .feature-card {
