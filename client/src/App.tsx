@@ -122,7 +122,7 @@ function Router() {
       <Route path="/court-procedures" component={CourtProceduresStaticPage} />
       <Route path="/court-procedures/:id" component={CourtProcedureDetailPage} />
       <Route path="/court-procedures-old" component={CourtProceduresPage} />
-      <Route path="/notarization-guide" component={NotarizationGuidePage} />
+      <ProtectedRoute path="/notarization-guide" component={NotarizationGuidePage} />
       <ProtectedRoute path="/document-navigator" component={DocumentNavigatorPage} />
       <ProtectedRoute path="/timeline-estimator" component={TimelineEstimatorPage} />
       <ProtectedRoute path="/cost-estimator" component={CostEstimatorPage} />

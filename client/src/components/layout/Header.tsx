@@ -72,6 +72,9 @@ function Header() {
         <Link href="/dispute-resolution" className="text-white/90 hover:text-white font-medium text-sm">
           Disputes
         </Link>
+        <Link href="/notarization-guide" className="text-white/90 hover:text-white font-medium text-sm">
+          Notarization
+        </Link>
       </div>
       
       {/* Search bar */}
@@ -196,6 +199,12 @@ function MobileSidebar() {
               <Link href="/compliance-checker" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
                 <span className="material-icons mr-3 text-primary">Verified</span>
                 <span className="font-medium">{t("compliance_checker")}</span>
+              </Link>
+            </li>
+            <li>
+              <Link href="/notarization-guide" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
+                <span className="material-icons mr-3 text-primary">Approval</span>
+                <span className="font-medium">{t("notarization_guide")}</span>
               </Link>
             </li>
           </ul>
