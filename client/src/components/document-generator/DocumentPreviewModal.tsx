@@ -16,7 +16,8 @@ import {
   Share2, 
   RotateCw, 
   ChevronLeft, 
-  ChevronRight 
+  ChevronRight,
+  Clipboard
 } from "lucide-react";
 import { t } from "@/lib/i18n";
 import * as pdfjsLib from "pdfjs-dist";
@@ -55,56 +56,43 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     if (isOpen && format === 'pdf' && documentContent) {
       setIsLoading(true);
       generatePdfFromText();
+    } else if (isOpen && format === 'txt') {
+      setIsLoading(false);
     }
   }, [isOpen, documentContent, format]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
+      }
+    };
+  }, [pdfUrl]);
 
   // Convert text to PDF and render it
   const generatePdfFromText = async () => {
     try {
-      // Create a simple HTML representation of the text content
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>${documentTitle}</title>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              line-height: 1.5;
-              margin: 40px;
-            }
-            pre {
-              white-space: pre-wrap;
-              font-family: 'Courier New', monospace;
-            }
-          </style>
-        </head>
-        <body>
-          <pre>${documentContent}</pre>
-        </body>
-        </html>
-      `;
-
       // Use the existing PDF generation function
-      const pdfGenSuccess = await generatePDF(documentContent, `${documentTitle}.pdf`, false);
+      const pdfGenResult = await generatePDF(documentContent, `${documentTitle}.pdf`, false);
       
       // If the PDF generation function returns a URL, use it
-      if (pdfGenSuccess && typeof pdfGenSuccess === 'string') {
-        setPdfUrl(pdfGenSuccess);
-        loadPdfDocument(pdfGenSuccess);
+      if (pdfGenResult && typeof pdfGenResult === 'string') {
+        setPdfUrl(pdfGenResult);
+        await loadPdfDocument(pdfGenResult);
       } else {
         // Fallback to displaying text
         setPdfUrl(null);
+        setIsLoading(false);
       }
     } catch (error) {
       console.error("Error generating PDF preview:", error);
       toast({
-        title: "Preview Generation Error",
-        description: "Could not generate PDF preview. Displaying text instead.",
+        title: t("Preview Generation Error"),
+        description: t("Could not generate PDF preview. Displaying text instead."),
         variant: "destructive"
       });
       setPdfUrl(null);
-    } finally {
       setIsLoading(false);
     }
   };
@@ -116,7 +104,7 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
       const pdfDoc = await loadingTask.promise;
       pdfDocRef.current = pdfDoc;
       setTotalPages(pdfDoc.numPages);
-      renderPage(1);
+      await renderPage(1);
     } catch (error) {
       console.error("Error loading PDF document:", error);
       setIsLoading(false);
@@ -131,6 +119,10 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
       const page = await pdfDocRef.current.getPage(pageNumber);
       const canvas = canvasRef.current;
       const context = canvas.getContext('2d');
+
+      if (!context) {
+        throw new Error("Could not get canvas context");
+      }
 
       // Calculate scaled viewport based on zoom and rotation
       const viewport = page.getViewport({ scale: zoom, rotation: rotation });
@@ -206,14 +198,14 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
       }
       
       toast({
-        title: "Download Complete",
-        description: `Document has been downloaded as ${format === 'pdf' ? 'PDF' : 'text'}.`
+        title: t("Download Complete"),
+        description: t(`Document has been downloaded as ${format === 'pdf' ? 'PDF' : 'text'}.`)
       });
     } catch (error) {
       console.error("Error downloading document:", error);
       toast({
-        title: "Download Failed",
-        description: "Could not download the document. Please try again.",
+        title: t("Download Failed"),
+        description: t("Could not download the document. Please try again."),
         variant: "destructive"
       });
     }
@@ -230,8 +222,8 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
           };
         } else {
           toast({
-            title: "Print Preparation",
-            description: "Please allow pop-ups and then try printing again."
+            title: t("Print Preparation"),
+            description: t("Please allow pop-ups and then try printing again.")
           });
         }
       } else {
@@ -241,8 +233,8 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     } catch (error) {
       console.error("Error printing document:", error);
       toast({
-        title: "Print Failed",
-        description: "Could not prepare document for printing. Please try again.",
+        title: t("Print Failed"),
+        description: t("Could not prepare document for printing. Please try again."),
         variant: "destructive"
       });
     }
@@ -252,9 +244,9 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     try {
       // Check if Web Share API is available
       if (navigator.share) {
-        const shareData = {
+        const shareData: ShareData = {
           title: documentTitle,
-          text: 'Check out this document I created with Canadian Legal AI'
+          text: t('Check out this document I created with Canadian Legal AI')
         };
         
         // Add file if available and supported
@@ -263,7 +255,25 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
             const response = await fetch(pdfUrl);
             const blob = await response.blob();
             const file = new File([blob], `${documentTitle}.pdf`, { type: 'application/pdf' });
-            shareData.files = [file];
+            
+            // Check if files are supported in the share API
+            // Note: The files property exists on the Web Share API Level 2
+            // but TypeScript's type definitions might not be updated
+            if ('canShare' in navigator && 
+                typeof navigator.canShare === 'function' && 
+                navigator.canShare({ files: [file] })) {
+              // We need to use type assertion since TypeScript doesn't fully
+              // support the File[] in ShareData interface yet
+              const shareDataWithFile = shareData as ShareData & { files: File[] };
+              shareDataWithFile.files = [file];
+              await navigator.share(shareDataWithFile);
+              
+              toast({
+                title: t("Sharing Initiated"),
+                description: t("Document sharing has been initiated.")
+              });
+              return;
+            }
           } catch (e) {
             console.error("Error preparing file for sharing:", e);
           }
@@ -272,25 +282,44 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
         await navigator.share(shareData);
         
         toast({
-          title: "Sharing Initiated",
-          description: "Document sharing has been initiated."
+          title: t("Sharing Initiated"),
+          description: t("Document sharing has been initiated.")
         });
       } else {
+        // If Web Share API is not available, copy to clipboard instead
+        await navigator.clipboard.writeText(documentContent);
+        
         toast({
-          title: "Sharing Not Available",
-          description: "Your browser doesn't support the Web Share API. Please use the download option instead.",
-          variant: "destructive"
+          title: t("Copied to Clipboard"),
+          description: t("Document has been copied to your clipboard."),
         });
       }
     } catch (error) {
       console.error("Error sharing document:", error);
       if (error instanceof Error && error.name !== 'AbortError') {
         toast({
-          title: "Sharing Failed",
-          description: "Could not share the document. Please try again or use the download option.",
+          title: t("Sharing Failed"),
+          description: t("Could not share the document. Please try again or use the download option."),
           variant: "destructive"
         });
       }
+    }
+  };
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(documentContent);
+      toast({
+        title: t("Copied to Clipboard"),
+        description: t("Document text has been copied to your clipboard.")
+      });
+    } catch (error) {
+      console.error("Error copying to clipboard:", error);
+      toast({
+        title: t("Copy Failed"),
+        description: t("Could not copy to clipboard. Please try again."),
+        variant: "destructive"
+      });
     }
   };
 
@@ -300,7 +329,7 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
         <DialogHeader>
           <DialogTitle className="text-xl">{documentTitle}</DialogTitle>
           <DialogDescription>
-            {t("preview_and_download_document")}
+            {t("Preview and export your document")}
           </DialogDescription>
         </DialogHeader>
         
@@ -332,7 +361,7 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <span className="text-sm">
-                {t("page")} {currentPage} {t("of")} {totalPages}
+                {t("Page")} {currentPage} {t("of")} {totalPages}
               </span>
               <Button 
                 variant="outline" 
@@ -359,23 +388,27 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
           </div>
         )}
         
-        <DialogFooter className="flex justify-between sm:justify-between flex-row">
+        <DialogFooter className="flex justify-between sm:justify-between flex-row flex-wrap gap-2">
           <Button variant="secondary" onClick={onClose}>
-            {t("close")}
+            {t("Close")}
           </Button>
           
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center flex-wrap gap-2">
+            <Button variant="outline" onClick={copyToClipboard}>
+              <Clipboard className="h-4 w-4 mr-2" />
+              {t("Copy")}
+            </Button>
             <Button variant="outline" onClick={handlePrint}>
               <Printer className="h-4 w-4 mr-2" />
-              {t("print")}
+              {t("Print")}
             </Button>
             <Button variant="outline" onClick={handleShare}>
               <Share2 className="h-4 w-4 mr-2" />
-              {t("share")}
+              {t("Share")}
             </Button>
             <Button onClick={handleDownload}>
               <Download className="h-4 w-4 mr-2" />
-              {t("download")}
+              {t("Download")}
             </Button>
           </div>
         </DialogFooter>
