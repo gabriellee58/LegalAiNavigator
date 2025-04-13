@@ -25,7 +25,7 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("form");
   const [generatedDocument, setGeneratedDocument] = useState<string | null>(null);
-  
+
   // Initialize form with default values
   const form = useForm({
     defaultValues: (template.fields as any[]).reduce((acc: Record<string, string>, field: any) => {
@@ -33,7 +33,7 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
       return acc;
     }, {} as Record<string, string>),
   });
-  
+
   // Generate document mutation
   const { mutate: generateDocumentMutation, isPending, error, reset } = useMutation({
     mutationFn: (data: Record<string, any>) => 
@@ -45,14 +45,14 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
       ),
     onSuccess: (data: any) => {
       console.log("Document generation successful, response:", data);
-      
+
       // Debug the response structure
       console.log("Document response type:", typeof data);
       console.log("Document response keys:", data ? Object.keys(data) : "null");
-      
+
       // Enhanced data extraction - handle different response formats
       let documentContent = null;
-      
+
       if (typeof data === 'string') {
         // If the response is a string, use it directly
         documentContent = data;
@@ -68,17 +68,17 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
           documentContent = data.data.documentContent;
         }
       }
-      
+
       // Ensure we have document content
       if (documentContent) {
         console.log("Document content extracted successfully, length:", documentContent.length);
         setGeneratedDocument(documentContent);
-        
+
         // Use setTimeout to ensure state is updated before tab switch
         setTimeout(() => {
           setActiveTab("preview");
         }, 100);
-        
+
         toast({
           title: "Document Generated",
           description: "Your document has been successfully generated. You can now preview and download it.",
@@ -101,20 +101,28 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
       });
     },
   });
-  
+
   // Function to retry document generation after error
   const retryGeneration = () => {
     reset();
     const formData = form.getValues();
     generateDocumentMutation(formData);
   };
-  
+
   const onSubmit = (data: Record<string, any>) => {
     generateDocumentMutation(data);
   };
-  
+
+  // Placeholder for e-signature initiation (needs implementation)
+  const initiateSigningProcess = (documentContent: string | null) => {
+    // Implement DocuSeal integration here.  This is a placeholder.
+    console.log("Initiating signing process with document:", documentContent);
+    // Add your DocuSeal API call here to initiate the signing process.
+  };
+
+
   // Export document functionality is now handled by DocumentExportOptions component
-  
+
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
       <TabsList className="grid w-full grid-cols-2 mb-4">
@@ -132,7 +140,7 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
           {!generatedDocument && <span className="ml-2 text-xs text-muted-foreground">(Generate first)</span>}
         </TabsTrigger>
       </TabsList>
-      
+
       <TabsContent value="form" className="mt-4">
         <Card>
           <CardContent className="pt-6">
@@ -172,7 +180,7 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
                     />
                   ))}
                 </div>
-                
+
                 {error && (
                   <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start mb-4">
                     <span className="material-icons text-red-500 mr-2 mt-0.5">error</span>
@@ -216,20 +224,29 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
           </CardContent>
         </Card>
       </TabsContent>
-      
+
       <TabsContent value="preview" className="mt-4">
         {generatedDocument && (
           <div className="space-y-4">
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-between items-center">
               <DocumentExportOptions 
                 documentContent={generatedDocument} 
                 documentTitle={`${template.title} - ${new Date().toLocaleDateString()}`}
               />
+              {template.requiresSignature && (
+                <Button
+                  onClick={() => initiateSigningProcess(generatedDocument)}
+                  className="bg-primary text-white"
+                >
+                  <span className="material-icons mr-2">draw</span>
+                  Request Signatures
+                </Button>
+              )}
             </div>
-            
+
             {/* Notarization Guidance */}
             <NotarizationGuidance template={template} />
-            
+
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-xl">{template.title}</CardTitle>
