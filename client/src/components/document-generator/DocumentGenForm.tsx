@@ -136,6 +136,18 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
         const data = await response.json();
         setActiveTab("signatures");
         
+        // Add signature status component
+        setDialog({
+          title: "Signature Request Status",
+          content: (
+            <SignatureStatus 
+              submissionId={data.submissionId}
+              signers={signers.map(s => ({ ...s, status: 'pending' }))}
+            />
+          ),
+          showClose: true
+        });
+        
         toast({
           title: "Signature Request Sent",
           description: "The document has been sent to the specified signers.",

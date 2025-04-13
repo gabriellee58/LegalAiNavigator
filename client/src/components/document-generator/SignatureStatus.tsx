@@ -1,75 +1,66 @@
 
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-
-interface Signer {
-  name: string;
-  email: string;
-  status: 'pending' | 'signed' | 'declined';
-  signedAt?: string;
-}
+import { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
 interface SignatureStatusProps {
   submissionId: string;
-  onComplete?: () => void;
+  signers: Array<{
+    name: string;
+    email: string;
+    status: 'pending' | 'signed' | 'declined';
+  }>;
 }
 
-export default function SignatureStatus({ submissionId, onComplete }: SignatureStatusProps) {
-  const [signers, setSigners] = useState<Signer[]>([]);
-  const [status, setStatus] = useState<'pending' | 'completed'>('pending');
+export default function SignatureStatus({ submissionId, signers }: SignatureStatusProps) {
+  const { toast } = useToast();
+  const [statusUpdates, setStatusUpdates] = useState(signers);
 
   useEffect(() => {
-    const fetchStatus = async () => {
+    const checkStatus = async () => {
       try {
-        const response = await fetch(`/api/docuseal/submissions/${submissionId}`);
+        const response = await fetch(`/api/docuseal/status/${submissionId}`);
+        if (!response.ok) throw new Error('Failed to fetch signature status');
+        
         const data = await response.json();
-        
-        setSigners(data.signers);
-        setStatus(data.status);
-        
-        if (data.status === 'completed' && onComplete) {
-          onComplete();
+        setStatusUpdates(data.signers);
+
+        if (data.status === 'completed') {
+          toast({
+            title: "All signatures collected",
+            description: "The document has been fully executed.",
+          });
         }
       } catch (error) {
-        console.error('Error fetching signature status:', error);
+        console.error('Error checking signature status:', error);
       }
     };
 
-    const interval = setInterval(fetchStatus, 5000);
-    fetchStatus();
-
+    const interval = setInterval(checkStatus, 30000); // Check every 30 seconds
     return () => clearInterval(interval);
-  }, [submissionId, onComplete]);
-
-  const progress = Math.round((signers.filter(s => s.status === 'signed').length / signers.length) * 100);
+  }, [submissionId, toast]);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex justify-between items-center">
-          Signature Status
-          <Badge variant={status === 'completed' ? "success" : "secondary"}>
-            {status === 'completed' ? 'Completed' : 'In Progress'}
-          </Badge>
-        </CardTitle>
+        <CardTitle className="text-lg">Signature Status</CardTitle>
       </CardHeader>
       <CardContent>
-        <Progress value={progress} className="mb-4" />
-        
-        <div className="space-y-2">
-          {signers.map((signer, index) => (
-            <div key={index} className="flex justify-between items-center p-2 bg-muted rounded">
+        <div className="space-y-4">
+          {statusUpdates.map((signer, index) => (
+            <div key={index} className="flex items-center justify-between">
               <div>
-                <div>{signer.name}</div>
-                <div className="text-sm text-muted-foreground">{signer.email}</div>
+                <p className="font-medium">{signer.name}</p>
+                <p className="text-sm text-muted-foreground">{signer.email}</p>
               </div>
-              <Badge variant={
-                signer.status === 'signed' ? "success" :
-                signer.status === 'declined' ? "destructive" : "secondary"
-              }>
-                {signer.status}
+              <Badge
+                variant={
+                  signer.status === 'signed' ? 'success' :
+                  signer.status === 'declined' ? 'destructive' : 'default'
+                }
+              >
+                {signer.status.charAt(0).toUpperCase() + signer.status.slice(1)}
               </Badge>
             </div>
           ))}
