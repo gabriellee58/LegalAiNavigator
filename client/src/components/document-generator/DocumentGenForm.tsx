@@ -297,8 +297,9 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
               <DocumentExportOptions 
                 documentContent={generatedDocument} 
                 documentTitle={`${template.title} - ${new Date().toLocaleDateString()}`}
+                showPreviewButton={true}
               />
-              {template.requiresSignature && (
+              {template?.requiresSignature && (
                 <Button
                   onClick={() => initiateSigningProcess(generatedDocument)}
                   className="bg-primary text-white"

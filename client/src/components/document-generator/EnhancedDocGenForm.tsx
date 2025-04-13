@@ -17,6 +17,7 @@ import { Loader2 } from "lucide-react";
 import { DocumentTemplate } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import NotarizationGuidance from "./NotarizationGuidance";
+import DocumentExportOptions from "./DocumentExportOptions";
 
 interface EnhancedDocGenFormProps {
   template: DocumentTemplate;
@@ -362,11 +363,12 @@ export default function EnhancedDocGenForm({ template }: EnhancedDocGenFormProps
       <TabsContent value="preview" className="mt-4">
         {generatedDocument && (
           <div className="space-y-4">
-            <div className="flex justify-end">
-              <Button onClick={downloadDocument} className="bg-primary hover:bg-primary-dark">
-                <span className="material-icons mr-2">download</span>
-                {t("download_document")}
-              </Button>
+            <div className="flex justify-between items-center">
+              <DocumentExportOptions 
+                documentContent={generatedDocument} 
+                documentTitle={`${template.title} - ${new Date().toLocaleDateString()}`}
+                showPreviewButton={true}
+              />
             </div>
             
             {/* Notarization Guidance */}
