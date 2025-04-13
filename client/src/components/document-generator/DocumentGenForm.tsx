@@ -15,6 +15,9 @@ import { DocumentTemplate } from "@shared/schema";
 import { generateDocument } from "@/lib/openai";
 import DocumentExportOptions from "./DocumentExportOptions";
 import NotarizationGuidance from "./NotarizationGuidance";
+import SignatureRequestForm from "./SignatureRequestForm"; // Import SignatureRequestForm
+import SignatureStatus from "./SignatureStatus"; // Import SignatureStatus
+
 
 interface DocumentGenFormProps {
   template: DocumentTemplate;
@@ -25,6 +28,7 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("form");
   const [generatedDocument, setGeneratedDocument] = useState<string | null>(null);
+  const [dialog, setDialog] = useState(null); // Add state for dialog
 
   // Initialize form with default values
   const form = useForm({
@@ -116,7 +120,7 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
   // Placeholder for e-signature initiation (needs implementation)
   const initiateSigningProcess = async (documentContent: string | null) => {
     if (!documentContent) return;
-    
+
     const handleSigners = async (signers: Array<{ name: string, email: string, role?: string }>) => {
       try {
         const response = await fetch('/api/docuseal/submissions', {
@@ -135,7 +139,7 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
 
         const data = await response.json();
         setActiveTab("signatures");
-        
+
         // Add signature status component
         setDialog({
           title: "Signature Request Status",
@@ -147,7 +151,7 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
           ),
           showClose: true
         });
-        
+
         toast({
           title: "Signature Request Sent",
           description: "The document has been sent to the specified signers.",
@@ -289,7 +293,7 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
       <TabsContent value="preview" className="mt-4">
         {generatedDocument && (
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center mb-4">
               <DocumentExportOptions 
                 documentContent={generatedDocument} 
                 documentTitle={`${template.title} - ${new Date().toLocaleDateString()}`}
@@ -305,9 +309,6 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
               )}
             </div>
 
-            {/* Notarization Guidance */}
-            <NotarizationGuidance template={template} />
-
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-xl">{template.title}</CardTitle>
@@ -320,6 +321,14 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        )}
+      </TabsContent>
+      {/*Added a new tab for signature status*/}
+      <TabsContent value="signatures" className="mt-4">
+        {dialog && (
+          <div>
+            {dialog.content}
           </div>
         )}
       </TabsContent>
