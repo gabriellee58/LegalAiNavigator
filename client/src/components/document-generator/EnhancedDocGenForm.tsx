@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { DocumentTemplate } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
+import NotarizationGuidance from "./NotarizationGuidance";
 
 interface EnhancedDocGenFormProps {
   template: DocumentTemplate;
@@ -367,6 +368,14 @@ export default function EnhancedDocGenForm({ template }: EnhancedDocGenFormProps
                 {t("download_document")}
               </Button>
             </div>
+            
+            {/* Notarization Guidance */}
+            <NotarizationGuidance 
+              template={{
+                ...template,
+                jurisdiction: jurisdiction  // Use the selected jurisdiction
+              }} 
+            />
             
             <Card>
               <CardContent className="pt-6">

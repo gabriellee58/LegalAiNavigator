@@ -14,6 +14,7 @@ import { t } from "@/lib/i18n";
 import { DocumentTemplate } from "@shared/schema";
 import { generateDocument } from "@/lib/openai";
 import DocumentExportOptions from "./DocumentExportOptions";
+import NotarizationGuidance from "./NotarizationGuidance";
 
 interface DocumentGenFormProps {
   template: DocumentTemplate;
@@ -225,6 +226,9 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
                 documentTitle={`${template.title} - ${new Date().toLocaleDateString()}`}
               />
             </div>
+            
+            {/* Notarization Guidance */}
+            <NotarizationGuidance template={template} />
             
             <Card>
               <CardHeader className="pb-3">
