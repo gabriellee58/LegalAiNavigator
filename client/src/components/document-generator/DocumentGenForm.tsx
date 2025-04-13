@@ -114,10 +114,59 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
   };
 
   // Placeholder for e-signature initiation (needs implementation)
-  const initiateSigningProcess = (documentContent: string | null) => {
-    // Implement DocuSeal integration here.  This is a placeholder.
-    console.log("Initiating signing process with document:", documentContent);
-    // Add your DocuSeal API call here to initiate the signing process.
+  const initiateSigningProcess = async (documentContent: string | null) => {
+    if (!documentContent) return;
+    
+    const handleSigners = async (signers: Array<{ name: string, email: string, role?: string }>) => {
+      try {
+        const response = await fetch('/api/docuseal/submissions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            documentContent,
+            signers,
+            title: `${template.title} - ${new Date().toLocaleDateString()}`
+          })
+        });
+
+        if (!response.ok) throw new Error('Failed to create signature request');
+
+        const data = await response.json();
+        setActiveTab("signatures");
+        
+        toast({
+          title: "Signature Request Sent",
+          description: "The document has been sent to the specified signers.",
+        });
+
+        return data;
+      } catch (error) {
+        console.error('Signature request error:', error);
+        toast({
+          title: "Error",
+          description: "Failed to send signature request. Please try again.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    return new Promise<void>((resolve) => {
+      setDialog({
+        title: "Request Signatures",
+        content: (
+          <SignatureRequestForm
+            onSubmit={async (signers) => {
+              await handleSigners(signers);
+              setDialog(null);
+              resolve();
+            }}
+          />
+        ),
+        showClose: true,
+      });
+    });
   };
 
 
