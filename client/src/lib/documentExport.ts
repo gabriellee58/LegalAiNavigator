@@ -121,12 +121,19 @@ export const generatePDF = async (
     `;
     
     // Write content to iframe
-    iframe.contentWindow?.document.open();
-    iframe.contentWindow?.document.write(html);
-    iframe.contentWindow?.document.close();
+    if (iframe.contentWindow) {
+      iframe.contentWindow.document.open();
+      iframe.contentWindow.document.write(html);
+      iframe.contentWindow.document.close();
+    } else {
+      console.error("Could not access iframe content window");
+      document.body.removeChild(iframe);
+      throw new Error('Failed to initialize document preview');
+    }
     
     return new Promise<boolean | string>((resolve) => {
-      iframe.onload = () => {
+      // Set a timeout to ensure the iframe has loaded
+      setTimeout(() => {
         try {
           const win = iframe.contentWindow;
           
@@ -150,33 +157,39 @@ export const generatePDF = async (
               resolve(false);
             }
           } else {
-            // For preview or direct download, attempt to create a PDF data URL
-            try {
-              // Approach 1: Use a library like jsPDF if available
-              // Fallback to a data URL with the HTML content
-              const blob = new Blob([html], { type: 'text/html' });
-              const url = URL.createObjectURL(blob);
-              resolve(url);
-            } catch (e) {
-              console.error("Error creating PDF data URL:", e);
-              resolve(false);
-            }
+            // Create a simple data URL with the HTML content
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            
+            // Ensure to clean up the iframe
+            setTimeout(() => {
+              try {
+                document.body.removeChild(iframe);
+              } catch (e) {
+                console.warn('Iframe already removed', e);
+              }
+            }, 500);
+            
+            resolve(url);
           }
-          
-          // Clean up the iframe after operation
-          setTimeout(() => {
-            document.body.removeChild(iframe);
-          }, 5000); // Allow time for print dialog or data URL creation
         } catch (err) {
           console.error('Error in PDF generation process:', err);
-          document.body.removeChild(iframe);
-          resolve(false);
+          try {
+            document.body.removeChild(iframe);
+          } catch (e) {
+            console.warn('Iframe already removed', e);
+          }
+          
+          // Fallback to text for preview
+          const blob = new Blob([content], { type: 'text/plain' });
+          const url = URL.createObjectURL(blob);
+          resolve(url);
         }
-      };
+      }, 300); // Short delay to ensure content is loaded
     });
   } catch (error) {
     console.error('Error generating PDF:', error);
-    throw new Error('Failed to generate PDF. Please try again.');
+    return false;
   }
 };
 

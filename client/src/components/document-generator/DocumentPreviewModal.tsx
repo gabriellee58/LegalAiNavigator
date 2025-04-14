@@ -24,8 +24,20 @@ import * as pdfjsLib from "pdfjs-dist";
 import { toast } from "@/hooks/use-toast";
 import { exportAsText, printDocument, generatePDF } from "@/lib/documentExport";
 
-// Set the PDF.js worker path
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Set the PDF.js worker path - ensure it works with our current environment
+if (typeof window !== 'undefined') {
+  try {
+    // Try to use CDN worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+    console.log("Using CDN PDF.js worker");
+  } catch (err) {
+    console.error("Error setting up PDF.js worker:", err);
+    
+    // Fallback to no worker (less efficient but still functional)
+    pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+    console.warn("Using PDF.js without worker");
+  }
+}
 
 interface DocumentPreviewModalProps {
   isOpen: boolean;
@@ -79,11 +91,28 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
       // If the PDF generation function returns a URL, use it
       if (pdfGenResult && typeof pdfGenResult === 'string') {
         setPdfUrl(pdfGenResult);
-        await loadPdfDocument(pdfGenResult);
+        try {
+          await loadPdfDocument(pdfGenResult);
+        } catch (pdfError) {
+          console.error("PDF.js loading error:", pdfError);
+          // If PDF.js fails, show a text preview instead
+          setPdfUrl(null);
+          setIsLoading(false);
+          toast({
+            title: t("Using Simplified Preview"),
+            description: t("PDF preview unavailable. Showing text format instead."),
+            variant: "default"
+          });
+        }
       } else {
         // Fallback to displaying text
         setPdfUrl(null);
         setIsLoading(false);
+        toast({
+          title: t("Using Text Preview"),
+          description: t("PDF preview unavailable. Showing text format instead."),
+          variant: "default"
+        });
       }
     } catch (error) {
       console.error("Error generating PDF preview:", error);
