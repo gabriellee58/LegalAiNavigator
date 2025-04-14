@@ -85,23 +85,27 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
   // Convert text to PDF and render it
   const generatePdfFromText = async () => {
     try {
-      // Use the existing PDF generation function
+      setIsLoading(true);
+      // Use the existing PDF generation function with preview mode
       const pdfGenResult = await generatePDF(documentContent, `${documentTitle}.pdf`, false);
       
-      // If the PDF generation function returns a URL, use it
       if (pdfGenResult && typeof pdfGenResult === 'string') {
         setPdfUrl(pdfGenResult);
         try {
-          await loadPdfDocument(pdfGenResult);
+          const loadingTask = pdfjsLib.getDocument(pdfGenResult);
+          const pdfDoc = await loadingTask.promise;
+          pdfDocRef.current = pdfDoc;
+          setTotalPages(pdfDoc.numPages);
+          await renderPage(1);
+          setIsLoading(false);
         } catch (pdfError) {
           console.error("PDF.js loading error:", pdfError);
-          // If PDF.js fails, show a text preview instead
           setPdfUrl(null);
           setIsLoading(false);
           toast({
-            title: t("Using Simplified Preview"),
-            description: t("PDF preview unavailable. Showing text format instead."),
-            variant: "default"
+            title: t("PDF Preview Error"),
+            description: t("Could not load PDF preview. Showing text format instead."),
+            variant: "destructive"
           });
         }
       } else {
