@@ -16,7 +16,7 @@ export const generatePDF = async (
   content: string, 
   filename: string = 'document.pdf', 
   openPrintDialog: boolean = true
-): Promise<string> => {
+): Promise<boolean | string> => {
   try {
     // Create a hidden iframe to use for PDF generation
     const iframe = document.createElement('iframe');

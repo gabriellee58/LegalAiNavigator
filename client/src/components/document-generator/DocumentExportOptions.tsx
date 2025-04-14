@@ -49,12 +49,6 @@ const DocumentExportOptions: React.FC<DocumentExportOptionsProps> = ({
     
     setIsExporting(true);
     
-    // Add loading toast
-    const loadingToast = toast({
-      title: t("Preparing document"),
-      description: t("Please wait while we prepare your document..."),
-    });
-    
     try {
       // Sanitize the filename
       const sanitizedTitle = documentTitle.replace(/[^a-zA-Z0-9_\-\.]/g, "_");
