@@ -1,8 +1,8 @@
-import React, { createContext, useContext, ReactNode, useMemo, ComponentType } from 'react';
+import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useSubscription } from '@/hooks/use-subscription';
 import { useToast } from '@/hooks/use-toast';
-import { Redirect, Route } from 'wouter';
+import { useLocation } from 'wouter';
 
 // Define permission types
 export type PermissionKey = 
@@ -23,6 +23,9 @@ export type PermissionKey =
 type PermissionsContextType = {
   hasPermission: (permission: PermissionKey) => boolean;
   permissions: PermissionKey[];
+  userRole: string;
+  isAdmin: boolean;
+  isModerator: boolean;
 };
 
 // Create context
@@ -37,6 +40,11 @@ interface PermissionsProviderProps {
 export function PermissionsProvider({ children }: PermissionsProviderProps) {
   const { user } = useAuth();
   const { subscription, currentPlan } = useSubscription();
+
+  // Determine user role properties
+  const userRole = useMemo(() => user?.role || 'user', [user]);
+  const isAdmin = useMemo(() => userRole === 'admin', [userRole]);
+  const isModerator = useMemo(() => userRole === 'moderator', [userRole]);
 
   // Determine permissions based on user role and subscription level
   const permissions = useMemo(() => {
@@ -80,7 +88,7 @@ export function PermissionsProvider({ children }: PermissionsProviderProps) {
     }
     
     // Admin permissions
-    if (user?.role === 'admin') {
+    if (isAdmin) {
       perms.push('admin:access');
       // Admins get all permissions
       perms.push('documents:advanced');
@@ -94,8 +102,14 @@ export function PermissionsProvider({ children }: PermissionsProviderProps) {
       perms.push('billing:access');
     }
     
+    // Moderator permissions
+    if (isModerator) {
+      perms.push('documents:advanced');
+      perms.push('research:advanced');
+    }
+    
     return perms;
-  }, [user, subscription, currentPlan]);
+  }, [user, subscription, currentPlan, isAdmin, isModerator]);
 
   // Check if user has a specific permission
   const hasPermission = (permission: PermissionKey): boolean => {
@@ -105,6 +119,9 @@ export function PermissionsProvider({ children }: PermissionsProviderProps) {
   const value = {
     hasPermission,
     permissions,
+    userRole,
+    isAdmin,
+    isModerator
   };
 
   return (
@@ -123,55 +140,42 @@ export function usePermissions() {
   return context;
 }
 
-// Permissions-aware wrapper component
-function PermissionProtectedComponent<P>({
-  component: Component,
-  requiredPermission,
-  redirectTo = '/subscription-plans',
-  ...props
-}: {
-  component: ComponentType<P>;
-  requiredPermission: PermissionKey;
-  redirectTo?: string;
-} & P) {
-  const { hasPermission } = usePermissions();
-  const { toast } = useToast();
-  
-  if (!hasPermission(requiredPermission)) {
-    toast({
-      title: "Permission Required",
-      description: "You need to upgrade your subscription to access this feature.",
-      variant: "destructive",
-    });
-    return <Redirect to={redirectTo} />;
-  }
-  
-  return <Component {...props as P} />;
-}
-
 // Higher-order component to check permissions
 export function withPermissionCheck<P extends object>(
-  WrappedComponent: ComponentType<P>,
+  WrappedComponent: React.ComponentType<P>,
   requiredPermission: PermissionKey,
   redirectPath = '/subscription-plans'
 ) {
-  // Set display name for debugging
+  // Create a named component for better debugging
+  function WithPermissionCheck(props: P) {
+    const { hasPermission } = usePermissions();
+    const { toast } = useToast();
+    const [, navigate] = useLocation();
+    
+    // Check if the user has the required permission using the useEffect hook
+    React.useEffect(() => {
+      if (!hasPermission(requiredPermission)) {
+        toast({
+          title: "Permission Required",
+          description: "You need to upgrade your subscription to access this feature.",
+          variant: "destructive",
+        });
+        navigate(redirectPath);
+      }
+    }, [hasPermission, navigate, toast]);
+    
+    // If permission check passes, render the wrapped component
+    if (hasPermission(requiredPermission)) {
+      return <WrappedComponent {...props} />;
+    }
+    
+    // Return null while redirecting
+    return null;
+  }
+  
+  // Set a display name for better debugging
   const displayName = WrappedComponent.displayName || WrappedComponent.name || 'Component';
+  WithPermissionCheck.displayName = `WithPermissionCheck(${displayName})`;
   
-  // Create the wrapped component
-  const WrappedWithPermission = (props: P) => {
-    return (
-      <PermissionProtectedComponent
-        component={WrappedComponent}
-        requiredPermission={requiredPermission}
-        redirectTo={redirectPath}
-        {...props}
-      />
-    );
-  };
-  
-  // Set a readable display name for debugging
-  WrappedWithPermission.displayName = `WithPermissionCheck(${displayName})`;
-  
-  return WrappedWithPermission;
+  return WithPermissionCheck;
 }

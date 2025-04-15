@@ -5,7 +5,6 @@ import { z } from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useAuth } from '@/hooks/use-auth';
-import { usePermissions } from '@/hooks/use-permissions';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,9 +40,13 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 const ProfilePage: React.FC = () => {
   const { user } = useAuth();
-  const { userRole, isAdmin, isModerator } = usePermissions();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Basic role information without the permissions system
+  const userRole = user?.role || 'user';
+  const isAdmin = userRole === 'admin';
+  const isModerator = userRole === 'moderator';
   
   // Set default form values
   const defaultValues: Partial<ProfileFormValues> = {
