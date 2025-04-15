@@ -1,8 +1,8 @@
-import React, { createContext, useContext, ReactNode, useMemo, ComponentType, useEffect } from 'react';
+import React, { createContext, useContext, ReactNode, useMemo, ComponentType } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useSubscription } from '@/hooks/use-subscription';
 import { useToast } from '@/hooks/use-toast';
-import { useLocation } from 'wouter';
+import { Redirect, Route } from 'wouter';
 
 // Define permission types
 export type PermissionKey = 
@@ -123,33 +123,55 @@ export function usePermissions() {
   return context;
 }
 
+// Permissions-aware wrapper component
+function PermissionProtectedComponent<P>({
+  component: Component,
+  requiredPermission,
+  redirectTo = '/subscription-plans',
+  ...props
+}: {
+  component: ComponentType<P>;
+  requiredPermission: PermissionKey;
+  redirectTo?: string;
+} & P) {
+  const { hasPermission } = usePermissions();
+  const { toast } = useToast();
+  
+  if (!hasPermission(requiredPermission)) {
+    toast({
+      title: "Permission Required",
+      description: "You need to upgrade your subscription to access this feature.",
+      variant: "destructive",
+    });
+    return <Redirect to={redirectTo} />;
+  }
+  
+  return <Component {...props as P} />;
+}
+
 // Higher-order component to check permissions
 export function withPermissionCheck<P extends object>(
   WrappedComponent: ComponentType<P>,
   requiredPermission: PermissionKey,
   redirectPath = '/subscription-plans'
 ) {
-  return function WithPermissionCheck(props: P) {
-    const { hasPermission } = usePermissions();
-    const { toast } = useToast();
-    const [, setLocation] = useLocation();
-    
-    useEffect(() => {
-      if (!hasPermission(requiredPermission)) {
-        toast({
-          title: "Permission Required",
-          description: "You need to upgrade your subscription to access this feature.",
-          variant: "destructive",
-        });
-        
-        setLocation(redirectPath);
-      }
-    }, [hasPermission, requiredPermission, setLocation]);
-    
-    if (!hasPermission(requiredPermission)) {
-      return null; // Return null while redirecting
-    }
-    
-    return <WrappedComponent {...props} />;
+  // Set display name for debugging
+  const displayName = WrappedComponent.displayName || WrappedComponent.name || 'Component';
+  
+  // Create the wrapped component
+  const WrappedWithPermission = (props: P) => {
+    return (
+      <PermissionProtectedComponent
+        component={WrappedComponent}
+        requiredPermission={requiredPermission}
+        redirectTo={redirectPath}
+        {...props}
+      />
+    );
   };
+  
+  // Set a readable display name for debugging
+  WrappedWithPermission.displayName = `WithPermissionCheck(${displayName})`;
+  
+  return WrappedWithPermission;
 }
