@@ -1,91 +1,155 @@
-import React, { createContext, useContext, useMemo } from 'react';
-import type { User } from '@shared/schema';
+import React, { createContext, useContext, ReactNode, useMemo, ComponentType, useEffect } from 'react';
+import { useAuth } from '@/hooks/use-auth';
+import { useSubscription } from '@/hooks/use-subscription';
+import { useToast } from '@/hooks/use-toast';
+import { useLocation } from 'wouter';
 
 // Define permission types
-export type Permission = 
-  | 'canManageUsers'
-  | 'canManageContent' 
-  | 'canManageSystem'
-  | 'canAccessAdminPanel';
+export type PermissionKey = 
+  | 'documents:create' 
+  | 'documents:advanced' 
+  | 'research:basic' 
+  | 'research:advanced'
+  | 'contracts:analyze'
+  | 'contracts:compare'
+  | 'dispute:create'
+  | 'dispute:mediation'
+  | 'compliance:check'
+  | 'notarization:access'
+  | 'billing:access'
+  | 'admin:access';
 
-// Default permissions by role
-const DEFAULT_PERMISSIONS: Record<string, Permission[]> = {
-  admin: ['canManageUsers', 'canManageContent', 'canManageSystem', 'canAccessAdminPanel'],
-  moderator: ['canManageContent', 'canAccessAdminPanel'],
-  user: []
+// Context type
+type PermissionsContextType = {
+  hasPermission: (permission: PermissionKey) => boolean;
+  permissions: PermissionKey[];
 };
 
-// Context interface
-interface PermissionsContextType {
-  hasPermission: (permission: Permission) => boolean;
-  isAdmin: boolean;
-  isModerator: boolean;
-  userRole: string | undefined;
-}
+// Create context
+const PermissionsContext = createContext<PermissionsContextType | null>(null);
 
-// Create the context
-const PermissionsContext = createContext<PermissionsContextType | undefined>(undefined);
-
-// Provider component - accepts user data directly to avoid circular import with useAuth
+// Provider props
 interface PermissionsProviderProps {
-  children: React.ReactNode;
-  user: User | null;
+  children: ReactNode;
 }
 
-export const PermissionsProvider: React.FC<PermissionsProviderProps> = ({ children, user }) => {
-  // Memoize the permissions data to avoid recalculations
-  const { 
-    hasPermission, 
-    isAdmin, 
-    isModerator, 
-    userRole 
-  } = useMemo(() => {
-    // Get the user's role, defaulting to 'user' if not present
-    const role = user?.role || 'user';
+// Permissions Provider
+export function PermissionsProvider({ children }: PermissionsProviderProps) {
+  const { user } = useAuth();
+  const { subscription, currentPlan } = useSubscription();
+
+  // Determine permissions based on user role and subscription level
+  const permissions = useMemo(() => {
+    const perms: PermissionKey[] = [];
     
-    // Check if user has a specific permission
-    const hasPermission = (permission: Permission): boolean => {
-      // Admin has all permissions
-      if (role === 'admin') return true;
-      
-      // Check if the role has the requested permission
-      return DEFAULT_PERMISSIONS[role]?.includes(permission) || false;
-    };
+    // Default permissions for any authenticated user
+    if (user) {
+      perms.push('documents:create');
+      perms.push('research:basic');
+    }
     
-    // Helper flags for common roles
-    const isAdmin = role === 'admin';
-    const isModerator = role === 'moderator';
+    // Basic subscription permissions
+    if (subscription && currentPlan?.id === 'basic') {
+      // Basic plan has limited access
+      perms.push('contracts:analyze');
+      perms.push('compliance:check');
+    }
     
-    return { hasPermission, isAdmin, isModerator, userRole: role };
-  }, [user]);
-  
+    // Professional subscription permissions
+    if (subscription && currentPlan?.id === 'professional') {
+      perms.push('documents:advanced');
+      perms.push('research:advanced');
+      perms.push('contracts:analyze');
+      perms.push('contracts:compare');
+      perms.push('dispute:create');
+      perms.push('compliance:check');
+      perms.push('billing:access');
+    }
+    
+    // Enterprise subscription permissions
+    if (subscription && currentPlan?.id === 'enterprise') {
+      perms.push('documents:advanced');
+      perms.push('research:advanced');
+      perms.push('contracts:analyze');
+      perms.push('contracts:compare');
+      perms.push('dispute:create');
+      perms.push('dispute:mediation');
+      perms.push('compliance:check');
+      perms.push('notarization:access');
+      perms.push('billing:access');
+    }
+    
+    // Admin permissions
+    if (user?.role === 'admin') {
+      perms.push('admin:access');
+      // Admins get all permissions
+      perms.push('documents:advanced');
+      perms.push('research:advanced');
+      perms.push('contracts:analyze');
+      perms.push('contracts:compare');
+      perms.push('dispute:create');
+      perms.push('dispute:mediation');
+      perms.push('compliance:check');
+      perms.push('notarization:access');
+      perms.push('billing:access');
+    }
+    
+    return perms;
+  }, [user, subscription, currentPlan]);
+
+  // Check if user has a specific permission
+  const hasPermission = (permission: PermissionKey): boolean => {
+    return permissions.includes(permission);
+  };
+
+  const value = {
+    hasPermission,
+    permissions,
+  };
+
   return (
-    <PermissionsContext.Provider value={{ hasPermission, isAdmin, isModerator, userRole }}>
+    <PermissionsContext.Provider value={value}>
       {children}
     </PermissionsContext.Provider>
   );
-};
+}
 
 // Hook to use permissions
-export const usePermissions = (): PermissionsContextType => {
+export function usePermissions() {
   const context = useContext(PermissionsContext);
-  
-  if (context === undefined) {
+  if (!context) {
     throw new Error('usePermissions must be used within a PermissionsProvider');
   }
-  
   return context;
-};
+}
 
-// Higher-order component to protect routes based on permissions
-// This HOC now needs to be used separately to avoid circular dependencies
-export const withPermissionCheck = <P extends object>(
-  Component: React.ComponentType<P>,
-  requiredPermission: Permission
-): React.FC<P> => {
-  // The actual implementation will be moved to a separate file
-  // to avoid circular dependencies
-  return (props: P) => <Component {...props} />;
-};
-
-export default usePermissions;
+// Higher-order component to check permissions
+export function withPermissionCheck<P extends object>(
+  WrappedComponent: ComponentType<P>,
+  requiredPermission: PermissionKey,
+  redirectPath = '/subscription-plans'
+) {
+  return function WithPermissionCheck(props: P) {
+    const { hasPermission } = usePermissions();
+    const { toast } = useToast();
+    const [, setLocation] = useLocation();
+    
+    useEffect(() => {
+      if (!hasPermission(requiredPermission)) {
+        toast({
+          title: "Permission Required",
+          description: "You need to upgrade your subscription to access this feature.",
+          variant: "destructive",
+        });
+        
+        setLocation(redirectPath);
+      }
+    }, [hasPermission, requiredPermission, setLocation]);
+    
+    if (!hasPermission(requiredPermission)) {
+      return null; // Return null while redirecting
+    }
+    
+    return <WrappedComponent {...props} />;
+  };
+}

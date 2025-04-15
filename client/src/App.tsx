@@ -216,15 +216,17 @@ function App() {
   return (
     <AuthProvider>
       <SubscriptionProvider>
-        <ErrorProvider>
-          <ErrorBoundary>
-            <Head />
-            <div className="app-container" key={language}>
-              <Router />
-            </div>
-            <Toaster />
-          </ErrorBoundary>
-        </ErrorProvider>
+        <PermissionsProvider>
+          <ErrorProvider>
+            <ErrorBoundary>
+              <Head />
+              <div className="app-container" key={language}>
+                <Router />
+              </div>
+              <Toaster />
+            </ErrorBoundary>
+          </ErrorProvider>
+        </PermissionsProvider>
       </SubscriptionProvider>
     </AuthProvider>
   );
