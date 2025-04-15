@@ -2,6 +2,7 @@ import { Switch, Route } from "wouter";
 import { useEffect, useState } from "react";
 import { getLanguage } from "./lib/i18n";
 import { AuthProvider } from "@/hooks/use-auth";
+import { SubscriptionProvider } from "@/hooks/use-subscription";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { ErrorBoundary } from "./components/error-boundary";
 import { Toaster } from "@/components/ui/toaster";
@@ -35,6 +36,7 @@ import CourtProceduresPage from "./pages/court-procedures";
 import CourtProceduresStaticPage from "./pages/court-procedures-static";
 import CourtProcedureDetailPage from "./pages/court-procedure-detail";
 import NotarizationGuidePage from "./pages/notarization-guide";
+import SubscriptionPlansPage from "./pages/subscription-plans";
 
 // Import legal domains browser
 import LegalDomainsPage from "./pages/legal-domains";
@@ -126,6 +128,7 @@ function Router() {
       <ProtectedRoute path="/document-navigator" component={DocumentNavigatorPage} />
       <ProtectedRoute path="/timeline-estimator" component={TimelineEstimatorPage} />
       <ProtectedRoute path="/cost-estimator" component={CostEstimatorPage} />
+      <ProtectedRoute path="/subscription-plans" component={SubscriptionPlansPage} />
       
       {/* Document Templates */}
       <ProtectedRoute path="/documents/all" component={DocumentTemplatesPage} />
@@ -212,15 +215,17 @@ function App() {
 
   return (
     <AuthProvider>
-      <ErrorProvider>
-        <ErrorBoundary>
-          <Head />
-          <div className="app-container" key={language}>
-            <Router />
-          </div>
-          <Toaster />
-        </ErrorBoundary>
-      </ErrorProvider>
+      <SubscriptionProvider>
+        <ErrorProvider>
+          <ErrorBoundary>
+            <Head />
+            <div className="app-container" key={language}>
+              <Router />
+            </div>
+            <Toaster />
+          </ErrorBoundary>
+        </ErrorProvider>
+      </SubscriptionProvider>
     </AuthProvider>
   );
 }

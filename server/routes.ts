@@ -42,6 +42,7 @@ import complianceRouter from "./routes/compliance";
 import courtProceduresRouter from "./routes/courtProcedures";
 import userRouter from "./routes/user";
 import docusealRouter from "./routes/docuseal";
+import subscriptionRouter from "./routes/subscription";
 
 // Set up multer for file uploads
 const storage_config = multer.memoryStorage();
@@ -86,6 +87,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register user routes
   app.use('/api/user', userRouter);
   app.use('/api/docuseal', docusealRouter);
+  app.use('/api/subscriptions', subscriptionRouter);
   
   // Health check endpoint
   app.get("/api/health", (req: Request, res: Response) => {

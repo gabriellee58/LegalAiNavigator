@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, uuid, json, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, uuid, json, varchar, numeric } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -401,6 +401,9 @@ export const usersRelations = relations(users, ({ many }) => ({
   mediationMessages: many(mediationMessages),
   savedCitations: many(savedCitations),
   researchVisualizations: many(researchVisualizations),
+  // Subscription relations
+  subscriptions: many(userSubscriptions),
+  usageTracking: many(userUsage),
   // New collaborative features relations
   uploadedDocuments: many(sharedDocuments, { relationName: "uploader" }),
   documentComments: many(documentComments),
@@ -1206,3 +1209,96 @@ export const insertAiResponseCacheSchema = createInsertSchema(aiResponseCache).o
 
 export type InsertAiResponseCache = z.infer<typeof insertAiResponseCacheSchema>;
 export type AiResponseCache = typeof aiResponseCache.$inferSelect;
+
+// Subscription plans schema
+export const subscriptionPlans = pgTable("subscription_plans", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  price: numeric("price").notNull(),
+  stripePriceId: text("stripe_price_id").notNull(),
+  interval: text("interval").default("month"),
+  features: jsonb("features").notNull(),
+  isActive: boolean("is_active").default(true),
+  tier: text("tier").notNull(), // 'basic', 'professional', 'enterprise'
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const insertSubscriptionPlanSchema = createInsertSchema(subscriptionPlans).omit({
+  id: true, 
+  createdAt: true
+});
+
+export type InsertSubscriptionPlan = z.infer<typeof insertSubscriptionPlanSchema>;
+export type SubscriptionPlan = typeof subscriptionPlans.$inferSelect;
+
+// User subscriptions schema
+export const userSubscriptions = pgTable("user_subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  planId: integer("plan_id").references(() => subscriptionPlans.id),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  status: text("status").notNull().default("trial"), // 'trial', 'active', 'canceled', 'expired', 'past_due'
+  currentPeriodStart: timestamp("current_period_start"),
+  currentPeriodEnd: timestamp("current_period_end"),
+  trialStart: timestamp("trial_start"),
+  trialEnd: timestamp("trial_end"),
+  canceledAt: timestamp("canceled_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const insertUserSubscriptionSchema = createInsertSchema(userSubscriptions).omit({
+  id: true, 
+  createdAt: true
+});
+
+export type InsertUserSubscription = z.infer<typeof insertUserSubscriptionSchema>;
+export type UserSubscription = typeof userSubscriptions.$inferSelect;
+
+// User usage tracking schema
+export const userUsage = pgTable("user_usage", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  periodStart: timestamp("period_start").notNull(),
+  periodEnd: timestamp("period_end").notNull(),
+  documentGenCount: integer("document_gen_count").default(0),
+  researchQueryCount: integer("research_query_count").default(0),
+  contractAnalysisCount: integer("contract_analysis_count").default(0),
+  aiChatMessageCount: integer("ai_chat_message_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const insertUserUsageSchema = createInsertSchema(userUsage).omit({
+  id: true, 
+  createdAt: true
+});
+
+export type InsertUserUsage = z.infer<typeof insertUserUsageSchema>;
+export type UserUsage = typeof userUsage.$inferSelect;
+
+// Subscription relations
+export const subscriptionPlansRelations = relations(subscriptionPlans, ({ many }) => ({
+  userSubscriptions: many(userSubscriptions),
+}));
+
+export const userSubscriptionsRelations = relations(userSubscriptions, ({ one }) => ({
+  user: one(users, {
+    fields: [userSubscriptions.userId],
+    references: [users.id],
+  }),
+  plan: one(subscriptionPlans, {
+    fields: [userSubscriptions.planId],
+    references: [subscriptionPlans.id],
+  }),
+}));
+
+export const userUsageRelations = relations(userUsage, ({ one }) => ({
+  user: one(users, {
+    fields: [userUsage.userId],
+    references: [users.id],
+  }),
+}));
