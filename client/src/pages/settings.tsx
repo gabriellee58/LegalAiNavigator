@@ -10,12 +10,16 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/use-auth";
+import { useSubscription } from "@/hooks/use-subscription";
 import { Link } from "wouter";
+import { Badge } from "@/components/ui/badge";
+import { Clock, CheckCircle, AlertCircle, CreditCard } from "lucide-react";
 
 export default function SettingsPage() {
   const [currentTab, setCurrentTab] = useState("profile");
   const { toast } = useToast();
   const { user, updateProfileMutation, updatePasswordMutation } = useAuth();
+  const { subscription, currentPlan, isLoading: isSubscriptionLoading, isTrialActive, trialDaysRemaining } = useSubscription();
   
   // Form states
   const [fullName, setFullName] = useState(user?.fullName || "");
@@ -180,6 +184,111 @@ export default function SettingsPage() {
                   
                   <Button type="submit">{t("save_changes")}</Button>
                 </form>
+              </CardContent>
+            </Card>
+            
+            {/* Subscription Information Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Subscription Information</CardTitle>
+                <CardDescription>
+                  Manage your subscription plan and billing information
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isSubscriptionLoading ? (
+                  <div className="flex items-center justify-center py-6">
+                    <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
+                    <span className="ml-2">Loading subscription information...</span>
+                  </div>
+                ) : subscription ? (
+                  <div className="space-y-6">
+                    <div className="p-4 bg-muted rounded-lg">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="text-lg font-medium">
+                            {currentPlan?.name || "Subscription Plan"}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {isTrialActive ? (
+                              <span className="flex items-center text-yellow-600">
+                                <Clock className="mr-1 h-4 w-4" />
+                                Trial Period - {trialDaysRemaining} days remaining
+                              </span>
+                            ) : (
+                              <span className="flex items-center text-green-600">
+                                <CheckCircle className="mr-1 h-4 w-4" />
+                                Active
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        <Badge className="bg-primary text-primary-foreground">
+                          ${currentPlan?.price}/month
+                        </Badge>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <span className="text-muted-foreground">Billing Cycle:</span>
+                          <span>Monthly</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <span className="text-muted-foreground">Next Billing Date:</span>
+                          <span>{new Date(subscription.currentPeriodEnd).toLocaleDateString()}</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <span className="text-muted-foreground">Payment Method:</span>
+                          <span className="flex items-center">
+                            <CreditCard className="mr-1 h-4 w-4" />
+                            •••• •••• •••• {subscription.lastFour || "1234"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-3">
+                      <Link href="/subscription-plans">
+                        <Button variant="outline">Change Plan</Button>
+                      </Link>
+                      <Button variant="outline">Update Payment Method</Button>
+                      <Link href="/billing-history">
+                        <Button variant="secondary">Billing History</Button>
+                      </Link>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="p-5 bg-muted rounded-lg text-center mb-6">
+                      <AlertCircle className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                      <h3 className="text-lg font-medium mb-2">No Active Subscription</h3>
+                      <p className="text-muted-foreground mb-4">
+                        You don't have an active subscription plan. Choose a plan to access premium features.
+                      </p>
+                      <Link href="/subscription-plans">
+                        <Button>View Subscription Plans</Button>
+                      </Link>
+                    </div>
+                    
+                    <div className="border-t pt-4">
+                      <h4 className="font-medium mb-2">Why Subscribe?</h4>
+                      <ul className="text-sm space-y-2">
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                          <span>Access all document templates</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                          <span>Advanced legal research capabilities</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                          <span>Priority customer support</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
