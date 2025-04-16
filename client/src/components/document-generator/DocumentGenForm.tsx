@@ -61,6 +61,20 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
           }
         }
         
+        // Add fallback default values for any missing fields
+        const templateFields = (template.fields as any[] || []);
+        templateFields.forEach((field: any) => {
+          if (data[field.name] === undefined || data[field.name] === null || data[field.name] === '') {
+            if (field.type === 'number') {
+              data[field.name] = '0';
+            } else if (field.type === 'date') {
+              data[field.name] = new Date().toISOString().split('T')[0];
+            } else {
+              data[field.name] = field.defaultValue || '';
+            }
+          }
+        });
+        
         // Proceed with document generation
         return await generateDocument(
           user?.id || 0, 

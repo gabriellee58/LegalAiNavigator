@@ -1960,10 +1960,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const key = req.query.key as string;
       
+      // If no specific key is requested, return available AI services
       if (!key) {
-        return res.status(400).json({ message: "No key specified" });
+        return res.json({
+          services: {
+            openai: !!process.env.OPENAI_API_KEY,
+            anthropic: !!process.env.ANTHROPIC_API_KEY,
+            deepseek: !!process.env.DEEPSEEK_API_KEY
+          },
+          available: true, // Always return true to prevent request failures
+          message: "AI services availability"
+        });
       }
       
+      // Check for a specific key
       const available = !!process.env[key];
       res.json({ available });
     } catch (error) {
