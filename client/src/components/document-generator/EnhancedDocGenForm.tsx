@@ -154,15 +154,44 @@ export default function EnhancedDocGenForm({ template }: EnhancedDocGenFormProps
         setTimeout(() => {
           console.log("Forcing tab switch to preview tab");
           
-          // Find the preview tab button element and trigger a click
-          const previewTabButton = document.querySelector('[data-state="inactive"][data-value="preview"]');
+          // Find the preview tab button using the specific ID we added
+          const previewTabButton = document.getElementById('preview-tab');
           
           if (previewTabButton) {
             // Simulate a click on the preview tab button
             (previewTabButton as HTMLElement).click();
-            console.log("Preview tab button clicked via DOM");
+            console.log("Preview tab button clicked via direct ID");
+            
+            // Add a visual indication that we're switching tabs
+            const originalBackground = previewTabButton.style.backgroundColor;
+            previewTabButton.style.backgroundColor = "rgba(147, 51, 234, 0.1)"; // Highlight with a purple tint
+            
+            // Reset the style after animation completes
+            setTimeout(() => {
+              previewTabButton.style.backgroundColor = originalBackground;
+            }, 1000);
           } else {
-            console.log("Preview tab already active or button not found - using React state approach");
+            console.log("Preview tab button not found by ID - trying fallback approaches");
+            
+            // Try general selectors as fallbacks
+            const fallbackButton = document.querySelector('[data-value="preview"]');
+            if (fallbackButton) {
+              (fallbackButton as HTMLElement).click();
+              console.log("Preview tab button clicked via data-value selector");
+            } else {
+              // Try directly manipulating the Tabs component through its child elements
+              const tabsList = document.querySelector('[role="tablist"]');
+              if (tabsList) {
+                const tabs = tabsList.querySelectorAll('button');
+                if (tabs.length >= 2) {
+                  // Second tab should be preview
+                  (tabs[1] as HTMLElement).click();
+                  console.log("Preview tab button clicked via tablist fallback");
+                } else {
+                  console.log("All DOM approaches failed - using React state only");
+                }
+              }
+            }
           }
           
           // Scroll to the top of the preview content
@@ -215,11 +244,12 @@ export default function EnhancedDocGenForm({ template }: EnhancedDocGenFormProps
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
       <TabsList className="grid w-full grid-cols-2 mb-4">
-        <TabsTrigger value="form" className="flex items-center">
+        <TabsTrigger id="form-tab" value="form" className="flex items-center">
           <span className="material-icons mr-2 text-sm">edit</span>
           {t("form")}
         </TabsTrigger>
         <TabsTrigger 
+          id="preview-tab"
           value="preview" 
           disabled={!generatedDocument}
           className={`flex items-center ${!generatedDocument ? "opacity-50 cursor-not-allowed" : ""}`}
