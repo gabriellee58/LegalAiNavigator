@@ -32,7 +32,8 @@ async function generateEnhancedDocument(
   saveDocument: boolean = false,
   title?: string,
 ) {
-  const response = await apiRequest("POST", "/api/documents/enhanced", {
+  // apiRequest already returns parsed JSON data, no need to call .json()
+  const data = await apiRequest("POST", "/api/documents/enhanced", {
     template,
     formData,
     documentType,
@@ -41,8 +42,8 @@ async function generateEnhancedDocument(
     title
   });
   
-  const data = await response.json();
-  return data.content;
+  // Return content or the full response if it's a string
+  return typeof data === 'string' ? data : (data.content || data);
 }
 
 export default function EnhancedDocGenForm({ template }: EnhancedDocGenFormProps) {
