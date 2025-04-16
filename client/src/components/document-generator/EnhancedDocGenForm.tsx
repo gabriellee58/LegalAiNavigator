@@ -137,17 +137,20 @@ export default function EnhancedDocGenForm({ template }: EnhancedDocGenFormProps
       
       // Ensure we have document content
       if (documentContent && documentContent.length > 0) {
+        // First update the document state
         setGeneratedDocument(documentContent);
         
-        // Use setTimeout to ensure state is updated before tab switch
-        setTimeout(() => {
-          setActiveTab("preview");
-        }, 100);
+        // Directly set the active tab immediately
+        setActiveTab("preview");
         
+        // Also add a more explicit success notification
         toast({
           title: t("document_generated"),
           description: t("document_enhanced_success"),
         });
+        
+        // Log the tab switch for debugging
+        console.log("Switching to preview tab after successful document generation");
       } else {
         console.error("Enhanced document generation succeeded but returned empty content");
         toast({
