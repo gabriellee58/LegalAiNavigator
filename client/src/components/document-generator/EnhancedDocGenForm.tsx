@@ -140,7 +140,7 @@ export default function EnhancedDocGenForm({ template }: EnhancedDocGenFormProps
         // First update the document state
         setGeneratedDocument(documentContent);
         
-        // Directly set the active tab immediately
+        // Directly set the active tab state
         setActiveTab("preview");
         
         // Also add a more explicit success notification
@@ -149,8 +149,25 @@ export default function EnhancedDocGenForm({ template }: EnhancedDocGenFormProps
           description: t("document_enhanced_success"),
         });
         
-        // Log the tab switch for debugging
-        console.log("Switching to preview tab after successful document generation");
+        // Force tab switch using direct DOM manipulation after a short delay
+        // This ensures the state has been updated and DOM is ready
+        setTimeout(() => {
+          console.log("Forcing tab switch to preview tab");
+          
+          // Find the preview tab button element and trigger a click
+          const previewTabButton = document.querySelector('[data-state="inactive"][data-value="preview"]');
+          
+          if (previewTabButton) {
+            // Simulate a click on the preview tab button
+            (previewTabButton as HTMLElement).click();
+            console.log("Preview tab button clicked via DOM");
+          } else {
+            console.log("Preview tab already active or button not found - using React state approach");
+          }
+          
+          // Scroll to the top of the preview content
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 300);
       } else {
         console.error("Enhanced document generation succeeded but returned empty content");
         toast({
@@ -232,7 +249,11 @@ export default function EnhancedDocGenForm({ template }: EnhancedDocGenFormProps
                     <FormItem>
                       <FormLabel>{t("document_title")}</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input 
+                          {...field} 
+                          id="field-documentTitle" 
+                          name="documentTitle" 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -246,7 +267,7 @@ export default function EnhancedDocGenForm({ template }: EnhancedDocGenFormProps
                     value={jurisdiction} 
                     onValueChange={setJurisdiction}
                   >
-                    <SelectTrigger id="jurisdiction">
+                    <SelectTrigger id="field-jurisdiction" name="jurisdiction">
                       <SelectValue placeholder={t("select_jurisdiction")} />
                     </SelectTrigger>
                     <SelectContent>
@@ -285,6 +306,8 @@ export default function EnhancedDocGenForm({ template }: EnhancedDocGenFormProps
                                 <FormControl>
                                   <Input 
                                     {...formField} 
+                                    id={`field-${field.name}`}
+                                    name={field.name}
                                     type={field.type} 
                                     required={field.required}
                                   />
@@ -309,6 +332,8 @@ export default function EnhancedDocGenForm({ template }: EnhancedDocGenFormProps
                                 <FormControl>
                                   <Textarea 
                                     {...formField} 
+                                    id={`field-${field.name}`}
+                                    name={field.name}
                                     required={field.required}
                                     className="min-h-[100px]"
                                   />
