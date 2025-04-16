@@ -28,7 +28,15 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("form");
   const [generatedDocument, setGeneratedDocument] = useState<string | null>(null);
-  const [dialog, setDialog] = useState(null); // Add state for dialog
+  
+  // Define DialogState type
+  interface DialogState {
+    title?: string;
+    content: React.ReactNode;
+    showClose?: boolean;
+  }
+  
+  const [dialog, setDialog] = useState<DialogState | null>(null);
 
   // Initialize form with default values
   const form = useForm({
@@ -40,13 +48,31 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
 
   // Generate document mutation
   const { mutate: generateDocumentMutation, isPending, error, reset } = useMutation({
-    mutationFn: (data: Record<string, any>) => 
-      generateDocument(
-        user?.id || 0, 
-        template.id, 
-        `${template.title} - ${new Date().toLocaleDateString()}`,
-        data
-      ),
+    mutationFn: async (data: Record<string, any>) => {
+      try {
+        // Validate required fields before submitting
+        const requiredFields = (template.fields as any[])
+          .filter((field: any) => field.required)
+          .map((field: any) => field.name);
+          
+        for (const fieldName of requiredFields) {
+          if (!data[fieldName] || data[fieldName].trim() === '') {
+            throw new Error(`${fieldName} is required`);
+          }
+        }
+        
+        // Proceed with document generation
+        return await generateDocument(
+          user?.id || 0, 
+          template.id, 
+          `${template.title} - ${new Date().toLocaleDateString()}`,
+          data
+        );
+      } catch (error) {
+        console.error("Error in mutation function:", error);
+        throw error; // Re-throw to be caught by onError
+      }
+    },
     onSuccess: (data: any) => {
       console.log("Document generation successful, response:", data);
 
@@ -110,11 +136,23 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
   const retryGeneration = () => {
     reset();
     const formData = form.getValues();
-    generateDocumentMutation(formData);
+    try {
+      generateDocumentMutation(formData);
+    } catch (err) {
+      console.error("Error retrying document generation:", err);
+    }
   };
 
   const onSubmit = (data: Record<string, any>) => {
-    generateDocumentMutation(data);
+    try {
+      // Reset any previous errors
+      reset();
+      
+      // Call the mutation
+      generateDocumentMutation(data);
+    } catch (err) {
+      console.error("Error in form submission:", err);
+    }
   };
 
   // Placeholder for e-signature initiation (needs implementation)
@@ -190,19 +228,19 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-2 mb-4">
-        <TabsTrigger value="form" className="flex items-center">
+      <TabsList className="flex w-full mb-4 flex-wrap overflow-visible sm:flex-nowrap">
+        <TabsTrigger value="form" className="flex items-center flex-1 whitespace-nowrap">
           <span className="material-icons mr-2 text-sm">edit</span>
           {t("fill_details")}
         </TabsTrigger>
         <TabsTrigger 
           value="preview" 
           disabled={!generatedDocument}
-          className={`flex items-center ${!generatedDocument ? "opacity-50 cursor-not-allowed" : ""}`}
+          className={`flex items-center flex-1 whitespace-nowrap ${!generatedDocument ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           <span className="material-icons mr-2 text-sm">visibility</span>
           {t("preview_document")}
-          {!generatedDocument && <span className="ml-2 text-xs text-muted-foreground">(Generate first)</span>}
+          {!generatedDocument && <span className="ml-2 hidden sm:inline text-xs text-muted-foreground">(Generate first)</span>}
         </TabsTrigger>
       </TabsList>
 
@@ -293,16 +331,16 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
       <TabsContent value="preview" className="mt-4">
         {generatedDocument && (
           <div className="space-y-4">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <DocumentExportOptions 
                 documentContent={generatedDocument} 
                 documentTitle={`${template.title} - ${new Date().toLocaleDateString()}`}
                 showPreviewButton={true}
               />
-              {template?.requiresSignature && (
+              {template.subcategory === 'requires-signature' && (
                 <Button
                   onClick={() => initiateSigningProcess(generatedDocument)}
-                  className="bg-primary text-white"
+                  className="bg-primary text-white w-full sm:w-auto"
                 >
                   <span className="material-icons mr-2">draw</span>
                   Request Signatures
@@ -315,8 +353,8 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
                 <CardTitle className="text-xl">{template.title}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="bg-white p-6 border rounded-lg shadow-sm print:border-none print:shadow-none print:p-0">
-                  <pre id="document-content" className="whitespace-pre-wrap font-mono text-sm print:text-base">
+                <div className="bg-white p-4 sm:p-6 border rounded-lg shadow-sm print:border-none print:shadow-none print:p-0 overflow-auto">
+                  <pre id="document-content" className="whitespace-pre-wrap font-mono text-xs sm:text-sm print:text-base">
                     {generatedDocument}
                   </pre>
                 </div>
