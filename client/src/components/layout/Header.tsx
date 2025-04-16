@@ -93,10 +93,6 @@ function Header() {
       
       {/* User profile and actions */}
       <div className="flex items-center ml-auto md:ml-0">
-        <Button variant="ghost" size="icon" className="p-2 rounded-full text-white hover:bg-white/10 focus:outline-none relative">
-          <span className="material-icons">Notifications</span>
-          <span className="absolute top-1 right-1 w-2 h-2 bg-white rounded-full"></span>
-        </Button>
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
