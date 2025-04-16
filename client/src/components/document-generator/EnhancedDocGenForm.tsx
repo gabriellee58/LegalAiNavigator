@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -13,11 +13,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
+import { Loader2, FileText, Copy, Printer, Download } from "lucide-react";
 import { DocumentTemplate } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import NotarizationGuidance from "./NotarizationGuidance";
 import DocumentExportOptions from "./DocumentExportOptions";
+import DocumentSectionNavigator from "./DocumentSectionNavigator";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { cn } from "@/lib/utils";
 
 interface EnhancedDocGenFormProps {
   template: DocumentTemplate;
@@ -364,6 +369,15 @@ export default function EnhancedDocGenForm({ template }: EnhancedDocGenFormProps
       <TabsContent value="preview" className="mt-4">
         {generatedDocument && (
           <div className="space-y-4">
+            {/* Success message */}
+            <Alert className="bg-green-50 border-green-200">
+              <FileText className="h-4 w-4 text-green-600" />
+              <AlertTitle className="text-green-800">Document Generated Successfully</AlertTitle>
+              <AlertDescription className="text-green-700">
+                Your enhanced document has been generated. You can review it below, download it, or print it.
+              </AlertDescription>
+            </Alert>
+            
             <div className="flex justify-between items-center">
               <DocumentExportOptions 
                 documentContent={generatedDocument} 
@@ -380,15 +394,64 @@ export default function EnhancedDocGenForm({ template }: EnhancedDocGenFormProps
               }} 
             />
             
-            <Card>
-              <CardContent className="pt-6">
-                <div className="bg-white p-6 border rounded-lg shadow-sm">
-                  <pre className="whitespace-pre-wrap font-sans text-sm">
-                    {generatedDocument}
-                  </pre>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+              {/* Document section navigator */}
+              <Card className="lg:col-span-1 h-fit">
+                <CardHeader className="py-3">
+                  <CardTitle className="text-base">Document Sections</CardTitle>
+                </CardHeader>
+                <CardContent className="py-0">
+                  <DocumentSectionNavigator 
+                    documentContent={generatedDocument} 
+                  />
+                </CardContent>
+              </Card>
+              
+              {/* Document preview */}
+              <Card className="lg:col-span-3">
+                <CardHeader className="py-3 flex flex-row items-center justify-between">
+                  <CardTitle className="text-base">Document Preview</CardTitle>
+                  <div className="flex space-x-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => navigator.clipboard.writeText(generatedDocument)}
+                      title="Copy to clipboard"
+                    >
+                      <Copy className="h-4 w-4 mr-1" />
+                      Copy
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => window.print()}
+                      title="Print document"
+                    >
+                      <Printer className="h-4 w-4 mr-1" />
+                      Print
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={downloadDocument}
+                      title="Download as text file"
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      Download
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[60vh] rounded-md border p-4">
+                    <div id="document-content" className="bg-white rounded-lg">
+                      <pre className="whitespace-pre-wrap font-sans text-sm">
+                        {generatedDocument}
+                      </pre>
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         )}
       </TabsContent>
