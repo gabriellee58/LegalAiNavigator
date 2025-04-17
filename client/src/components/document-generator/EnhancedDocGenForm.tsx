@@ -151,51 +151,35 @@ export default function EnhancedDocGenForm({ template }: EnhancedDocGenFormProps
         
         // Force tab switch using direct DOM manipulation after a short delay
         // This ensures the state has been updated and DOM is ready
+        // SIMPLIFIED APPROACH: Skip DOM manipulation and rely on React state
+        // Set the active tab and then apply some style changes after the state is updated
+        
+        console.log("Setting active tab to preview via React state");
+        setActiveTab("preview");
+        
+        // After a brief timeout, apply visual effects to the preview section
         setTimeout(() => {
-          console.log("Forcing tab switch to preview tab");
+          // Target the preview content more reliably using TabsContent
+          const previewContent = document.querySelector('.mt-4[role="tabpanel"]');
           
-          // Find the preview tab button using the specific ID we added
-          const previewTabButton = document.getElementById('preview-tab');
-          
-          if (previewTabButton) {
-            // Simulate a click on the preview tab button
-            (previewTabButton as HTMLElement).click();
-            console.log("Preview tab button clicked via direct ID");
+          if (previewContent) {
+            // Add a transition for smooth animation
+            previewContent.setAttribute('style', 'transition: background-color 0.5s ease-in-out');
             
-            // Add a visual indication that we're switching tabs
-            const originalBackground = previewTabButton.style.backgroundColor;
-            previewTabButton.style.backgroundColor = "rgba(147, 51, 234, 0.1)"; // Highlight with a purple tint
+            // Add a brief highlight animation
+            previewContent.setAttribute('style', 'background-color: rgba(147, 51, 234, 0.05); transition: background-color 0.5s ease-in-out');
+            console.log("Added highlight to preview content");
             
-            // Reset the style after animation completes
+            // Remove the highlight after animation completes
             setTimeout(() => {
-              previewTabButton.style.backgroundColor = originalBackground;
+              previewContent.setAttribute('style', 'background-color: transparent; transition: background-color 0.5s ease-in-out');
             }, 1000);
-          } else {
-            console.log("Preview tab button not found by ID - trying fallback approaches");
-            
-            // Try general selectors as fallbacks
-            const fallbackButton = document.querySelector('[data-value="preview"]');
-            if (fallbackButton) {
-              (fallbackButton as HTMLElement).click();
-              console.log("Preview tab button clicked via data-value selector");
-            } else {
-              // Try directly manipulating the Tabs component through its child elements
-              const tabsList = document.querySelector('[role="tablist"]');
-              if (tabsList) {
-                const tabs = tabsList.querySelectorAll('button');
-                if (tabs.length >= 2) {
-                  // Second tab should be preview
-                  (tabs[1] as HTMLElement).click();
-                  console.log("Preview tab button clicked via tablist fallback");
-                } else {
-                  console.log("All DOM approaches failed - using React state only");
-                }
-              }
-            }
           }
           
           // Scroll to the top of the preview content
           window.scrollTo({ top: 0, behavior: 'smooth' });
+          
+          console.log("Applied visual effects and scrolling to preview content");
         }, 300);
       } else {
         console.error("Enhanced document generation succeeded but returned empty content");
