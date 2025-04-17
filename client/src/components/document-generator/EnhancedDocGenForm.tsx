@@ -59,6 +59,33 @@ export default function EnhancedDocGenForm({ template }: EnhancedDocGenFormProps
   const [saveDocument, setSaveDocument] = useState(true);
   const [jurisdiction, setJurisdiction] = useState<string>("Canada");
   
+  // Create a ref to access the preview panel for highlight effects
+  const previewPanelRef = useRef<HTMLDivElement>(null);
+  
+  // This effect ensures that when we have a generated document, we switch to preview tab
+  useEffect(() => {
+    if (generatedDocument) {
+      console.log("useEffect detected generatedDocument change - switching to preview tab");
+      setActiveTab("preview");
+      
+      // Add a brief timeout to allow the tab switch to complete
+      setTimeout(() => {
+        // Apply highlight effect to preview panel
+        if (previewPanelRef.current) {
+          // Add flash animation class
+          previewPanelRef.current.classList.add("bg-purple-50/30");
+          
+          // Remove it after animation completes
+          setTimeout(() => {
+            if (previewPanelRef.current) {
+              previewPanelRef.current.classList.remove("bg-purple-50/30");
+            }
+          }, 1000);
+        }
+      }, 100);
+    }
+  }, [generatedDocument]);
+  
   // Canadian jurisdictions list
   const jurisdictions = [
     "Canada",
@@ -137,11 +164,8 @@ export default function EnhancedDocGenForm({ template }: EnhancedDocGenFormProps
       
       // Ensure we have document content
       if (documentContent && documentContent.length > 0) {
-        // First update the document state
+        // First update the document state - this will trigger useEffect to switch tabs
         setGeneratedDocument(documentContent);
-        
-        // Directly set the active tab state
-        setActiveTab("preview");
         
         // Also add a more explicit success notification
         toast({
@@ -149,37 +173,10 @@ export default function EnhancedDocGenForm({ template }: EnhancedDocGenFormProps
           description: t("document_enhanced_success"),
         });
         
-        // Force tab switch using direct DOM manipulation after a short delay
-        // This ensures the state has been updated and DOM is ready
-        // SIMPLIFIED APPROACH: Skip DOM manipulation and rely on React state
-        // Set the active tab and then apply some style changes after the state is updated
-        
-        console.log("Setting active tab to preview via React state");
-        setActiveTab("preview");
-        
-        // After a brief timeout, apply visual effects to the preview section
+        // Scroll to the top to help user see result (animation now handled by useEffect)
         setTimeout(() => {
-          // Target the preview content more reliably using TabsContent
-          const previewContent = document.querySelector('.mt-4[role="tabpanel"]');
-          
-          if (previewContent) {
-            // Add a transition for smooth animation
-            previewContent.setAttribute('style', 'transition: background-color 0.5s ease-in-out');
-            
-            // Add a brief highlight animation
-            previewContent.setAttribute('style', 'background-color: rgba(147, 51, 234, 0.05); transition: background-color 0.5s ease-in-out');
-            console.log("Added highlight to preview content");
-            
-            // Remove the highlight after animation completes
-            setTimeout(() => {
-              previewContent.setAttribute('style', 'background-color: transparent; transition: background-color 0.5s ease-in-out');
-            }, 1000);
-          }
-          
-          // Scroll to the top of the preview content
           window.scrollTo({ top: 0, behavior: 'smooth' });
-          
-          console.log("Applied visual effects and scrolling to preview content");
+          console.log("Scrolled to top of page to show generated document");
         }, 300);
       } else {
         console.error("Enhanced document generation succeeded but returned empty content");
@@ -408,9 +405,9 @@ export default function EnhancedDocGenForm({ template }: EnhancedDocGenFormProps
         </Card>
       </TabsContent>
       
-      <TabsContent value="preview" className="mt-4">
+      <TabsContent value="preview" className="mt-4 transition-colors duration-500">
         {generatedDocument && (
-          <div className="space-y-4">
+          <div ref={previewPanelRef} className="space-y-4 rounded-lg transition-colors duration-500">
             {/* Success message */}
             <Alert className="bg-green-50 border-green-200">
               <FileText className="h-4 w-4 text-green-600" />
