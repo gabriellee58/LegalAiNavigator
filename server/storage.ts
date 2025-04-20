@@ -1579,13 +1579,15 @@ export class DatabaseStorage implements IStorage {
         eq(provincialInfo.language, language)
       ));
     
-    // If province is provided, add it to the conditions
+    // Execute query
+    let result = await baseQuery;
+    
+    // If province is provided, filter the results
     if (province) {
-      return await baseQuery.where(eq(provincialInfo.province, province));
+      result = result.filter(info => info.province === province);
     }
     
-    // Return base query results
-    return await baseQuery;
+    return result;
   }
   
   async getProvincialInfoById(id: number): Promise<ProvincialInfo | undefined> {

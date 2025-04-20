@@ -1,0 +1,189 @@
+2025-04-20 01:34:09.362] [WARN] [http] GET /api/user 401 in 1ms
+[2025-04-20 01:34:55.711] [INFO] [http] GET /api/user 304 in 80ms :: {"id":1,"username":"gabriellee58@gmail.com","fullName":"gabriellee58","preferredLanguage":"en"}
+[2025-04-20 01:34:55.945] [INFO] [http] GET /api/jurisdictions/provinces 200 in 91ms
+[2025-04-20 01:34:55.959] [INFO] [http] GET /api/jurisdictions/categories 200 in 99ms
+[2025-04-20T01:34:56.115Z] [ERROR] [subscription] Error fetching subscription: PostgresError: relation "user_subscriptions" does not exist
+    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:788:26)
+    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:474:6)
+    at TLSSocket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)
+    at TLSSocket.emit (node:events:518:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at TLSWrap.onStreamRead (node:internal/stream_base_commons:191:23) {
+  severity_local: 'ERROR',
+  severity: 'ERROR',
+  code: '42P01',
+  position: '215',
+  file: 'parse_relation.c',
+  line: '1449',
+  routine: 'parserOpenTable'
+}
+[2025-04-20 01:34:56.126] [INFO] [http] GET /api/jurisdictions/subcategories/family_law 200 in 253ms
+[2025-04-20 01:34:56.139] [ERROR] [http] GET /api/subscriptions/current 500 in 107ms :: {"error":"Failed to fetch subscription"}
+[2025-04-20 01:34:56.161] [INFO] [http] GET /api/jurisdictions/requirements 200 in 86ms
+[2025-04-20T01:34:58.340Z] [ERROR] [subscription] Error fetching subscription: PostgresError: relation "user_subscriptions" does not exist
+    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:788:26)
+    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:474:6)
+    at TLSSocket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)
+    at TLSSocket.emit (node:events:518:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at TLSWrap.onStreamRead (node:internal/stream_base_commons:191:23) {
+  severity_local: 'ERROR',
+  severity: 'ERROR',
+  code: '42P01',
+  position: '215',
+  file: 'parse_relation.c',
+  line: '1449',
+  routine: 'parserOpenTable'
+}
+[2025-04-20 01:34:58.362] [ERROR] [http] GET /api/subscriptions/current 500 in 109ms :: {"error":"Failed to fetch subscription"}
+[2025-04-20 01:38:45.500] [INFO] [http] GET /api/user 304 in 84ms :: {"id":1,"username":"gabriellee58@gmail.com","fullName":"gabriellee58","preferredLanguage":"en"}
+[2025-04-20T01:38:47.462Z] [ERROR] [subscription] Error fetching subscription: PostgresError: relation "user_subscriptions" does not exist
+    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:788:26)
+    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:474:6)
+    at TLSSocket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)
+    at TLSSocket.emit (node:events:518:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at TLSWrap.onStreamRead (node:internal/stream_base_commons:191:23) {
+  severity_local: 'ERROR',
+  severity: 'ERROR',
+  code: '42P01',
+  position: '215',
+  file: 'parse_relation.c',
+  line: '1449',
+  routine: 'parserOpenTable'
+}
+[2025-04-20 01:38:47.464] [INFO] [http] GET /api/jurisdictions/subcategories/family_law 200 in 138ms
+[2025-04-20 01:38:47.470] [INFO] [http] GET /api/jurisdictions/requirements 200 in 141ms
+[2025-04-20 01:38:47.470] [INFO] [http] GET /api/jurisdictions/provinces 200 in 143ms
+[2025-04-20 01:38:47.483] [ERROR] [http] GET /api/subscriptions/current 500 in 154ms :: {"error":"Failed to fetch subscription"}
+[2025-04-20 01:38:47.485] [INFO] [http] GET /api/jurisdictions/categories 200 in 157ms
+[2025-04-20T01:38:49.323Z] [ERROR] [subscription] Error fetching subscription: PostgresError: relation "user_subscriptions" does not exist
+    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:788:26)
+    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:474:6)
+    at TLSSocket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)
+    at TLSSocket.emit (node:events:518:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at TLSWrap.onStreamRead (node:internal/stream_base_commons:191:23) {
+  severity_local: 'ERROR',
+  severity: 'ERROR',
+  code: '42P01',
+  position: '215',
+  file: 'parse_relation.c',
+  line: '1449',
+  routine: 'parserOpenTable'
+}
+[2025-04-20 01:38:49.343] [ERROR] [http] GET /api/subscriptions/current 500 in 104ms :: {"error":"Failed to fetch subscription"}
+[2025-04-20 01:38:59.047] [INFO] [http] GET /api/jurisdictions/subcategories/business_law 200 in 89ms
+[2025-04-20 01:38:59.180] [INFO] [http] GET /api/jurisdictions/requirements 200 in 221ms
+[2025-04-20 01:39:06.871] [INFO] [http] GET /api/jurisdictions/requirements 200 in 625ms
+[2025-04-20 01:39:13.972] [INFO] [http] GET /api/jurisdictions/requirements 200 in 97ms
+[2025-04-20 01:39:15.846] [INFO] [http] POST /api/jurisdictions/save-comparison 200 in 85ms
+[2025-04-20 01:39:50.208] [INFO] [http] GET /api/secrets/check 304 in 223ms :: {"available":true}
+[2025-04-20 01:39:50.416] [INFO] [http] GET /api/document-templates 304 in 422ms :: [{"id":76,"templateType":"indigenous","subcategory":"land-rights","title":"Aboriginal Title Claim Statement","description":"Template for making a statement of claim for Aboriginal title","language":"en","templateContent":"# ABORIGINAL TITLE CLAIM STATEMENT\\n\\n**NOTICE OF CIVIL CLAIM**\\n\\nIN THE SUPREME COURT OF {{province}}\\n\\n**BETWEEN:**\\n\\n{{indigenousNation}}\\n\\nPlaintiff\\n\\n**AND:**\\n\\n{{defendantName}}\\n\\nDefendant\\n\\n## STATEMENT OF FACTS\\n\\n### IDENTITY OF THE PARTIES...
+[2025-04-20 01:39:52.126] [INFO] [http] GET /api/chat/messages 200 in 145ms :: [{"id":60,"userId":1,"role":"assistant","content":"# Electronic Signatures in Canadian Law\n\nElectronic signatures (e-signatures) are legally valid in Canada under federal and provincial legislation. Here's an overview of the key requirements:\n\n## Federal Legislation\nThe **Personal Information Protection and Electronic Documents Act (PIPEDA)** establishes that electronic signatures are legally binding when they meet certain requirements:\n\n1. The electronic signature must be reliable for id...
+[2025-04-20 01:39:53.955] [INFO] [http] GET /api/secrets/check 304 in 87ms :: {"available":true}
+[2025-04-20 01:39:56.081] [INFO] [http] GET /api/contract-analyses 200 in 148ms :: []
+[2025-04-20 01:39:58.500] [INFO] [http] GET /api/disputes 200 in 129ms :: []
+[2025-04-20 01:40:15.741] [INFO] [http] GET /api/secrets/check 304 in 83ms :: {"available":true}
+[2025-04-20 01:40:24.926] [INFO] [http] GET /api/disputes 304 in 126ms :: []
+[2025-04-20 01:40:26.592] [INFO] [http] GET /api/contract-analyses 304 in 122ms :: []
+[2025-04-20 01:40:27.688] [INFO] [http] GET /api/secrets/check 304 in 85ms :: {"available":true}
+[2025-04-20 01:40:27.853] [INFO] [http] GET /api/document-templates 304 in 248ms :: [{"id":76,"templateType":"indigenous","subcategory":"land-rights","title":"Aboriginal Title Claim Statement","description":"Template for making a statement of claim for Aboriginal title","language":"en","templateContent":"# ABORIGINAL TITLE CLAIM STATEMENT\\n\\n**NOTICE OF CIVIL CLAIM**\\n\\nIN THE SUPREME COURT OF {{province}}\\n\\n**BETWEEN:**\\n\\n{{indigenousNation}}\\n\\nPlaintiff\\n\\n**AND:**\\n\\n{{defendantName}}\\n\\nDefendant\\n\\n## STATEMENT OF FACTS\\n\\n### IDENTITY OF THE PARTIES...
+[2025-04-20 01:40:52.666] [INFO] [http] GET /api/user 304 in 91ms :: {"id":1,"username":"gabriellee58@gmail.com","fullName":"gabriellee58","preferredLanguage":"en"}
+[2025-04-20T01:40:53.974Z] [ERROR] [subscription] Error fetching subscription: PostgresError: relation "user_subscriptions" does not exist
+    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:788:26)
+    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:474:6)
+    at TLSSocket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)
+    at TLSSocket.emit (node:events:518:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at TLSWrap.onStreamRead (node:internal/stream_base_commons:191:23) {
+  severity_local: 'ERROR',
+  severity: 'ERROR',
+  code: '42P01',
+  position: '215',
+  file: 'parse_relation.c',
+  line: '1449',
+  routine: 'parserOpenTable'
+}
+[2025-04-20 01:40:53.975] [INFO] [http] GET /api/jurisdictions/provinces 200 in 94ms
+[2025-04-20 01:40:53.983] [INFO] [http] GET /api/jurisdictions/subcategories/family_law 200 in 93ms
+[2025-04-20 01:40:53.987] [INFO] [http] GET /api/jurisdictions/requirements 200 in 95ms
+[2025-04-20 01:40:53.994] [INFO] [http] GET /api/jurisdictions/categories 200 in 105ms
+[2025-04-20 01:40:53.996] [ERROR] [http] GET /api/subscriptions/current 500 in 105ms :: {"error":"Failed to fetch subscription"}
+[2025-04-20T01:40:55.233Z] [ERROR] [subscription] Error fetching subscription: PostgresError: relation "user_subscriptions" does not exist
+    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:788:26)
+    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:474:6)
+    at TLSSocket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)
+    at TLSSocket.emit (node:events:518:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at TLSWrap.onStreamRead (node:internal/stream_base_commons:191:23) {
+  severity_local: 'ERROR',
+  severity: 'ERROR',
+  code: '42P01',
+  position: '215',
+  file: 'parse_relation.c',
+  line: '1449',
+  routine: 'parserOpenTable'
+}
+[2025-04-20 01:40:55.253] [ERROR] [http] GET /api/subscriptions/current 500 in 102ms :: {"error":"Failed to fetch subscription"}
+[2025-04-20 01:45:00.225] [INFO] [http] GET /api/jurisdictions/subcategories/family_law 200 in 315ms
+[2025-04-20 01:45:00.450] [INFO] [http] GET /api/jurisdictions/provinces 200 in 85ms
+[2025-04-20 01:45:00.610] [INFO] [http] GET /api/jurisdictions/categories 200 in 95ms
+[2025-04-20 01:45:01.133] [INFO] [http] GET /api/jurisdictions/subcategories/business_law 200 in 3063ms
+[2025-04-20 01:45:01.135] [INFO] [http] GET /api/jurisdictions/requirements 200 in 3090ms
+[2025-04-20 01:45:02.186] [INFO] [http] GET /api/jurisdictions/requirements 200 in 2272ms
+[2025-04-20 01:45:35.292] [INFO] [http] GET /api/jurisdictions/requirements 200 in 230ms
+[2025-04-20 01:45:44.910] [INFO] [http] GET /api/jurisdictions/requirements 200 in 82ms
+[2025-04-20 01:47:55.539] [INFO] [http] GET /api/user 304 in 80ms :: {"id":1,"username":"gabriellee58@gmail.com","fullName":"gabriellee58","preferredLanguage":"en"}
+[2025-04-20 01:47:55.962] [INFO] [http] GET /api/jurisdictions/provinces 200 in 89ms
+[2025-04-20T01:47:55.968Z] [ERROR] [subscription] Error fetching subscription: PostgresError: relation "user_subscriptions" does not exist
+    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:788:26)
+    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:474:6)
+    at TLSSocket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)
+    at TLSSocket.emit (node:events:518:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at TLSWrap.onStreamRead (node:internal/stream_base_commons:191:23) {
+  severity_local: 'ERROR',
+  severity: 'ERROR',
+  code: '42P01',
+  position: '215',
+  file: 'parse_relation.c',
+  line: '1449',
+  routine: 'parserOpenTable'
+}
+[2025-04-20 01:47:55.977] [INFO] [http] GET /api/jurisdictions/requirements 200 in 97ms
+[2025-04-20 01:47:55.978] [INFO] [http] GET /api/jurisdictions/categories 200 in 97ms
+[2025-04-20 01:47:55.990] [ERROR] [http] GET /api/subscriptions/current 500 in 108ms :: {"error":"Failed to fetch subscription"}
+[2025-04-20 01:47:56.012] [INFO] [http] GET /api/jurisdictions/subcategories/family_law 200 in 121ms
+[2025-04-20T01:47:57.460Z] [ERROR] [subscription] Error fetching subscription: PostgresError: relation "user_subscriptions" does not exist
+    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:788:26)
+    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:474:6)
+    at TLSSocket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)
+    at TLSSocket.emit (node:events:518:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at TLSWrap.onStreamRead (node:internal/stream_base_commons:191:23) {
+  severity_local: 'ERROR',
+  severity: 'ERROR',
+  code: '42P01',
+  position: '215',
+  file: 'parse_relation.c',
+  line: '1449',
+  routine: 'parserOpenTable'
+}
+[2025-04-20 01:47:57.480] [ERROR] [http] GET /api/subscriptions/current 500 in 147ms :: {"error":"Failed to fetch subscription"}

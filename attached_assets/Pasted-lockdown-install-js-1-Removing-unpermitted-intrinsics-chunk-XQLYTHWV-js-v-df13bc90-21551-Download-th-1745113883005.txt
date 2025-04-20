@@ -1,0 +1,87 @@
+lockdown-install.js:1 Removing unpermitted intrinsics
+chunk-XQLYTHWV.js?v=df13bc90:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+firebase.ts:20 Firebase config status: Configured
+firebase.ts:100 Firebase auth configuration status: CONFIGURED
+DocumentPreviewModal.tsx:32 Using CDN PDF.js worker
+index.ts:18 Procedure data map keys: Array(5)
+index.ts:19 Family court procedure ID: family-court
+index.ts:20 Small claims procedure ID: small-claims
+index.ts:21 Administrative procedure ID: administrative-tribunals
+content-script.js:104442 current location https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/jurisdiction-compare
+api/subscriptions/current:1 
+            
+            
+           Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+main.tsx:15 Error fetching provinces: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+console.error @ main.tsx:15Understand this error
+main.tsx:15 Error fetching subcategories: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+console.error @ main.tsx:15Understand this error
+main.tsx:15 Error fetching requirements: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+console.error @ main.tsx:15Understand this error
+main.tsx:15 Error fetching categories: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+console.error @ main.tsx:15Understand this error
+main.tsx:15 Warning: validateDOMNesting(...): <button> cannot appear as a descendant of <button>.
+    at button
+    at button
+    at https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-JVRV33CZ.js?v=df13bc90:41:13
+    at https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-GWNN5Q73.js?v=df13bc90:52:11
+    at https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-GWNN5Q73.js?v=df13bc90:33:11
+    at https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-JVRV33CZ.js?v=df13bc90:41:13
+    at https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-GWNN5Q73.js?v=df13bc90:52:11
+    at https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-GWNN5Q73.js?v=df13bc90:33:11
+    at https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-MSSVGQUS.js?v=df13bc90:109:15
+    at https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-I25L5ERT.js?v=df13bc90:209:7
+    at https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=df13bc90:123:13
+    at _c3 (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/src/components/ui/tabs.tsx:47:12)
+    at div
+    at https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-JVRV33CZ.js?v=df13bc90:41:13
+    at https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-GWNN5Q73.js?v=df13bc90:52:11
+    at https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-GWNN5Q73.js?v=df13bc90:33:11
+    at https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-JVRV33CZ.js?v=df13bc90:41:13
+    at Provider (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-I25L5ERT.js?v=df13bc90:48:15)
+    at https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-I25L5ERT.js?v=df13bc90:118:5
+    at https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-GWNN5Q73.js?v=df13bc90:52:11
+    at https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-GWNN5Q73.js?v=df13bc90:33:11
+    at https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-MSSVGQUS.js?v=df13bc90:98:15
+    at Provider (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-MSSVGQUS.js?v=df13bc90:28:15)
+    at CollectionProvider (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-MSSVGQUS.js?v=df13bc90:89:13)
+    at https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-I25L5ERT.js?v=df13bc90:112:77
+    at https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=df13bc90:95:13
+    at _c (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/src/components/ui/tabs.tsx:22:11)
+    at div
+    at div
+    at https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-JVRV33CZ.js?v=df13bc90:41:13
+    at Provider (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-IX3V5OUR.js?v=df13bc90:38:15)
+    at https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=df13bc90:53:7
+    at div
+    at div
+    at div
+    at main
+    at div
+    at div
+    at MainLayout (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/src/components/layout/MainLayout.tsx:20:23)
+    at JurisdictionCompare (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/src/pages/jurisdiction-compare.tsx?t=1745112841962:222:21)
+    at RenderedComponent
+    at Route (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=df13bc90:323:16)
+    at ProtectedRoute (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/src/lib/protected-route.tsx:22:3)
+    at Switch (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=df13bc90:379:17)
+    at Router
+    at div
+    at ErrorBoundary (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/src/components/error-boundary.tsx:10:5)
+    at ErrorProvider (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/src/components/ui/error-handler.tsx:24:33)
+    at PermissionsProvider (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/src/hooks/use-permissions.tsx:24:39)
+    at SubscriptionProvider (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/src/hooks/use-subscription.tsx:29:40)
+    at AuthProvider (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/src/hooks/use-auth.tsx:28:32)
+    at App (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/src/App.tsx?t=1745112841962&v=zoZEu9IiwIXOO2vw0FKhU:462:35)
+    at QueryClientProvider (https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=df13bc90:2805:3)
+console.error @ main.tsx:15Understand this error
+api/subscriptions/current:1 
+            
+            
+           Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+
+                
+          
+          
+          
+         Chrome is moving towards a new experience that allows users to choose to browse without third-party cookies.

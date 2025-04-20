@@ -609,15 +609,15 @@ export default function JurisdictionCompare() {
                         <TabsTrigger key={provinceCode} value={provinceCode} className="relative pl-8 pr-12">
                           {province?.name}
                           {selectedProvinces.length > 1 && (
-                            <button
-                              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            <span
+                              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 removeProvince(provinceCode);
                               }}
                             >
                               ✕
-                            </button>
+                            </span>
                           )}
                         </TabsTrigger>
                       );

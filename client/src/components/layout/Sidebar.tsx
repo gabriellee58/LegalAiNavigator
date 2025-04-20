@@ -13,6 +13,7 @@ export function Sidebar() {
   const [isTimelineEstimatorRoute] = useRoute("/timeline-estimator");
   const [isCostEstimatorRoute] = useRoute("/cost-estimator");
   const [isLegalDomainsRoute] = useRoute("/legal-domains");
+  const [isJurisdictionCompareRoute] = useRoute("/jurisdiction-compare");
   
   // Document template routes
   const [isAllDocumentsRoute] = useRoute("/documents/all");
@@ -115,6 +116,14 @@ export function Sidebar() {
                 <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isCostEstimatorRoute ? 'bg-blue-50 text-primary' : ''}`}>
                   <span className={`material-icons mr-3 ${isCostEstimatorRoute ? 'text-primary' : 'text-neutral-500'}`}>payments</span>
                   <span>Cost Estimator</span>
+                </div>
+              </Link>
+            </li>
+            <li>
+              <Link href="/jurisdiction-compare">
+                <div className={`flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary mb-1 ${isJurisdictionCompareRoute ? 'bg-blue-50 text-primary' : ''}`}>
+                  <span className={`material-icons mr-3 ${isJurisdictionCompareRoute ? 'text-primary' : 'text-neutral-500'}`}>compare</span>
+                  <span>{t("multi_jurisdictional_comparison")}</span>
                 </div>
               </Link>
             </li>
