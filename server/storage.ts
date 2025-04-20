@@ -213,6 +213,8 @@ export interface IStorage {
   getProvincialJurisdictions(): Promise<ProvincialJurisdiction[]>;
   getJurisdictionByCode(code: string): Promise<ProvincialJurisdiction | undefined>;
   getLegalRequirements(jurisdictionId: number, category: string, subcategory: string): Promise<LegalRequirement[]>;
+  getDistinctLegalCategories(): Promise<{legalCategory: string}[]>;
+  getDistinctSubcategories(category: string): Promise<{subcategory: string}[]>;
 }
 
 // Database storage implementation using PostgreSQL
@@ -1930,6 +1932,94 @@ export class DatabaseStorage implements IStorage {
         )
       );
     return party;
+  }
+
+  // Jurisdiction comparison operations
+  async saveJurisdictionComparison(comparison: InsertJurisdictionComparison): Promise<JurisdictionComparison> {
+    const [newComparison] = await db
+      .insert(jurisdictionComparisons)
+      .values(comparison)
+      .returning();
+    return newComparison;
+  }
+
+  async getUserJurisdictionComparisons(userId: number): Promise<JurisdictionComparison[]> {
+    return await db
+      .select()
+      .from(jurisdictionComparisons)
+      .where(eq(jurisdictionComparisons.userId, userId))
+      .orderBy(desc(jurisdictionComparisons.createdAt));
+  }
+
+  async getJurisdictionComparison(id: number): Promise<JurisdictionComparison | undefined> {
+    const [comparison] = await db
+      .select()
+      .from(jurisdictionComparisons)
+      .where(eq(jurisdictionComparisons.id, id));
+    return comparison;
+  }
+
+  async updateJurisdictionComparison(id: number, updates: Partial<JurisdictionComparison>): Promise<JurisdictionComparison | undefined> {
+    const [updatedComparison] = await db
+      .update(jurisdictionComparisons)
+      .set(updates)
+      .where(eq(jurisdictionComparisons.id, id))
+      .returning();
+    return updatedComparison;
+  }
+
+  async deleteJurisdictionComparison(id: number): Promise<void> {
+    await db
+      .delete(jurisdictionComparisons)
+      .where(eq(jurisdictionComparisons.id, id));
+  }
+
+  // Jurisdictions and requirements
+  async getProvincialJurisdictions(): Promise<ProvincialJurisdiction[]> {
+    return await db
+      .select()
+      .from(provincialJurisdictions)
+      .orderBy(provincialJurisdictions.name);
+  }
+
+  async getJurisdictionByCode(code: string): Promise<ProvincialJurisdiction | undefined> {
+    const [jurisdiction] = await db
+      .select()
+      .from(provincialJurisdictions)
+      .where(eq(provincialJurisdictions.code, code));
+    return jurisdiction;
+  }
+
+  async getLegalRequirements(jurisdictionId: number, category: string, subcategory: string): Promise<LegalRequirement[]> {
+    return await db
+      .select()
+      .from(legalRequirements)
+      .where(
+        and(
+          eq(legalRequirements.jurisdictionId, jurisdictionId),
+          eq(legalRequirements.legalCategory, category),
+          eq(legalRequirements.subcategory, subcategory)
+        )
+      );
+  }
+  
+  async getDistinctLegalCategories(): Promise<{legalCategory: string}[]> {
+    return await db
+      .selectDistinct({ 
+        legalCategory: legalRequirements.legalCategory 
+      })
+      .from(legalRequirements)
+      .orderBy(legalRequirements.legalCategory);
+  }
+  
+  async getDistinctSubcategories(category: string): Promise<{subcategory: string}[]> {
+    return await db
+      .selectDistinct({ 
+        subcategory: legalRequirements.subcategory 
+      })
+      .from(legalRequirements)
+      .where(eq(legalRequirements.legalCategory, category))
+      .orderBy(legalRequirements.subcategory);
   }
 }
 

@@ -9,16 +9,16 @@ const router = Router();
 // Get all provincial jurisdictions
 router.get("/provinces", async (_req: Request, res: Response) => {
   try {
-    const provinces = await storage.db
-      .select({
-        code: provincialJurisdictions.code,
-        name: provincialJurisdictions.name,
-        system: provincialJurisdictions.legalSystem,
-      })
-      .from(provincialJurisdictions)
-      .orderBy(provincialJurisdictions.name);
+    const provinces = await storage.getProvincialJurisdictions();
+    
+    // Transform provinces to match the expected format
+    const formattedProvinces = provinces.map(province => ({
+      code: province.code,
+      name: province.name,
+      system: province.legalSystem
+    }));
 
-    res.json(provinces);
+    res.json(formattedProvinces);
   } catch (error) {
     console.error("Error fetching provinces:", error);
     res.status(500).json({ message: "Error fetching provincial jurisdictions" });
@@ -52,31 +52,18 @@ router.get("/requirements", async (req: Request, res: Response) => {
 
     // For each province, fetch the requirements
     for (const provinceCode of provincesList) {
-      const province = await storage.db
-        .select()
-        .from(provincialJurisdictions)
-        .where(eq(provincialJurisdictions.code, provinceCode))
-        .limit(1);
+      const province = await storage.getJurisdictionByCode(provinceCode);
 
-      if (province.length === 0) {
+      if (!province) {
         continue; // Skip if province not found
       }
 
       // Get requirements for this province, category, and subcategory
-      const requirements = await storage.db
-        .select({
-          requirement: legalRequirements.requirement,
-          description: legalRequirements.description,
-          statuteReference: legalRequirements.statuteReference,
-        })
-        .from(legalRequirements)
-        .where(
-          and(
-            eq(legalRequirements.jurisdictionId, province[0].id),
-            eq(legalRequirements.legalCategory, category as string),
-            eq(legalRequirements.subcategory, subcategory as string)
-          )
-        );
+      const requirements = await storage.getLegalRequirements(
+        province.id, 
+        category as string, 
+        subcategory as string
+      );
 
       // Map to expected format
       result[provinceCode] = {
@@ -146,17 +133,12 @@ router.get("/saved-comparisons", isAuthenticated, async (req: Request, res: Resp
 router.get("/categories", async (_req: Request, res: Response) => {
   try {
     // Fetch distinct categories from legal requirements table
-    const categories = await storage.db
-      .selectDistinct({ 
-        legalCategory: legalRequirements.legalCategory 
-      })
-      .from(legalRequirements)
-      .orderBy(legalRequirements.legalCategory);
+    const categories = await storage.getDistinctLegalCategories();
     
     // Format response
-    const formattedCategories = categories.map(cat => ({
-      id: cat.legalCategory,
-      name: formatCategoryName(cat.legalCategory)
+    const formattedCategories = categories.map((category: {legalCategory: string}) => ({
+      id: category.legalCategory,
+      name: formatCategoryName(category.legalCategory)
     }));
     
     res.json(formattedCategories);
@@ -176,18 +158,12 @@ router.get("/subcategories/:category", async (req: Request, res: Response) => {
     }
     
     // Fetch distinct subcategories for this category
-    const subcategories = await storage.db
-      .selectDistinct({ 
-        subcategory: legalRequirements.subcategory 
-      })
-      .from(legalRequirements)
-      .where(eq(legalRequirements.legalCategory, category))
-      .orderBy(legalRequirements.subcategory);
+    const subcategories = await storage.getDistinctSubcategories(category);
     
     // Format response
-    const formattedSubcategories = subcategories.map(sub => ({
-      id: sub.subcategory,
-      name: formatCategoryName(sub.subcategory)
+    const formattedSubcategories = subcategories.map((subcat: {subcategory: string}) => ({
+      id: subcat.subcategory,
+      name: formatCategoryName(subcat.subcategory)
     }));
     
     res.json(formattedSubcategories);
