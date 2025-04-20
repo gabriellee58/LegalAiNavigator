@@ -401,6 +401,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   mediationMessages: many(mediationMessages),
   savedCitations: many(savedCitations),
   researchVisualizations: many(researchVisualizations),
+  jurisdictionComparisons: many(jurisdictionComparisons),
   // Subscription relations
   subscriptions: many(userSubscriptions),
   usageTracking: many(userUsage),

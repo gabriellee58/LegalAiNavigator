@@ -41,6 +41,7 @@ import SubscriptionPlansPage from "./pages/subscription-plans";
 // Import legal domains browser
 import LegalDomainsPage from "./pages/legal-domains";
 import DomainPage from "./pages/legal-domains/domain-page";
+import JurisdictionCompare from "./pages/jurisdiction-compare";
 
 // Import feedback pages
 import MyFeedbackPage from "./pages/my-feedback";
@@ -129,6 +130,7 @@ function Router() {
       <ProtectedRoute path="/timeline-estimator" component={TimelineEstimatorPage} />
       <ProtectedRoute path="/cost-estimator" component={CostEstimatorPage} />
       <ProtectedRoute path="/subscription-plans" component={SubscriptionPlansPage} />
+      <ProtectedRoute path="/jurisdiction-compare" component={JurisdictionCompare} />
       
       {/* Document Templates */}
       <ProtectedRoute path="/documents/all" component={DocumentTemplatesPage} />
