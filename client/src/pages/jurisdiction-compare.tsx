@@ -250,6 +250,29 @@ export default function JurisdictionCompare() {
   const [subcategory, setSubcategory] = useState("divorce");
   const [selectedProvinces, setSelectedProvinces] = useState<string[]>(["ON", "QC", "BC"]);
   const [activeTab, setActiveTab] = useState("ON");
+  
+  // Check authentication on load
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/user', {
+          headers: {
+            'Accept': 'application/json',
+          },
+          credentials: 'include',
+        });
+        
+        if (res.status === 401) {
+          // User is not authenticated, redirect to login
+          window.location.href = '/auth';
+        }
+      } catch (error) {
+        console.error('Authentication check failed:', error);
+      }
+    };
+    
+    checkAuth();
+  }, []);
 
   // Fetch provinces from the API
   const {
@@ -486,10 +509,18 @@ export default function JurisdictionCompare() {
       const response = await fetch('/api/jurisdictions/save-comparison', {
         method: 'POST',
         headers: {
+          'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include cookies for authentication
         body: JSON.stringify(comparisonData),
       });
+      
+      if (response.status === 401) {
+        // Unauthorized - redirect to auth page
+        window.location.href = '/auth';
+        throw new Error("Authentication required");
+      }
       
       if (!response.ok) {
         throw new Error('Failed to save comparison');
