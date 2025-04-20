@@ -103,7 +103,7 @@ function Header() {
               <span className="ml-2 text-sm font-medium hidden md:block">
                 {user?.fullName || user?.username || 'User'}
               </span>
-              <span className="material-icons text-sm ml-1">Arrow_Drop_Down</span>
+              <span className="material-icons text-sm ml-1">arrow_drop_down</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -163,43 +163,43 @@ function MobileSidebar() {
           <ul className="space-y-2">
             <li>
               <Link href="/legal-assistant" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
-                <span className="material-icons mr-3 text-primary">Smart_Toy</span>
+                <span className="material-icons mr-3 text-primary">smart_toy</span>
                 <span className="font-medium">{t("legal_assistant")}</span>
               </Link>
             </li>
             <li>
               <Link href="/document-generator" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
-                <span className="material-icons mr-3 text-primary">Description</span>
+                <span className="material-icons mr-3 text-primary">description</span>
                 <span className="font-medium">{t("document_generator")}</span>
               </Link>
             </li>
             <li>
               <Link href="/legal-research" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
-                <span className="material-icons mr-3 text-primary">Search</span>
+                <span className="material-icons mr-3 text-primary">search</span>
                 <span className="font-medium">{t("legal_research")}</span>
               </Link>
             </li>
             <li>
               <Link href="/contract-analysis" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
-                <span className="material-icons mr-3 text-primary">Insert_Drive_File</span>
+                <span className="material-icons mr-3 text-primary">insert_drive_file</span>
                 <span className="font-medium">{t("contract_analysis")}</span>
               </Link>
             </li>
             <li>
               <Link href="/dispute-resolution" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
-                <span className="material-icons mr-3 text-primary">Gavel</span>
+                <span className="material-icons mr-3 text-primary">gavel</span>
                 <span className="font-medium">{t("dispute_resolution")}</span>
               </Link>
             </li>
             <li>
               <Link href="/compliance-checker" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
-                <span className="material-icons mr-3 text-primary">Verified</span>
+                <span className="material-icons mr-3 text-primary">verified</span>
                 <span className="font-medium">{t("compliance_checker")}</span>
               </Link>
             </li>
             <li>
               <Link href="/notarization-guide" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
-                <span className="material-icons mr-3 text-primary">Approval</span>
+                <span className="material-icons mr-3 text-primary">approval</span>
                 <span className="font-medium">{t("notarization_guide")}</span>
               </Link>
             </li>
