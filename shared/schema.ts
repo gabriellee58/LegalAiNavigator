@@ -1234,6 +1234,91 @@ export type InsertSubscriptionPlan = z.infer<typeof insertSubscriptionPlanSchema
 export type SubscriptionPlan = typeof subscriptionPlans.$inferSelect;
 
 // User subscriptions schema
+// Provincial jurisdictions table
+export const provincialJurisdictions = pgTable("provincial_jurisdictions", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(), // ON, QC, BC, etc.
+  name: text("name").notNull(), // Ontario, Quebec, British Columbia, etc.
+  fullName: text("full_name").notNull(), // Province of Ontario, etc.
+  legalSystem: text("legal_system").notNull().default("common_law"), // common_law or civil_law
+  officialLanguages: jsonb("official_languages").notNull().default(["en"]), // Array of languages: ["en"], ["en", "fr"], etc.
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const insertProvincialJurisdictionSchema = createInsertSchema(provincialJurisdictions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertProvincialJurisdiction = z.infer<typeof insertProvincialJurisdictionSchema>;
+export type ProvincialJurisdiction = typeof provincialJurisdictions.$inferSelect;
+
+// Legal requirements by jurisdiction
+export const legalRequirements = pgTable("legal_requirements", {
+  id: serial("id").primaryKey(),
+  jurisdictionId: integer("jurisdiction_id").references(() => provincialJurisdictions.id, { onDelete: 'cascade' }),
+  legalCategory: text("legal_category").notNull(), // family_law, business_law, criminal_law, etc.
+  subcategory: text("subcategory").notNull(), // divorce, incorporation, assault, etc.
+  requirement: text("requirement").notNull(), // The specific legal requirement
+  description: text("description").notNull(),
+  statuteReference: text("statute_reference"), // Reference to specific statute
+  lastUpdated: timestamp("last_updated").notNull(),
+  effectiveDate: timestamp("effective_date"),
+  expiryDate: timestamp("expiry_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertLegalRequirementSchema = createInsertSchema(legalRequirements).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertLegalRequirement = z.infer<typeof insertLegalRequirementSchema>;
+export type LegalRequirement = typeof legalRequirements.$inferSelect;
+
+// Multi-jurisdictional comparisons saved by users
+export const jurisdictionComparisons = pgTable("jurisdiction_comparisons", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }),
+  title: text("title").notNull(),
+  description: text("description"),
+  legalCategory: text("legal_category").notNull(),
+  subcategory: text("subcategory").notNull(),
+  jurisdictions: jsonb("jurisdictions").notNull(), // Array of jurisdiction codes being compared
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  notes: text("notes"),
+  isPublic: boolean("is_public").default(false),
+});
+
+export const insertJurisdictionComparisonSchema = createInsertSchema(jurisdictionComparisons).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertJurisdictionComparison = z.infer<typeof insertJurisdictionComparisonSchema>;
+export type JurisdictionComparison = typeof jurisdictionComparisons.$inferSelect;
+
+// Define relations for jurisdictional tables
+export const provincialJurisdictionsRelations = relations(provincialJurisdictions, ({ many }) => ({
+  legalRequirements: many(legalRequirements),
+}));
+
+export const legalRequirementsRelations = relations(legalRequirements, ({ one }) => ({
+  jurisdiction: one(provincialJurisdictions, {
+    fields: [legalRequirements.jurisdictionId],
+    references: [provincialJurisdictions.id],
+  }),
+}));
+
+export const jurisdictionComparisonsRelations = relations(jurisdictionComparisons, ({ one }) => ({
+  user: one(users, {
+    fields: [jurisdictionComparisons.userId],
+    references: [users.id],
+  }),
+}));
+
 export const userSubscriptions = pgTable("user_subscriptions", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
