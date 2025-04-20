@@ -264,12 +264,72 @@ export default function JurisdictionCompare() {
           throw new Error("Failed to fetch provinces");
         }
         const data = await res.json();
-        return data || MOCK_PROVINCES; // Fallback to mock data if API fails
+        return data;
       } catch (error) {
         console.error("Error fetching provinces:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load provinces. Please try again later.",
+          variant: "destructive",
+        });
         return MOCK_PROVINCES; // Fallback to mock data
       }
     },
+  });
+  
+  // Fetch categories from the API
+  const {
+    data: categories,
+    isLoading: isLoadingCategories,
+  } = useQuery<Category[]>({
+    queryKey: ["/api/jurisdictions/categories"],
+    queryFn: async () => {
+      try {
+        const res = await fetch("/api/jurisdictions/categories");
+        if (!res.ok) {
+          throw new Error("Failed to fetch categories");
+        }
+        const data = await res.json();
+        return data;
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load legal categories. Please try again later.",
+          variant: "destructive",
+        });
+        return MOCK_CATEGORIES; // Fallback to mock data
+      }
+    },
+  });
+  
+  // Fetch subcategories from the API
+  const {
+    data: subcategories,
+    isLoading: isLoadingSubcategories,
+  } = useQuery<Subcategory[]>({
+    queryKey: ["/api/jurisdictions/subcategories", category],
+    queryFn: async () => {
+      try {
+        if (!category) return [];
+        
+        const res = await fetch(`/api/jurisdictions/subcategories/${category}`);
+        if (!res.ok) {
+          throw new Error("Failed to fetch subcategories");
+        }
+        const data = await res.json();
+        return data;
+      } catch (error) {
+        console.error("Error fetching subcategories:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load subcategories. Please try again later.",
+          variant: "destructive",
+        });
+        return MOCK_SUBCATEGORIES[category] || []; // Fallback to mock data
+      }
+    },
+    enabled: !!category,
   });
 
   // Fetch legal requirements from the API
@@ -399,11 +459,18 @@ export default function JurisdictionCompare() {
                       <SelectValue placeholder={t("select_category")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {MOCK_CATEGORIES.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </SelectItem>
-                      ))}
+                      {isLoadingCategories ? (
+                        <div className="flex items-center justify-center p-2">
+                          <Loader2 className="h-4 w-4 animate-spin text-primary mr-2" />
+                          Loading...
+                        </div>
+                      ) : (
+                        (categories || MOCK_CATEGORIES).map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
