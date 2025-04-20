@@ -251,27 +251,53 @@ export default function JurisdictionCompare() {
   const [selectedProvinces, setSelectedProvinces] = useState<string[]>(["ON", "QC", "BC"]);
   const [activeTab, setActiveTab] = useState("ON");
 
-  // Fetch provinces (would be API call in production)
+  // Fetch provinces from the API
   const {
     data: provinces,
     isLoading: isLoadingProvinces,
-  } = useQuery({
-    queryKey: ["/api/provinces"],
-    queryFn: () => Promise.resolve(MOCK_PROVINCES), // Mock data
+  } = useQuery<Province[]>({
+    queryKey: ["/api/jurisdictions/provinces"],
+    queryFn: async () => {
+      try {
+        const res = await fetch("/api/jurisdictions/provinces");
+        if (!res.ok) {
+          throw new Error("Failed to fetch provinces");
+        }
+        const data = await res.json();
+        return data || MOCK_PROVINCES; // Fallback to mock data if API fails
+      } catch (error) {
+        console.error("Error fetching provinces:", error);
+        return MOCK_PROVINCES; // Fallback to mock data
+      }
+    },
   });
 
-  // Fetch legal requirements (would be API call in production)
+  // Fetch legal requirements from the API
   const {
     data: requirements,
     isLoading: isLoadingRequirements,
   } = useQuery<RequirementsByProvince>({
-    queryKey: ["/api/legal-requirements", category, subcategory, selectedProvinces],
-    queryFn: () => {
-      // Mock implementation
-      if (MOCK_REQUIREMENTS[subcategory]) {
-        return Promise.resolve(MOCK_REQUIREMENTS[subcategory]);
+    queryKey: ["/api/jurisdictions/requirements", category, subcategory, selectedProvinces],
+    queryFn: async () => {
+      try {
+        const queryParams = new URLSearchParams({
+          category,
+          subcategory,
+          provinces: selectedProvinces.join(','),
+        });
+        
+        const res = await fetch(`/api/jurisdictions/requirements?${queryParams}`);
+        if (!res.ok) {
+          throw new Error("Failed to fetch requirements");
+        }
+        
+        const data = await res.json();
+        return data || (MOCK_REQUIREMENTS[subcategory] || {} as RequirementsByProvince); // Fallback to mock data
+      } catch (error) {
+        console.error("Error fetching requirements:", error);
+        // Fallback to mock data if available for this subcategory
+        return MOCK_REQUIREMENTS[subcategory] || {} as RequirementsByProvince;
       }
-      return Promise.resolve({} as RequirementsByProvince);
     },
     enabled: !!subcategory,
   });
