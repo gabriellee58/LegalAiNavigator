@@ -336,6 +336,7 @@ export default function JurisdictionCompare() {
   const {
     data: requirements,
     isLoading: isLoadingRequirements,
+    error: requirementsError,
   } = useQuery<RequirementsByProvince>({
     queryKey: ["/api/jurisdictions/requirements", category, subcategory, selectedProvinces],
     queryFn: async () => {
@@ -352,23 +353,26 @@ export default function JurisdictionCompare() {
         }
         
         const data = await res.json();
-        return data || (MOCK_REQUIREMENTS[subcategory] || {} as RequirementsByProvince); // Fallback to mock data
+        return data;
       } catch (error) {
         console.error("Error fetching requirements:", error);
-        // Fallback to mock data if available for this subcategory
-        return MOCK_REQUIREMENTS[subcategory] || {} as RequirementsByProvince;
+        toast({
+          title: "Error",
+          description: "Failed to load legal requirements. Please try again later.",
+          variant: "destructive",
+        });
+        // Return empty object to prevent UI breaking
+        return {} as RequirementsByProvince;
       }
     },
-    enabled: !!subcategory,
+    enabled: !!subcategory && !!category && selectedProvinces.length > 0,
   });
 
   // Handle category change
   const handleCategoryChange = (value: string) => {
     setCategory(value);
-    // Set default subcategory for this category
-    if (MOCK_SUBCATEGORIES[value]?.length > 0) {
-      setSubcategory(MOCK_SUBCATEGORIES[value][0].id);
-    }
+    // Subcategories will be fetched automatically due to the dependency in the useQuery
+    // We'll set the default subcategory in the useEffect below
   };
 
   // Handle subcategory change
@@ -412,11 +416,39 @@ export default function JurisdictionCompare() {
   };
 
   // Save comparison
-  const saveComparison = () => {
-    toast({
-      title: "Comparison saved",
-      description: "Your comparison has been saved successfully",
-    });
+  const saveComparison = async () => {
+    try {
+      const comparisonData = {
+        category,
+        subcategory,
+        provinces: selectedProvinces,
+        title: `${subcategories?.find(s => s.id === subcategory)?.name || ''} Comparison - ${new Date().toLocaleDateString()}`
+      };
+      
+      const response = await fetch('/api/jurisdictions/save-comparison', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(comparisonData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to save comparison');
+      }
+      
+      toast({
+        title: "Comparison saved",
+        description: "Your comparison has been saved successfully",
+      });
+    } catch (error) {
+      console.error('Error saving comparison:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save comparison. Please try again later.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Share comparison
@@ -430,10 +462,10 @@ export default function JurisdictionCompare() {
 
   // Handle initial loading of default subcategory
   useEffect(() => {
-    if (MOCK_SUBCATEGORIES[category]?.length > 0) {
-      setSubcategory(MOCK_SUBCATEGORIES[category][0].id);
+    if (subcategories && subcategories.length > 0) {
+      setSubcategory(subcategories[0].id);
     }
-  }, [category]);
+  }, [subcategories]);
 
   return (
     <MainLayout>
@@ -464,12 +496,16 @@ export default function JurisdictionCompare() {
                           <Loader2 className="h-4 w-4 animate-spin text-primary mr-2" />
                           Loading...
                         </div>
-                      ) : (
-                        (categories || MOCK_CATEGORIES).map((cat) => (
+                      ) : categories && categories.length > 0 ? (
+                        categories.map((cat) => (
                           <SelectItem key={cat.id} value={cat.id}>
                             {cat.name}
                           </SelectItem>
                         ))
+                      ) : (
+                        <div className="p-2 text-sm text-muted-foreground text-center">
+                          No categories available
+                        </div>
                       )}
                     </SelectContent>
                   </Select>
@@ -484,11 +520,22 @@ export default function JurisdictionCompare() {
                       <SelectValue placeholder={t("select_subcategory")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {MOCK_SUBCATEGORIES[category]?.map((subcat: Subcategory) => (
-                        <SelectItem key={subcat.id} value={subcat.id}>
-                          {subcat.name}
-                        </SelectItem>
-                      ))}
+                      {isLoadingSubcategories ? (
+                        <div className="flex items-center justify-center p-2">
+                          <Loader2 className="h-4 w-4 animate-spin text-primary mr-2" />
+                          Loading...
+                        </div>
+                      ) : subcategories && subcategories.length > 0 ? (
+                        subcategories.map((subcat) => (
+                          <SelectItem key={subcat.id} value={subcat.id}>
+                            {subcat.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="p-2 text-sm text-muted-foreground text-center">
+                          No subcategories available
+                        </div>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -507,15 +554,26 @@ export default function JurisdictionCompare() {
                       <SelectValue placeholder={t("add_province_to_compare")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {provinces?.map((province) => (
-                        <SelectItem
-                          key={province.code}
-                          value={province.code}
-                          disabled={selectedProvinces.includes(province.code)}
-                        >
-                          {province.name}
-                        </SelectItem>
-                      ))}
+                      {isLoadingProvinces ? (
+                        <div className="flex items-center justify-center p-2">
+                          <Loader2 className="h-4 w-4 animate-spin text-primary mr-2" />
+                          Loading...
+                        </div>
+                      ) : provinces && provinces.length > 0 ? (
+                        provinces.map((province) => (
+                          <SelectItem
+                            key={province.code}
+                            value={province.code}
+                            disabled={selectedProvinces.includes(province.code)}
+                          >
+                            {province.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="p-2 text-sm text-muted-foreground text-center">
+                          No provinces available
+                        </div>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
