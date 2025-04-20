@@ -259,10 +259,24 @@ export default function JurisdictionCompare() {
     queryKey: ["/api/jurisdictions/provinces"],
     queryFn: async () => {
       try {
-        const res = await fetch("/api/jurisdictions/provinces");
+        const res = await fetch("/api/jurisdictions/provinces", {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include', // Include cookies for authentication
+        });
+        
+        if (res.status === 401) {
+          // Unauthorized - redirect to auth page
+          window.location.href = '/auth';
+          throw new Error("Authentication required");
+        }
+        
         if (!res.ok) {
           throw new Error("Failed to fetch provinces");
         }
+        
         const data = await res.json();
         return data;
       } catch (error) {
@@ -272,7 +286,8 @@ export default function JurisdictionCompare() {
           description: "Failed to load provinces. Please try again later.",
           variant: "destructive",
         });
-        return MOCK_PROVINCES; // Fallback to mock data
+        // Return empty array instead of mock data to be safer
+        return [];
       }
     },
   });
@@ -285,10 +300,24 @@ export default function JurisdictionCompare() {
     queryKey: ["/api/jurisdictions/categories"],
     queryFn: async () => {
       try {
-        const res = await fetch("/api/jurisdictions/categories");
+        const res = await fetch("/api/jurisdictions/categories", {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include', // Include cookies for authentication
+        });
+        
+        if (res.status === 401) {
+          // Unauthorized - redirect to auth page
+          window.location.href = '/auth';
+          throw new Error("Authentication required");
+        }
+        
         if (!res.ok) {
           throw new Error("Failed to fetch categories");
         }
+        
         const data = await res.json();
         return data;
       } catch (error) {
@@ -298,7 +327,8 @@ export default function JurisdictionCompare() {
           description: "Failed to load legal categories. Please try again later.",
           variant: "destructive",
         });
-        return MOCK_CATEGORIES; // Fallback to mock data
+        // Return empty array instead of mock data
+        return [];
       }
     },
   });
@@ -313,10 +343,24 @@ export default function JurisdictionCompare() {
       try {
         if (!category) return [];
         
-        const res = await fetch(`/api/jurisdictions/subcategories/${category}`);
+        const res = await fetch(`/api/jurisdictions/subcategories/${category}`, {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include', // Include cookies for authentication
+        });
+        
+        if (res.status === 401) {
+          // Unauthorized - redirect to auth page
+          window.location.href = '/auth';
+          throw new Error("Authentication required");
+        }
+        
         if (!res.ok) {
           throw new Error("Failed to fetch subcategories");
         }
+        
         const data = await res.json();
         return data;
       } catch (error) {
@@ -326,7 +370,8 @@ export default function JurisdictionCompare() {
           description: "Failed to load subcategories. Please try again later.",
           variant: "destructive",
         });
-        return MOCK_SUBCATEGORIES[category] || []; // Fallback to mock data
+        // Return empty array instead of mock data
+        return [];
       }
     },
     enabled: !!category,
@@ -347,7 +392,20 @@ export default function JurisdictionCompare() {
           provinces: selectedProvinces.join(','),
         });
         
-        const res = await fetch(`/api/jurisdictions/requirements?${queryParams}`);
+        const res = await fetch(`/api/jurisdictions/requirements?${queryParams}`, {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include', // Include cookies for authentication
+        });
+        
+        if (res.status === 401) {
+          // Unauthorized - redirect to auth page
+          window.location.href = '/auth';
+          throw new Error("Authentication required");
+        }
+        
         if (!res.ok) {
           throw new Error("Failed to fetch requirements");
         }
