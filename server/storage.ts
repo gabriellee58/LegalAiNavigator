@@ -25,7 +25,10 @@ import {
   settlementProposals, type SettlementProposal, type InsertSettlementProposal,
   digitalSignatures, type DigitalSignature, type InsertDigitalSignature,
   disputeActivities, type DisputeActivity, type InsertDisputeActivity,
-  passwordResetTokens, type PasswordResetToken, type InsertPasswordResetToken
+  passwordResetTokens, type PasswordResetToken, type InsertPasswordResetToken,
+  jurisdictionComparisons, type JurisdictionComparison, type InsertJurisdictionComparison,
+  provincialJurisdictions, type ProvincialJurisdiction, type InsertProvincialJurisdiction,
+  legalRequirements, type LegalRequirement, type InsertLegalRequirement
 } from "@shared/schema";
 import { db } from './db';
 import { eq, and, desc, inArray, sql } from 'drizzle-orm';
@@ -198,6 +201,18 @@ export interface IStorage {
   // Initialize methods
   initializeDefaultDocumentTemplates(): Promise<void>;
   initializeLegalDomains(): Promise<void>;
+  
+  // Jurisdiction comparison operations
+  saveJurisdictionComparison(comparison: InsertJurisdictionComparison): Promise<JurisdictionComparison>;
+  getUserJurisdictionComparisons(userId: number): Promise<JurisdictionComparison[]>;
+  getJurisdictionComparison(id: number): Promise<JurisdictionComparison | undefined>;
+  updateJurisdictionComparison(id: number, updates: Partial<JurisdictionComparison>): Promise<JurisdictionComparison | undefined>;
+  deleteJurisdictionComparison(id: number): Promise<void>;
+  
+  // Jurisdictions and requirements
+  getProvincialJurisdictions(): Promise<ProvincialJurisdiction[]>;
+  getJurisdictionByCode(code: string): Promise<ProvincialJurisdiction | undefined>;
+  getLegalRequirements(jurisdictionId: number, category: string, subcategory: string): Promise<LegalRequirement[]>;
 }
 
 // Database storage implementation using PostgreSQL
