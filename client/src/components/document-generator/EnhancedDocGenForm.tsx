@@ -28,7 +28,7 @@ interface EnhancedDocGenFormProps {
   template: DocumentTemplate;
 }
 
-// Function to generate document with Anthropic
+// Function to generate document with AI services (with DeepSeek as primary provider)
 async function generateEnhancedDocument(
   template: string,
   formData: Record<string, any>,
@@ -37,18 +37,41 @@ async function generateEnhancedDocument(
   saveDocument: boolean = false,
   title?: string,
 ) {
-  // apiRequest already returns parsed JSON data, no need to call .json()
-  const data = await apiRequest("POST", "/api/documents/enhanced", {
-    template,
-    formData,
-    documentType,
-    jurisdiction,
-    saveDocument,
-    title
-  });
-  
-  // Return content or the full response if it's a string
-  return typeof data === 'string' ? data : (data.content || data);
+  try {
+    // apiRequest already returns parsed JSON data, no need to call .json()
+    const data = await apiRequest("POST", "/api/documents/enhanced", {
+      template,
+      formData,
+      documentType,
+      jurisdiction,
+      saveDocument,
+      title
+    });
+    
+    // Log which AI provider was used for the document
+    if (data && data.provider) {
+      console.log(`Document enhanced using provider: ${data.provider}`);
+    }
+    
+    // Extract content from the response, ensuring we have valid document content
+    if (data && typeof data === 'object') {
+      if (data.content && typeof data.content === 'string') {
+        console.log(`Enhanced document successfully extracted, length: ${data.content.length}`);
+        return data.content;
+      } else if (data.document) {
+        return typeof data.document === 'string' 
+          ? data.document 
+          : data.document.content || data.document.documentContent || JSON.stringify(data.document);
+      }
+    } else if (typeof data === 'string') {
+      return data;
+    }
+    
+    throw new Error("Invalid document response format");
+  } catch (error) {
+    console.error("Document enhancement error:", error);
+    throw error;
+  }
 }
 
 export default function EnhancedDocGenForm({ template }: EnhancedDocGenFormProps) {
