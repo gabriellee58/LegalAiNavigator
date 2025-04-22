@@ -63,7 +63,11 @@ export const translations: Translations = {
     
     // Document Templates
     document_templates: "Document Templates",
-    contracts: "Contracts",
+    contracts: "Business Contracts",
+    real_estate: "Real Estate Documents",
+    family: "Family Law Documents",
+    employment: "Employment Agreements",
+    immigration: "Immigration Forms",
     
     // Virtual Legal Assistant
     assistant_title: "Virtual Legal Assistant",
@@ -451,7 +455,11 @@ export const translations: Translations = {
     
     // Document Templates
     document_templates: "Modèles de Documents",
-    contracts: "Contrats",
+    contracts: "Contrats d'Affaires",
+    real_estate: "Documents Immobiliers",
+    family: "Documents de Droit Familial",
+    employment: "Contrats de Travail",
+    immigration: "Formulaires d'Immigration",
     
     // Virtual Legal Assistant
     assistant_title: "Assistant Juridique Virtuel",
