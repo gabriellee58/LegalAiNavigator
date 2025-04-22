@@ -36,23 +36,56 @@ router.get('/current', ensureAuthenticated, async (req, res) => {
   try {
     const userId = req.user.id;
     
-    // Get subscription from database
-    const subscription = await getUserSubscription(userId);
-    
-    if (!subscription) {
-      return res.status(404).json({ error: 'No active subscription found' });
+    try {
+      // Attempt to get subscription from database
+      const subscription = await getUserSubscription(userId);
+      
+      if (!subscription) {
+        return res.status(404).json({ error: 'No active subscription found' });
+      }
+      
+      // Get plan details
+      const [plan] = await db
+        .select()
+        .from(subscriptionPlans)
+        .where(eq(subscriptionPlans.id, subscription.planId));
+      
+      res.json({
+        ...subscription,
+        plan: plan || null
+      });
+    } catch (error) {
+      // If the error is a "relation does not exist" error, handle it gracefully
+      if (error.message && (
+        error.message.includes("relation \"user_subscriptions\" does not exist") ||
+        error.code === '42P01' // PostgreSQL code for undefined_table
+      )) {
+        logger.warn('[subscription] The subscription tables have not been created yet. Returning default trial subscription.');
+        
+        // Return a default "trial" subscription since the table doesn't exist
+        // This ensures the app can function before subscriptions are set up
+        const defaultSubscription = {
+          id: 0,
+          userId: userId,
+          planId: "professional", // Default to professional plan
+          stripeCustomerId: null,
+          stripeSubscriptionId: null,
+          status: "trial",
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+          trialStart: new Date(),
+          trialEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+          canceledAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        
+        return res.json(defaultSubscription);
+      }
+      
+      // For other errors, return 500
+      throw error;
     }
-    
-    // Get plan details
-    const [plan] = await db
-      .select()
-      .from(subscriptionPlans)
-      .where(eq(subscriptionPlans.id, subscription.planId));
-    
-    res.json({
-      ...subscription,
-      plan: plan || null
-    });
   } catch (error) {
     logger.error('[subscription] Error fetching subscription:', error);
     res.status(500).json({ error: 'Failed to fetch subscription' });
