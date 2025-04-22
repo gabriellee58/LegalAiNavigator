@@ -1,14 +1,21 @@
 import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 
 // Initialize the Anthropic client
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
+// Initialize OpenAI client for fallback
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+}) : null;
+
 // Define response types
 interface DocumentEnhancementResponse {
   content: string;
   explanation?: string;
+  provider?: string;
 }
 
 interface DocumentAnalysisResponse {
@@ -20,7 +27,7 @@ interface DocumentAnalysisResponse {
 }
 
 /**
- * Enhances a legal document with AI
+ * Enhances a legal document with AI, with fallback between providers
  * @param content Original document content
  * @param formData Form data with variable values
  * @param documentType Type of document (contract, will, etc.)
@@ -33,7 +40,10 @@ export async function generateEnhancedDocument(
   documentType: string,
   jurisdiction: string = 'Ontario'
 ): Promise<DocumentEnhancementResponse> {
+  // Try Anthropic first
   try {
+    console.log(`Attempting document enhancement with Anthropic Claude for ${documentType} (${jurisdiction})`);
+    
     // the newest Anthropic model is "claude-3-7-sonnet-20250219" which was released February 24, 2025. do not change this unless explicitly requested by the user
     const response = await anthropic.messages.create({
       model: 'claude-3-7-sonnet-20250219',
@@ -75,10 +85,112 @@ Please enhance this document to make it more comprehensive, legally sound, and c
       
     return {
       content: responseText,
+      provider: 'anthropic'
     };
   } catch (error) {
     console.error('Error enhancing document with Anthropic:', error);
-    throw new Error('Failed to enhance document');
+    
+    // Try OpenAI as first fallback
+    if (openai) {
+      try {
+        console.log('Anthropic unavailable, falling back to OpenAI for document enhancement');
+        
+        // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        const openaiResponse = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+            {
+              role: "system",
+              content: `You are a Canadian legal document assistant specialized in drafting professional legal documents for ${jurisdiction} jurisdiction. 
+              Your task is to enhance the provided ${documentType} template by:
+              1. Using the provided form data to fill in any remaining placeholders
+              2. Ensuring proper legal language and formatting
+              3. Adding any standard clauses typical for this document type in ${jurisdiction}
+              4. Making the document more comprehensive and legally sound while maintaining its original intent
+              5. Ensuring compliance with ${jurisdiction} laws and regulations
+              
+              Response should be the enhanced document text in plain text format. Maintain proper paragraph breaks and section formatting.
+              Do not add any explanations or notes within the document itself.`
+            },
+            {
+              role: "user",
+              content: `I need to enhance this ${documentType} for ${jurisdiction} jurisdiction. 
+              
+Here is my drafted document:
+${documentContent}
+
+Here is the form data I've entered (use this to add missing details):
+${JSON.stringify(formData, null, 2)}
+
+Please enhance this document to make it more comprehensive, legally sound, and compliant with ${jurisdiction} laws while maintaining its original intent. Fill in any missing details based on the form data I provided.`
+            }
+          ],
+          max_tokens: 4000,
+        });
+        
+        return {
+          content: openaiResponse.choices[0].message.content || "",
+          provider: 'openai'
+        };
+      } catch (openaiError) {
+        console.error('Error with OpenAI fallback:', openaiError);
+        
+        // If we have a DeepSeek key, try that as a last resort
+        if (process.env.DEEPSEEK_API_KEY) {
+          try {
+            console.log('Trying DeepSeek AI as final fallback for document enhancement');
+            
+            // Simple implementation for DeepSeek using fetch
+            const deepseekResponse = await fetch('https://api.deepseek.com/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`
+              },
+              body: JSON.stringify({
+                model: 'deepseek-chat',
+                messages: [
+                  {
+                    role: "system",
+                    content: `You are a Canadian legal document assistant specialized in drafting professional legal documents for ${jurisdiction} jurisdiction. 
+                    Enhance the provided ${documentType} template by filling in placeholders, ensuring proper legal language, adding standard clauses, making it comprehensive and legally sound.`
+                  },
+                  {
+                    role: "user",
+                    content: `Enhance this ${documentType} for ${jurisdiction}: 
+                    
+Document: ${documentContent}
+
+Form data: ${JSON.stringify(formData, null, 2)}
+
+Make it comprehensive, legally sound, and compliant with ${jurisdiction} laws.`
+                  }
+                ],
+                max_tokens: 4000
+              })
+            });
+            
+            const deepseekData = await deepseekResponse.json();
+            
+            if (deepseekData.choices && deepseekData.choices[0].message.content) {
+              return {
+                content: deepseekData.choices[0].message.content,
+                provider: 'deepseek'
+              };
+            }
+          } catch (deepseekError) {
+            console.error('Error with DeepSeek fallback:', deepseekError);
+          }
+        }
+      }
+    }
+    
+    // If all else fails, try to return the original document with a note
+    return {
+      content: `${documentContent}\n\n[NOTE: This document could not be enhanced due to AI service overload. Please try again later.]`,
+      explanation: 'AI services currently overloaded, returning original document with minimal enhancements.',
+      provider: 'fallback'
+    };
   }
 }
 

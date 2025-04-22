@@ -1923,7 +1923,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid enhanced document request" });
       }
       
-      // Generate enhanced document with Anthropic
+      // Generate enhanced document with AI service (Anthropic with fallback)
       const enhancedContent = await generateEnhancedDocument(
         parsed.data.template,
         parsed.data.formData,
@@ -1931,23 +1931,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         parsed.data.jurisdiction || 'Canada'
       );
       
-      // Save document if requested
-      if (parsed.data.saveDocument && parsed.data.title) {
-        await storage.createGeneratedDocument({
-          userId: req.user!.id,
-          documentTitle: parsed.data.title,
-          documentContent: enhancedContent.content,
-          templateId: null, // External template, no direct DB reference
-          documentData: {
-            type: parsed.data.documentType,
-            jurisdiction: parsed.data.jurisdiction || 'Canada',
-            generatedWith: 'anthropic',
-            formData: parsed.data.formData
-          }
-        });
+      // Log which provider was used
+      console.log(`Document enhanced using provider: ${enhancedContent.provider || 'unknown'}`);
+      
+      // Save document if requested and user is logged in
+      if (parsed.data.saveDocument && parsed.data.title && req.user) {
+        try {
+          await storage.createGeneratedDocument({
+            userId: req.user.id,
+            documentTitle: parsed.data.title,
+            documentContent: enhancedContent.content,
+            templateId: null, // External template, no direct DB reference
+            documentData: {
+              type: parsed.data.documentType,
+              jurisdiction: parsed.data.jurisdiction || 'Canada',
+              generatedWith: enhancedContent.provider || 'ai',
+              formData: parsed.data.formData
+            }
+          });
+          
+          console.log(`Document saved successfully for user ${req.user.id}`);
+        } catch (saveError) {
+          // Just log the error but don't fail the request
+          console.error("Error saving document:", saveError);
+        }
       }
       
-      res.json({ content: enhancedContent.content });
+      // Include provider info in response
+      res.json({ 
+        content: enhancedContent.content,
+        provider: enhancedContent.provider || 'ai',
+        explanation: enhancedContent.explanation
+      });
     } catch (error) {
       console.error("Enhanced document generation error:", error);
       res.status(500).json({ message: "Error generating enhanced document" });
