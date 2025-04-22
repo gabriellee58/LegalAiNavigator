@@ -1,0 +1,68 @@
+Error enhancing document with Anthropic: InternalServerError: 529 {"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}
+    at Function.generate (/home/runner/workspace/node_modules/@anthropic-ai/sdk/src/error.ts:91:14)
+    at Anthropic.makeStatusError (/home/runner/workspace/node_modules/@anthropic-ai/sdk/src/core.ts:454:21)
+    at Anthropic.makeRequest (/home/runner/workspace/node_modules/@anthropic-ai/sdk/src/core.ts:518:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async generateEnhancedDocument (/home/runner/workspace/server/lib/anthropic.ts:38:22)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:1927:31) {
+  status: 529,
+  headers: {
+    'anthropic-organization-id': 'a2371e92-b2e0-460e-95a1-b01f925730fc',
+    'cf-cache-status': 'DYNAMIC',
+    'cf-ray': '9341aed43c07eb09-ORD',
+    connection: 'keep-alive',
+    'content-length': '75',
+    'content-type': 'application/json',
+    date: 'Tue, 22 Apr 2025 02:27:46 GMT',
+    'request-id': 'req_011CNNyrMrxtM363qDrJEepA',
+    server: 'cloudflare',
+    via: '1.1 google',
+    'x-robots-tag': 'none',
+    'x-should-retry': 'true'
+  },
+  request_id: 'req_011CNNyrMrxtM363qDrJEepA',
+  error: {
+    type: 'error',
+    error: { type: 'overloaded_error', message: 'Overloaded' }
+  }
+}
+Enhanced document generation error: Error: Failed to enhance document
+    at generateEnhancedDocument (/home/runner/workspace/server/lib/anthropic.ts:81:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:1927:31)
+[2025-04-22 02:27:47.195] [ERROR] [http] POST /api/documents/enhanced 500 in 33742ms :: {"message":"Error generating enhanced document"}
+Error enhancing document with Anthropic: InternalServerError: 529 {"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}
+    at Function.generate (/home/runner/workspace/node_modules/@anthropic-ai/sdk/src/error.ts:91:14)
+    at Anthropic.makeStatusError (/home/runner/workspace/node_modules/@anthropic-ai/sdk/src/core.ts:454:21)
+    at Anthropic.makeRequest (/home/runner/workspace/node_modules/@anthropic-ai/sdk/src/core.ts:518:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async generateEnhancedDocument (/home/runner/workspace/server/lib/anthropic.ts:38:22)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:1927:31) {
+  status: 529,
+  headers: {
+    'anthropic-organization-id': 'a2371e92-b2e0-460e-95a1-b01f925730fc',
+    'cf-cache-status': 'DYNAMIC',
+    'cf-ray': '9341af57eaedeb09-ORD',
+    connection: 'keep-alive',
+    'content-length': '75',
+    'content-type': 'application/json',
+    date: 'Tue, 22 Apr 2025 02:27:59 GMT',
+    'request-id': 'req_011CNNysuwYiQGzNrZ4SK5Mw',
+    server: 'cloudflare',
+    via: '1.1 google',
+    'x-robots-tag': 'none',
+    'x-should-retry': 'true'
+  },
+  request_id: 'req_011CNNysuwYiQGzNrZ4SK5Mw',
+  error: {
+    type: 'error',
+    error: { type: 'overloaded_error', message: 'Overloaded' }
+  }
+}
+Enhanced document generation error: Error: Failed to enhance document
+    at generateEnhancedDocument (/home/runner/workspace/server/lib/anthropic.ts:81:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:1927:31)
+[2025-04-22 02:28:01.687] [ERROR] [http] POST /api/documents/enhanced 500 in 13449ms :: {"message":"Error generating enhanced document"}
+[2025-04-22 02:28:01.909] [INFO] [http] GET /api/secrets/check 304 in 99ms :: {"available":true}
+[2025-04-22 02:28:06.971] [INFO] [http] GET /api/secrets/check 304 in 131ms :: {"available":true}
