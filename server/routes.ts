@@ -43,6 +43,7 @@ import courtProceduresRouter from "./routes/courtProcedures";
 import userRouter from "./routes/user";
 import docusealRouter from "./routes/docuseal";
 import subscriptionRouter from "./routes/subscription";
+import jurisdictionsRouter from "./routes/jurisdictions";
 
 // Set up multer for file uploads
 const storage_config = multer.memoryStorage();
@@ -88,6 +89,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/user', userRouter);
   app.use('/api/docuseal', docusealRouter);
   app.use('/api/subscriptions', subscriptionRouter);
+  app.use('/api/jurisdictions', jurisdictionsRouter);
   
   // Health check endpoint
   app.get("/api/health", (req: Request, res: Response) => {
