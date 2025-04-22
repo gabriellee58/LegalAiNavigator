@@ -82,15 +82,25 @@ export async function apiRequest<T = any>(
   data?: unknown | undefined,
   options: {
     retries?: number, 
-    retryDelay?: number
-  } = { retries: 1, retryDelay: 1000 },
+    retryDelay?: number,
+    logDetails?: boolean
+  } = { retries: 1, retryDelay: 1000, logDetails: true },
 ): Promise<T> {
-  const { retries = 1, retryDelay = 1000 } = options;
+  const { retries = 1, retryDelay = 1000, logDetails = true } = options;
   let lastError: Error | null = null;
+  
+  // Log request details when debugging is enabled
+  if (logDetails) {
+    console.log(`API Request: ${method} ${url}`, data ? { bodyFields: Object.keys(data as object) } : 'No body');
+  }
   
   // Attempt with retries
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
+      if (attempt > 0 && logDetails) {
+        console.log(`Retry attempt ${attempt}/${retries} for ${method} ${url}`);
+      }
+      
       const res = await fetch(url, {
         method,
         headers: data ? { "Content-Type": "application/json" } : {},
@@ -98,12 +108,64 @@ export async function apiRequest<T = any>(
         credentials: "include",
       });
       
-      await throwIfResNotOk(res);
+      // Check if the response is OK
+      if (!res.ok) {
+        let errorData;
+        try {
+          // Try to get the error details as JSON
+          errorData = await res.json();
+          if (logDetails) {
+            console.error(`API Error (${res.status}) for ${method} ${url}:`, errorData);
+          }
+        } catch {
+          // If the error isn't JSON, get it as text
+          const errorText = await res.text();
+          if (logDetails) {
+            console.error(`API Error (${res.status}) for ${method} ${url}:`, errorText || res.statusText);
+          }
+          errorData = { message: errorText || res.statusText };
+        }
+        
+        throw new ApiError(res.status, 
+          errorData.message || `Error ${res.status}: ${res.statusText}`, 
+          errorData
+        );
+      }
       
-      // Parse the response as JSON
-      return await res.json() as T;
+      let result;
+      // Handle both JSON responses and non-JSON responses (like empty responses)
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        result = await res.json() as T;
+      } else {
+        // If not JSON content type, check if there's any content at all
+        const text = await res.text();
+        if (!text) {
+          // Empty response, return an empty object
+          result = {} as T;
+        } else {
+          // Try to parse as JSON anyway, fallback to text
+          try {
+            result = JSON.parse(text) as T;
+          } catch {
+            // Not JSON, return the text
+            result = text as unknown as T;
+          }
+        }
+      }
+      
+      if (logDetails) {
+        console.log(`API Success: ${method} ${url}`, 
+          result ? (typeof result === 'object' ? 'Response object received' : 'Response received') : 'Empty response');
+      }
+      
+      return result;
     } catch (error) {
       lastError = error as Error;
+      
+      if (logDetails) {
+        console.error(`API Request failed (attempt ${attempt + 1}/${retries + 1}):`, error);
+      }
       
       // Don't retry certain errors
       if (error instanceof ApiError) {
@@ -123,6 +185,9 @@ export async function apiRequest<T = any>(
   }
   
   // If we got here, all retries failed
+  if (logDetails) {
+    console.error(`All ${retries + 1} attempts failed for ${method} ${url}`, lastError);
+  }
   throw lastError; 
 }
 
@@ -130,20 +195,79 @@ export async function apiRequest<T = any>(
 type UnauthorizedBehavior = "returnNull" | "throw";
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
+  logDetails?: boolean;
 }) => QueryFunction<T> =
-  ({ on401: unauthorizedBehavior }) =>
+  ({ on401: unauthorizedBehavior, logDetails = true }) =>
   async ({ queryKey }) => {
     try {
-      const res = await fetch(queryKey[0] as string, {
+      const url = queryKey[0] as string;
+      if (logDetails) {
+        console.log(`Query: GET ${url}`);
+      }
+      
+      const res = await fetch(url, {
         credentials: "include",
       });
 
       if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+        if (logDetails) {
+          console.log(`Query: GET ${url} - 401 returned, returning null as configured`);
+        }
         return null;
       }
 
-      await throwIfResNotOk(res);
-      return await res.json();
+      // Handle errors with enhanced error messages
+      if (!res.ok) {
+        let errorData;
+        try {
+          // Try to get the error details as JSON
+          errorData = await res.json();
+          if (logDetails) {
+            console.error(`Query Error (${res.status}) for GET ${url}:`, errorData);
+          }
+        } catch {
+          // If the error isn't JSON, get it as text
+          const errorText = await res.text();
+          if (logDetails) {
+            console.error(`Query Error (${res.status}) for GET ${url}:`, errorText || res.statusText);
+          }
+          errorData = { message: errorText || res.statusText };
+        }
+        
+        throw new ApiError(res.status, 
+          errorData.message || `Error ${res.status}: ${res.statusText}`, 
+          errorData
+        );
+      }
+      
+      // Handle both JSON responses and non-JSON responses
+      let result;
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        result = await res.json() as T;
+      } else {
+        // If not JSON content type, check if there's any content at all
+        const text = await res.text();
+        if (!text) {
+          // Empty response, return an empty object
+          result = {} as T;
+        } else {
+          // Try to parse as JSON anyway, fallback to text
+          try {
+            result = JSON.parse(text) as T;
+          } catch {
+            // Not JSON, return the text
+            result = text as unknown as T;
+          }
+        }
+      }
+      
+      if (logDetails) {
+        console.log(`Query Success: GET ${url}`, 
+          result ? 'Response received' : 'Empty response');
+      }
+      
+      return result;
     } catch (error) {
       // Add query key to error for better debugging
       if (error instanceof Error) {
@@ -157,7 +281,7 @@ export const getQueryFn: <T>(options: {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      queryFn: getQueryFn({ on401: "throw" }),
+      queryFn: getQueryFn({ on401: "throw", logDetails: true }),
       refetchInterval: false,
       refetchOnWindowFocus: import.meta.env.PROD === true, // Only in production
       staleTime: 1000 * 60 * 5, // 5 minutes

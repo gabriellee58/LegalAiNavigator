@@ -57,7 +57,7 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
           
         for (const fieldName of requiredFields) {
           if (!data[fieldName] || data[fieldName].trim() === '') {
-            throw new Error(`${fieldName} is required`);
+            throw new Error(`Field "${fieldName}" is required to generate this document.`);
           }
         }
         
@@ -75,16 +75,36 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
           }
         });
         
+        // Display a message to the user about what's happening
+        console.log("Generating document with template ID:", template.id);
+        console.log("Document data has these fields:", Object.keys(data));
+        
         // Proceed with document generation
-        return await generateDocument(
+        const result = await generateDocument(
           user?.id || 0, 
           template.id, 
           `${template.title} - ${new Date().toLocaleDateString()}`,
           data
         );
+        
+        console.log("Document generation result:", result);
+        return result;
       } catch (error) {
-        console.error("Error in mutation function:", error);
-        throw error; // Re-throw to be caught by onError
+        // Create a more descriptive error with additional debugging
+        console.error("Error in standard document generation:", error);
+        
+        // Build a more helpful error message
+        let errorMessage = "Document generation failed. ";
+        
+        if (error instanceof Error) {
+          errorMessage += error.message;
+        } else if (error && typeof error === 'object') {
+          errorMessage += JSON.stringify(error);
+        } else {
+          errorMessage += "An unexpected error occurred. Please check your input and try again.";
+        }
+        
+        throw new Error(errorMessage);
       }
     },
     onSuccess: (data: any) => {

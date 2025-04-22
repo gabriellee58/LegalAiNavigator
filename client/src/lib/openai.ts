@@ -327,6 +327,19 @@ export const generateDocument = async (
     });
   } catch (error) {
     console.error("Error in document generation:", error);
-    throw new Error(error instanceof Error ? error.message : "Failed to generate document. Please try again.");
+    
+    // Create a more descriptive error message
+    let errorMessage = "Failed to generate document. Please try again.";
+    
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (error && typeof error === 'object' && 'message' in error) {
+      errorMessage = String(error.message);
+    }
+    
+    // Log the detailed error for debugging
+    console.error("Document generation error details:", { error, message: errorMessage });
+    
+    throw new Error(errorMessage);
   }
 };

@@ -442,11 +442,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generated document routes
   app.post("/api/documents", isAuthenticated, async (req: Request, res: Response) => {
     try {
+      // Log the incoming document creation request for debugging
+      console.log("Document creation request received");
+      
       // Validate document data without userId
       const documentSchema = insertGeneratedDocumentSchema.omit({ userId: true });
       const parsed = documentSchema.safeParse(req.body);
+      
       if (!parsed.success) {
-        return res.status(400).json({ message: "Invalid document data" });
+        console.error("Document validation error:", parsed.error);
+        return res.status(400).json({ 
+          message: "Invalid document data", 
+          details: parsed.error.format()
+        });
       }
       
       // Add authenticated user ID to the document data
@@ -455,9 +463,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: req.user!.id
       });
       
+      console.log("Document created successfully with ID:", document.id);
       res.status(201).json(document);
     } catch (error) {
-      res.status(500).json({ message: "Error creating document" });
+      console.error("Error creating document:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({ 
+        message: "Error creating document", 
+        error: errorMessage,
+        errorType: error.constructor.name || "ServerError"
+      });
     }
   });
 
