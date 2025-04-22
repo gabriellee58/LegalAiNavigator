@@ -27,15 +27,29 @@ import { exportAsText, printDocument, generatePDF } from "@/lib/documentExport";
 // Set the PDF.js worker path - ensure it works with our current environment
 if (typeof window !== 'undefined') {
   try {
-    // Try to use CDN worker
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-    console.log("Using CDN PDF.js worker");
+    // Try to use CDN worker - verify the CDN is accessible
+    const workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
+    console.log("Using CDN PDF.js worker:", workerSrc);
+    
+    // Verify worker availability with a HEAD request (no actual download)
+    fetch(workerSrc, { method: 'HEAD' })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`Worker not available at CDN: ${response.status}`);
+        }
+        console.log("PDF.js worker verified available at CDN");
+      })
+      .catch(err => {
+        console.warn("PDF.js worker might not be available at CDN:", err.message);
+        // Fallback strategy will be used in generatePdfFromText if needed
+      });
   } catch (err) {
     console.error("Error setting up PDF.js worker:", err);
     
-    // Fallback to no worker (less efficient but still functional)
+    // Fallback to blank worker URL (slower but works without external dependencies)
     pdfjsLib.GlobalWorkerOptions.workerSrc = '';
-    console.warn("Using PDF.js without worker");
+    console.warn("Using PDF.js without worker - performance may be affected");
   }
 }
 
@@ -82,36 +96,67 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     };
   }, [pdfUrl]);
 
-  // Convert text to PDF and render it
+  // Convert text to PDF and render it with enhanced error handling
   const generatePdfFromText = async () => {
     try {
       setIsLoading(true);
+      console.log("Starting PDF generation with content length:", documentContent.length);
+      
       // Use the existing PDF generation function with preview mode
       const pdfGenResult = await generatePDF(documentContent, `${documentTitle}.pdf`, false);
       
+      // Check if we got a valid URL back
       if (pdfGenResult && typeof pdfGenResult === 'string') {
+        console.log("PDF generation successful, got URL:", pdfGenResult.substring(0, 50) + "...");
         setPdfUrl(pdfGenResult);
+        
+        // Wrap PDF document loading in try/catch to handle rendering failures
         try {
+          // Verify the URL is accessible before attempting to render
+          const response = await fetch(pdfGenResult, { method: 'HEAD' });
+          if (!response.ok) {
+            throw new Error(`PDF blob URL not accessible: ${response.status}`);
+          }
+          
+          // Load the PDF document using PDF.js
+          console.log("Loading PDF document with PDF.js");
           const loadingTask = pdfjsLib.getDocument(pdfGenResult);
+          
+          // Add a loading task progress handler
+          loadingTask.onProgress = (progress) => {
+            console.log(`Loading PDF: ${Math.round(progress.loaded / progress.total * 100)}%`);
+          };
+          
           const pdfDoc = await loadingTask.promise;
           pdfDocRef.current = pdfDoc;
+          
+          // Get total pages and initialize rendering
+          console.log(`PDF loaded successfully with ${pdfDoc.numPages} pages`);
           setTotalPages(pdfDoc.numPages);
           await renderPage(1);
           setIsLoading(false);
         } catch (pdfError) {
-          console.error("PDF.js loading error:", pdfError);
+          console.error("PDF.js loading/rendering error:", pdfError);
+          
+          // Clean up the URL state since we couldn't render it
+          if (pdfUrl) {
+            URL.revokeObjectURL(pdfUrl);
+          }
           setPdfUrl(null);
           setIsLoading(false);
+          
           toast({
             title: t("PDF Preview Error"),
-            description: t("Could not load PDF preview. Showing text format instead."),
+            description: t("Could not render PDF preview. Showing text format instead."),
             variant: "destructive"
           });
         }
       } else {
-        // Fallback to displaying text
+        // Handle case where PDF generation didn't return a valid URL
+        console.warn("PDF generation did not return a valid URL:", pdfGenResult);
         setPdfUrl(null);
         setIsLoading(false);
+        
         toast({
           title: t("Using Text Preview"),
           description: t("PDF preview unavailable. Showing text format instead."),
@@ -119,14 +164,24 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
         });
       }
     } catch (error) {
-      console.error("Error generating PDF preview:", error);
-      toast({
-        title: t("Preview Generation Error"),
-        description: t("Could not generate PDF preview. Displaying text instead."),
-        variant: "destructive"
-      });
+      // Handle errors in the PDF generation process
+      console.error("Error in PDF preview generation process:", error);
+      
+      // Clean up any existing URL state
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
+      }
       setPdfUrl(null);
       setIsLoading(false);
+      
+      // Show error toast
+      toast({
+        title: t("Preview Generation Error"),
+        description: error instanceof Error 
+          ? t(`PDF generation failed: ${error.message}`)
+          : t("Could not generate PDF preview. Showing text format instead."),
+        variant: "destructive"
+      });
     }
   };
 

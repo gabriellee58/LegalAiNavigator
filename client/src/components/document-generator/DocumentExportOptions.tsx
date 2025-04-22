@@ -49,59 +49,101 @@ const DocumentExportOptions: React.FC<DocumentExportOptionsProps> = ({
     
     setIsExporting(true);
     
-    // Add loading toast
-    const loadingToast = toast({
+    // Add loading toast that will be dismissed when export is complete
+    const loadingId = toast({
       title: t("Preparing document"),
       description: t("Please wait while we prepare your document..."),
-    });
+    }).id;
     
     try {
-      // Sanitize the filename
-      const sanitizedTitle = documentTitle.replace(/[^a-zA-Z0-9_\-\.]/g, "_");
+      console.log(`Starting document export in ${format} format`);
+      
+      // Sanitize the filename to prevent any file system issues
+      const sanitizedTitle = documentTitle
+        .replace(/[^a-zA-Z0-9_\-\.]/g, "_")
+        .replace(/_+/g, "_") // Replace multiple underscores with a single one
+        .trim();
       
       if (format === 'txt') {
+        // Text export - directly use the text exporter
+        console.log(`Exporting text file: ${sanitizedTitle}.txt`);
         await exportAsText(documentContent, `${sanitizedTitle}.txt`);
+        
+        // Success message
         toast({
           title: t("Document Exported"),
           description: t("Your document has been exported as a text file."),
         });
       } else if (format === 'pdf') {
-        const result = await generatePDF(documentContent, `${sanitizedTitle}.pdf`);
-        if (result) {
+        // PDF export - use the PDF generator with print dialog
+        console.log(`Generating PDF file: ${sanitizedTitle}.pdf`);
+        const result = await generatePDF(documentContent, `${sanitizedTitle}.pdf`, true);
+        
+        // Check the result type to determine success
+        if (result === true || (typeof result === 'string' && result)) {
           toast({
             title: t("PDF Generated"),
             description: t("Your document has been generated as a PDF."),
           });
         } else {
+          console.warn("PDF generation returned an invalid result:", result);
+          // Fallback to text export
+          await exportAsText(documentContent, `${sanitizedTitle}.txt`);
+          
           toast({
             title: t("PDF Generation Limited"),
             description: t("Your browser doesn't fully support PDF generation. Document was exported as text instead."),
-            variant: "destructive",
+            variant: "default",
           });
         }
       } else if (format === 'docx' || format === 'rtf') {
-        // For now, we'll fallback to text export for these formats
-        // In the future, this can be enhanced with proper DOCX/RTF generation
+        // For now, we'll fallback to text export for unsupported formats
+        console.log(`Requested ${format} format not supported, using text fallback`);
         await exportAsText(documentContent, `${sanitizedTitle}.txt`);
+        
         toast({
-          title: t("Format Not Available Yet"),
-          description: t("This format is not yet supported. Your document was exported as a text file instead."),
+          title: t("Format Coming Soon"),
+          description: t(`The ${format.toUpperCase()} format will be available in a future update. Your document was exported as a text file instead.`),
           variant: "default",
         });
       }
     } catch (error) {
-      console.error("Error exporting document:", error);
+      // Log detailed error for debugging
+      console.error("Document export error:", error);
+      
+      // Show appropriate error message to user
       toast({
         title: t("Export Failed"),
-        description: error instanceof Error ? error.message : t("There was an error exporting your document. Please try again."),
+        description: error instanceof Error 
+          ? t(`Export error: ${error.message}`) 
+          : t("There was an error exporting your document. Please try again."),
         variant: "destructive",
       });
+      
+      // Try basic text export as a fallback for any export failure
+      try {
+        if (format !== 'txt') {
+          console.log("Attempting text export as fallback after failure");
+          await exportAsText(documentContent, `${documentTitle.replace(/[^a-zA-Z0-9_\-\.]/g, "_")}_fallback.txt`);
+          
+          toast({
+            title: t("Fallback Export Completed"),
+            description: t("We exported your document as a text file instead."),
+            variant: "default",
+          });
+        }
+      } catch (fallbackError) {
+        console.error("Even fallback text export failed:", fallbackError);
+      }
     } finally {
+      // Dismiss the loading toast
+      toast.dismiss(loadingId);
+      
       setIsExporting(false);
     }
   };
   
-  const handlePrint = () => {
+  const handlePrint = async () => {
     if (!documentContent) {
       toast({
         title: t("No document to print"),
@@ -113,20 +155,48 @@ const DocumentExportOptions: React.FC<DocumentExportOptionsProps> = ({
     
     try {
       // Show "preparing to print" message
-      toast({
+      const loadingId = toast({
         title: t("Preparing document for printing"),
         description: t("The print dialog will open momentarily...")
-      });
+      }).id;
       
-      // Small delay to allow the toast to display before print dialog opens
-      setTimeout(() => {
-        printDocument(documentContent, documentTitle);
+      console.log(`Preparing to print document: "${documentTitle}" (${documentContent.length} chars)`);
+      
+      // Process printing with a small delay to ensure toast is shown first
+      setTimeout(async () => {
+        try {
+          // Use the enhanced print function which now returns a promise
+          await printDocument(documentContent, documentTitle);
+          
+          // Success message
+          toast({
+            title: t("Print Initiated"),
+            description: t("The print dialog has been opened."),
+          });
+          
+        } catch (printError) {
+          console.error("Error during print process:", printError);
+          
+          toast({
+            title: t("Print Failed"),
+            description: printError instanceof Error 
+              ? t(`Print error: ${printError.message}`) 
+              : t("There was an error printing your document. Please try again."),
+            variant: "destructive",
+          });
+        } finally {
+          // Dismiss the loading toast
+          toast.dismiss(loadingId);
+        }
       }, 500);
     } catch (error) {
-      console.error("Error printing document:", error);
+      console.error("Error initializing print process:", error);
+      
       toast({
         title: t("Print Failed"),
-        description: error instanceof Error ? error.message : t("There was an error printing your document. Please try again."),
+        description: error instanceof Error 
+          ? t(`Print error: ${error.message}`) 
+          : t("There was an error preparing your document for printing. Please try again."),
         variant: "destructive",
       });
     }
