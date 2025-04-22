@@ -68,6 +68,10 @@ export default function EnhancedDocGenForm({ template }: EnhancedDocGenFormProps
       console.log("useEffect detected generatedDocument change - switching to preview tab");
       setActiveTab("preview");
       
+      // Scroll to top of page to make sure the preview is visible
+      window.scrollTo(0, 0);
+      console.log("Scrolled to top of page to show generated document");
+      
       // Add a brief timeout to allow the tab switch to complete
       setTimeout(() => {
         // Apply highlight effect to preview panel
@@ -81,8 +85,15 @@ export default function EnhancedDocGenForm({ template }: EnhancedDocGenFormProps
               previewPanelRef.current.classList.remove("bg-purple-50/30");
             }
           }, 1000);
+          
+          // Make sure the preview tab is visible and focused
+          const previewTab = document.getElementById('preview-tab');
+          if (previewTab) {
+            previewTab.click();
+            previewTab.focus();
+          }
         }
-      }, 100);
+      }, 200);
     }
   }, [generatedDocument]);
   

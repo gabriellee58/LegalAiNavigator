@@ -40,9 +40,68 @@ export async function generateEnhancedDocument(
   documentType: string,
   jurisdiction: string = 'Ontario'
 ): Promise<DocumentEnhancementResponse> {
-  // Try Anthropic first
+  // Try DeepSeek first since it's been most reliable
+  if (process.env.DEEPSEEK_API_KEY) {
+    try {
+      console.log(`Starting with DeepSeek AI for document enhancement - ${documentType} (${jurisdiction})`);
+      
+      // Simple implementation for DeepSeek using fetch
+      const deepseekResponse = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            {
+              role: "system",
+              content: `You are a Canadian legal document assistant specialized in drafting professional legal documents for ${jurisdiction} jurisdiction. 
+              Enhance the provided ${documentType} template by:
+              1. Using the provided form data to fill in any remaining placeholders
+              2. Ensuring proper legal language and formatting
+              3. Adding any standard clauses typical for this document type in ${jurisdiction}
+              4. Making the document more comprehensive and legally sound while maintaining its original intent
+              5. Ensuring compliance with ${jurisdiction} laws and regulations
+
+              Response should be the enhanced document text in plain text format. Maintain proper paragraph breaks and section formatting.
+              Do not add any explanations or notes within the document itself.`
+            },
+            {
+              role: "user",
+              content: `I need to enhance this ${documentType} for ${jurisdiction} jurisdiction. 
+              
+Here is my drafted document:
+${documentContent}
+
+Here is the form data I've entered (use this to add missing details):
+${JSON.stringify(formData, null, 2)}
+
+Please enhance this document to make it more comprehensive, legally sound, and compliant with ${jurisdiction} laws while maintaining its original intent. Fill in any missing details based on the form data I provided.`
+            }
+          ],
+          max_tokens: 4000
+        })
+      });
+      
+      const deepseekData = await deepseekResponse.json();
+      
+      if (deepseekData.choices && deepseekData.choices[0].message.content) {
+        return {
+          content: deepseekData.choices[0].message.content,
+          provider: 'deepseek'
+        };
+      }
+    } catch (deepseekError) {
+      console.error('Error with DeepSeek AI:', deepseekError);
+      // Continue to next provider on failure
+    }
+  }
+  
+  // Try Anthropic as second option
   try {
-    console.log(`Attempting document enhancement with Anthropic Claude for ${documentType} (${jurisdiction})`);
+    console.log(`Trying Anthropic Claude for document enhancement - ${documentType} (${jurisdiction})`);
     
     // the newest Anthropic model is "claude-3-7-sonnet-20250219" which was released February 24, 2025. do not change this unless explicitly requested by the user
     const response = await anthropic.messages.create({
@@ -90,10 +149,10 @@ Please enhance this document to make it more comprehensive, legally sound, and c
   } catch (error) {
     console.error('Error enhancing document with Anthropic:', error);
     
-    // Try OpenAI as first fallback
+    // Try OpenAI as last fallback
     if (openai) {
       try {
-        console.log('Anthropic unavailable, falling back to OpenAI for document enhancement');
+        console.log('Trying OpenAI as last fallback for document enhancement');
         
         // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         const openaiResponse = await openai.chat.completions.create({
@@ -134,54 +193,6 @@ Please enhance this document to make it more comprehensive, legally sound, and c
         };
       } catch (openaiError) {
         console.error('Error with OpenAI fallback:', openaiError);
-        
-        // If we have a DeepSeek key, try that as a last resort
-        if (process.env.DEEPSEEK_API_KEY) {
-          try {
-            console.log('Trying DeepSeek AI as final fallback for document enhancement');
-            
-            // Simple implementation for DeepSeek using fetch
-            const deepseekResponse = await fetch('https://api.deepseek.com/v1/chat/completions', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`
-              },
-              body: JSON.stringify({
-                model: 'deepseek-chat',
-                messages: [
-                  {
-                    role: "system",
-                    content: `You are a Canadian legal document assistant specialized in drafting professional legal documents for ${jurisdiction} jurisdiction. 
-                    Enhance the provided ${documentType} template by filling in placeholders, ensuring proper legal language, adding standard clauses, making it comprehensive and legally sound.`
-                  },
-                  {
-                    role: "user",
-                    content: `Enhance this ${documentType} for ${jurisdiction}: 
-                    
-Document: ${documentContent}
-
-Form data: ${JSON.stringify(formData, null, 2)}
-
-Make it comprehensive, legally sound, and compliant with ${jurisdiction} laws.`
-                  }
-                ],
-                max_tokens: 4000
-              })
-            });
-            
-            const deepseekData = await deepseekResponse.json();
-            
-            if (deepseekData.choices && deepseekData.choices[0].message.content) {
-              return {
-                content: deepseekData.choices[0].message.content,
-                provider: 'deepseek'
-              };
-            }
-          } catch (deepseekError) {
-            console.error('Error with DeepSeek fallback:', deepseekError);
-          }
-        }
       }
     }
     
