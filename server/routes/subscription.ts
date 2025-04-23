@@ -164,8 +164,9 @@ router.post('/create', ensureAuthenticated, async (req, res) => {
     
     const { planId } = result.data;
     const userId = req.user!.id;
-    const userEmail = req.user!.email || '';
-    const userName = req.user!.username;
+    // Use username as email since our user schema doesn't have a separate email field
+    const userEmail = req.user!.username; // Assuming username is the email
+    const userName = req.user!.fullName || req.user!.username;
     
     try {
       // Get plan details
