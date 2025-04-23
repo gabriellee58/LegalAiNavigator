@@ -101,21 +101,34 @@ router.get('/current', ensureAuthenticated, async (req, res) => {
         return res.status(404).json({ error: 'No active subscription found' });
       }
       
-      // Get plan details
-      const [plan] = await db
-        .select()
-        .from(subscriptionPlans)
-        .where(eq(subscriptionPlans.id, subscription.planId));
+      // Get plan details - check if planId is string or number
+      let plan;
+      
+      if (typeof subscription.planId === 'string') {
+        // Handle string planId (tier name)
+        const plans = await db
+          .select()
+          .from(subscriptionPlans)
+          .where(eq(subscriptionPlans.tier, subscription.planId));
+        plan = plans.length > 0 ? plans[0] : null;
+      } else {
+        // Handle numeric planId
+        const plans = await db
+          .select()
+          .from(subscriptionPlans)
+          .where(eq(subscriptionPlans.id, subscription.planId));
+        plan = plans.length > 0 ? plans[0] : null;
+      }
       
       res.json({
         ...subscription,
         plan: plan || null
       });
-    } catch (error) {
+    } catch (error: any) {
       // If the error is a "relation does not exist" error, handle it gracefully
       if (error.message && (
         error.message.includes("relation \"user_subscriptions\" does not exist") ||
-        error.code === '42P01' // PostgreSQL code for undefined_table
+        (error.code && error.code === '42P01') // PostgreSQL code for undefined_table
       )) {
         logger.warn('[subscription] The subscription tables have not been created yet. Returning default trial subscription.');
         
@@ -124,7 +137,7 @@ router.get('/current', ensureAuthenticated, async (req, res) => {
         const defaultSubscription = {
           id: 0,
           userId: userId,
-          planId: "professional", // Default to professional plan
+          planId: 2, // Default to professional plan
           stripeCustomerId: null,
           stripeSubscriptionId: null,
           status: "trial",
@@ -170,20 +183,22 @@ router.post('/create', ensureAuthenticated, async (req, res) => {
     
     try {
       // Check if planId is a string tier (basic, professional, enterprise) or a numeric ID
-      let planQuery;
+      let plans;
       if (isNaN(Number(planId))) {
         // If planId is a string like "basic", "professional", etc. 
-        planQuery = eq(subscriptionPlans.tier, planId);
+        plans = await db
+          .select()
+          .from(subscriptionPlans)
+          .where(eq(subscriptionPlans.tier, planId));
       } else {
         // If planId is a number
-        planQuery = eq(subscriptionPlans.id, parseInt(planId, 10));
+        plans = await db
+          .select()
+          .from(subscriptionPlans)
+          .where(eq(subscriptionPlans.id, parseInt(planId, 10)));
       }
       
-      // Get plan details
-      const [plan] = await db
-        .select()
-        .from(subscriptionPlans)
-        .where(planQuery);
+      const plan = plans.length > 0 ? plans[0] : null;
       
       if (!plan) {
         return res.status(404).json({ error: 'Subscription plan not found' });
