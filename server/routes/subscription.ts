@@ -16,29 +16,39 @@ import {
   getUserSubscription
 } from '../lib/stripe';
 
+// Define types for our Stripe-like interfaces
+interface CheckoutSessionOptions {
+  priceId: string;
+  customerId: string;
+  successUrl: string;
+  cancelUrl: string;
+  trialPeriodDays?: number;
+  metadata?: Record<string, string>;
+}
+
 // Mock stripe functions for development/testing
 const mockStripeImplementation = {
-  createCheckoutSession: async ({ priceId, customerId, successUrl, cancelUrl, trialPeriodDays, metadata }) => {
-    console.log('Mock createCheckoutSession called:', { priceId, customerId, successUrl, cancelUrl, trialPeriodDays, metadata });
-    return { url: successUrl.replace('{CHECKOUT_SESSION_ID}', 'mock_session_' + Date.now()) };
+  createCheckoutSession: async (options: CheckoutSessionOptions) => {
+    console.log('Mock createCheckoutSession called:', options);
+    return { url: options.successUrl.replace('{CHECKOUT_SESSION_ID}', 'mock_session_' + Date.now()) };
   },
   
-  createCustomer: async (email, name) => {
+  createCustomer: async (email: string, name?: string) => {
     console.log('Mock createCustomer called:', { email, name });
     return { id: 'cus_mock_' + Date.now() };
   },
   
-  createSubscription: async (customerId, priceId, trialDays) => {
+  createSubscription: async (customerId: string, priceId: string, trialDays: number = 0) => {
     console.log('Mock createSubscription called:', { customerId, priceId, trialDays });
     return { id: 'sub_mock_' + Date.now() };
   },
   
-  cancelSubscription: async (subscriptionId) => {
+  cancelSubscription: async (subscriptionId: string) => {
     console.log('Mock cancelSubscription called:', { subscriptionId });
     return { id: subscriptionId, status: 'canceled' };
   },
   
-  createBillingPortalSession: async (customerId, returnUrl) => {
+  createBillingPortalSession: async (customerId: string, returnUrl: string) => {
     console.log('Mock createBillingPortalSession called:', { customerId, returnUrl });
     return { url: returnUrl };
   }
@@ -243,7 +253,7 @@ router.post('/create', ensureAuthenticated, async (req, res) => {
           message: 'Free trial started successfully. Payment will be set up later.',
         });
       }
-    } catch (dbError) {
+    } catch (dbError: any) {
       // Specific handling for database-related errors
       if (dbError && typeof dbError === 'object' && 'code' in dbError) {
         logger.error('[subscription] Database error creating subscription:', dbError);
@@ -278,8 +288,8 @@ router.post('/create', ensureAuthenticated, async (req, res) => {
         // For other Postgres errors
         return res.status(500).json({ 
           error: 'Database error occurred',
-          details: dbError.message,
-          code: dbError.code
+          details: typeof dbError.message === 'string' ? dbError.message : 'Unknown database error',
+          code: String(dbError.code)
         });
       }
       
@@ -494,7 +504,7 @@ router.post('/billing-portal', ensureAuthenticated, async (req, res) => {
           message: 'Using basic billing page due to payment provider issues',
         });
       }
-    } catch (dbError) {
+    } catch (dbError: any) {
       // Specific handling for database-related errors
       if (dbError && typeof dbError === 'object' && 'code' in dbError) {
         logger.error('[subscription] Database error in billing portal:', dbError);
@@ -512,8 +522,8 @@ router.post('/billing-portal', ensureAuthenticated, async (req, res) => {
         // For other Postgres errors
         return res.status(500).json({ 
           error: 'Database error occurred',
-          details: dbError.message,
-          code: dbError.code
+          details: typeof dbError.message === 'string' ? dbError.message : 'Unknown database error',
+          code: String(dbError.code)
         });
       }
       
