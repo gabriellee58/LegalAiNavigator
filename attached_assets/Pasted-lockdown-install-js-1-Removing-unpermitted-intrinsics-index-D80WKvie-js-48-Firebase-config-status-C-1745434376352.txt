@@ -1,0 +1,43 @@
+lockdown-install.js:1 Removing unpermitted intrinsics
+index-D80WKvie.js:48 Firebase config status: Configured
+index-D80WKvie.js:48 Firebase auth configuration status: CONFIGURED
+index-D80WKvie.js:833 Using CDN PDF.js worker: https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.10.111/pdf.worker.min.js
+index-D80WKvie.js:866 Procedure data map keys: Array(5)
+index-D80WKvie.js:866 Family court procedure ID: family-court
+index-D80WKvie.js:866 Small claims procedure ID: small-claims
+index-D80WKvie.js:866 Administrative procedure ID: administrative-tribunals
+index-D80WKvie.js:48 Query: GET /api/user
+index-D80WKvie.js:833 PDF.js worker verified available at CDN
+content-script.js:104442 current location https://legal-ai-navigator-gabriellee58.replit.app/
+index-D80WKvie.js:48 Query Success: GET /api/user Response received
+index-D80WKvie.js:48 API Request: GET /api/subscriptions/current No body
+index-D80WKvie.js:48 API Success: GET /api/subscriptions/current Response object received
+index-D80WKvie.js:48 API Request: POST /api/subscriptions/create Object
+api/subscriptions/create:1 
+            
+            
+           Failed to load resource: the server responded with a status of 500 ()Understand this error
+index-D80WKvie.js:872 API Error (500) for POST /api/subscriptions/create: Object
+console.error @ index-D80WKvie.js:872Understand this error
+index-D80WKvie.js:872 API Request failed (attempt 1/2): ApiError: Error 500: 
+    at apiRequest (index-D80WKvie.js:48:43911)
+    at async Object.mutationFn (index-D80WKvie.js:48:91989)
+console.error @ index-D80WKvie.js:872Understand this error
+index-D80WKvie.js:48 Retry attempt 1/1 for POST /api/subscriptions/create
+api/subscriptions/create:1 
+            
+            
+           Failed to load resource: the server responded with a status of 500 ()Understand this error
+index-D80WKvie.js:872 API Error (500) for POST /api/subscriptions/create: Object
+console.error @ index-D80WKvie.js:872Understand this error
+index-D80WKvie.js:872 API Request failed (attempt 2/2): ApiError: Error 500: 
+    at apiRequest (index-D80WKvie.js:48:43911)
+    at async Object.mutationFn (index-D80WKvie.js:48:91989)
+console.error @ index-D80WKvie.js:872Understand this error
+index-D80WKvie.js:872 All 2 attempts failed for POST /api/subscriptions/create ApiError: Error 500: 
+    at apiRequest (index-D80WKvie.js:48:43911)
+    at async Object.mutationFn (index-D80WKvie.js:48:91989)
+console.error @ index-D80WKvie.js:872Understand this error
+index-D80WKvie.js:872 Error starting subscription: ApiError: Error 500: 
+    at apiRequest (index-D80WKvie.js:48:43911)
+    at async Object.mutationFn (index-D80WKvie.js:48:91989)
