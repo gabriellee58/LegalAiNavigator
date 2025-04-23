@@ -16,17 +16,25 @@ import { logger } from '../lib/logger';
 let stripe: any;
 let stripeAvailable = false;
 
+// In ESM modules we need to use dynamic imports
 try {
-  // Dynamically import Stripe to handle the case when it's not installed
-  const Stripe = require('stripe');
-  
-  // Initialize Stripe with the secret key if available
+  // We'll try to initialize Stripe only if the API key is available
   if (process.env.STRIPE_SECRET_KEY) {
-    stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2023-10-16', // Use the latest API version
-    });
-    stripeAvailable = true;
-    logger.info('[stripe] Stripe integration initialized successfully');
+    try {
+      // Try to dynamically import Stripe - this will work if the package is installed
+      import('stripe').then(StripeModule => {
+        const Stripe = StripeModule.default;
+        stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+          apiVersion: '2023-10-16', // Use the latest API version
+        });
+        stripeAvailable = true;
+        logger.info('[stripe] Stripe integration initialized successfully');
+      }).catch(err => {
+        logger.warn('[stripe] Failed to import Stripe package, using mock implementation:', err);
+      });
+    } catch (importError) {
+      logger.warn('[stripe] Failed to dynamically import Stripe, using mock implementation:', importError);
+    }
   } else {
     logger.warn('[stripe] STRIPE_SECRET_KEY environment variable is not set, using mock implementation');
   }

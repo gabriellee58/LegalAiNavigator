@@ -281,7 +281,7 @@ router.post('/cancel', ensureAuthenticated, async (req, res) => {
     if (stripeSubscriptionId && !stripeSubscriptionId.startsWith('sub_temp_') && !stripeSubscriptionId.startsWith('pending_payment')) {
       try {
         // Cancel the subscription with Stripe
-        await cancelSubscription(stripeSubscriptionId);
+        await cancelStripeSubscription(stripeSubscriptionId);
         
         logger.info(`[subscription] Stripe subscription ${stripeSubscriptionId} canceled successfully`);
       } catch (stripeError) {
