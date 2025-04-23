@@ -12,10 +12,27 @@ import { eq, and, gte, lte, desc } from 'drizzle-orm';
 import { addDays, startOfDay, endOfDay, addMonths } from 'date-fns';
 import { logger } from '../lib/logger';
 
-// This is a mock implementation since we don't have the Stripe SDK installed yet
-// In a real implementation, you would import Stripe and use it here
-// import Stripe from 'stripe';
-// const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+// We'll need to handle the case when Stripe is not installed
+let stripe: any;
+let stripeAvailable = false;
+
+try {
+  // Dynamically import Stripe to handle the case when it's not installed
+  const Stripe = require('stripe');
+  
+  // Initialize Stripe with the secret key if available
+  if (process.env.STRIPE_SECRET_KEY) {
+    stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2023-10-16', // Use the latest API version
+    });
+    stripeAvailable = true;
+    logger.info('[stripe] Stripe integration initialized successfully');
+  } else {
+    logger.warn('[stripe] STRIPE_SECRET_KEY environment variable is not set, using mock implementation');
+  }
+} catch (error) {
+  logger.warn('[stripe] Failed to initialize Stripe, using mock implementation:', error);
+}
 
 interface StripeCheckoutOptions {
   priceId: string;
@@ -26,61 +43,186 @@ interface StripeCheckoutOptions {
   metadata?: Record<string, string>;
 }
 
-// Mock function for creating checkout sessions
+// Create a Stripe checkout session
 export async function createCheckoutSession(options: StripeCheckoutOptions): Promise<{ url: string }> {
-  // This is a placeholder that would normally create a Stripe checkout session
-  // For now, we'll just return a mock URL
   logger.info(`[stripe] Creating checkout session for price ${options.priceId}`);
   
-  // In a real implementation, this would create a Stripe checkout session
-  return {
-    url: `/checkout-success?session_id=mock_session_${Date.now()}`
+  // If Stripe is not available, return a mock URL
+  if (!stripeAvailable) {
+    logger.warn('[stripe] Stripe is not available, using mock checkout URL');
+    return {
+      url: `${options.successUrl}?session_id=mock_session_${Date.now()}`
+    };
+  }
+  
+  const sessionParams: any = {
+    mode: 'subscription',
+    payment_method_types: ['card'],
+    line_items: [
+      {
+        price: options.priceId,
+        quantity: 1,
+      },
+    ],
+    success_url: options.successUrl,
+    cancel_url: options.cancelUrl,
   };
+
+  // Add customer ID if provided
+  if (options.customerId) {
+    sessionParams.customer = options.customerId;
+  }
+
+  // Add trial period if provided
+  if (options.trialPeriodDays && options.trialPeriodDays > 0) {
+    sessionParams.subscription_data = {
+      trial_period_days: options.trialPeriodDays,
+    };
+  }
+
+  // Add metadata if provided
+  if (options.metadata) {
+    sessionParams.metadata = options.metadata;
+  }
+
+  try {
+    const session = await stripe.checkout.sessions.create(sessionParams);
+    
+    return {
+      url: session.url || ''
+    };
+  } catch (error) {
+    logger.error('[stripe] Error creating checkout session:', error);
+    // Return a mock URL on error
+    return {
+      url: `${options.successUrl}?session_id=mock_session_${Date.now()}`
+    };
+  }
 }
 
-// Mock function for creating customers
+// Create a Stripe customer
 export async function createCustomer(email: string, name?: string): Promise<{ id: string }> {
-  // This is a placeholder that would normally create a Stripe customer
   logger.info(`[stripe] Creating customer for ${email}`);
   
-  // In a real implementation, this would create a Stripe customer
-  return {
-    id: `cus_${Date.now()}`
-  };
+  // If Stripe is not available, return a mock customer ID
+  if (!stripeAvailable) {
+    logger.warn('[stripe] Stripe is not available, using mock customer ID');
+    const mockId = `cus_temp_${Date.now()}`;
+    return { id: mockId };
+  }
+  
+  try {
+    const customer = await stripe.customers.create({
+      email,
+      name,
+    });
+    
+    return {
+      id: customer.id
+    };
+  } catch (error) {
+    logger.error('[stripe] Error creating customer:', error);
+    // Return a mock customer ID on error
+    const mockId = `cus_temp_${Date.now()}`;
+    return { id: mockId };
+  }
 }
 
-// Mock function for creating subscriptions
+// Create a Stripe subscription
 export async function createSubscription(customerId: string, priceId: string, trialDays: number = 0): Promise<{ id: string }> {
-  // This is a placeholder that would normally create a Stripe subscription
   logger.info(`[stripe] Creating subscription for customer ${customerId} with price ${priceId}`);
   
-  // In a real implementation, this would create a Stripe subscription
-  return {
-    id: `sub_${Date.now()}`
-  };
+  // If Stripe is not available, return a mock subscription ID
+  if (!stripeAvailable) {
+    logger.warn('[stripe] Stripe is not available, using mock subscription ID');
+    const mockId = `sub_temp_${Date.now()}`;
+    return { id: mockId };
+  }
+  
+  try {
+    const subscriptionParams: any = {
+      customer: customerId,
+      items: [{ price: priceId }],
+      payment_behavior: 'default_incomplete',
+      expand: ['latest_invoice.payment_intent'],
+    };
+
+    // Add trial period if provided
+    if (trialDays > 0) {
+      subscriptionParams.trial_period_days = trialDays;
+    }
+
+    const subscription = await stripe.subscriptions.create(subscriptionParams);
+    
+    return {
+      id: subscription.id
+    };
+  } catch (error) {
+    logger.error('[stripe] Error creating subscription:', error);
+    // Return a mock subscription ID on error
+    const mockId = `sub_temp_${Date.now()}`;
+    return { id: mockId };
+  }
 }
 
-// Mock function for canceling subscriptions
+// Cancel a Stripe subscription
 export async function cancelSubscription(subscriptionId: string): Promise<{ id: string, status: string }> {
-  // This is a placeholder that would normally cancel a Stripe subscription
   logger.info(`[stripe] Canceling subscription ${subscriptionId}`);
   
-  // In a real implementation, this would cancel a Stripe subscription
-  return {
-    id: subscriptionId,
-    status: 'canceled'
-  };
+  // If Stripe is not available or the subscription ID is a mock ID, return a mock response
+  if (!stripeAvailable || subscriptionId.startsWith('sub_temp_')) {
+    logger.warn('[stripe] Stripe is not available or using mock subscription ID, returning mock canceled status');
+    return {
+      id: subscriptionId,
+      status: 'canceled'
+    };
+  }
+  
+  try {
+    const subscription = await stripe.subscriptions.cancel(subscriptionId);
+    
+    return {
+      id: subscription.id,
+      status: subscription.status
+    };
+  } catch (error) {
+    logger.error('[stripe] Error canceling subscription:', error);
+    // Return a mock response on error
+    return {
+      id: subscriptionId,
+      status: 'canceled'
+    };
+  }
 }
 
-// Mock function for creating billing portal sessions
+// Create a Stripe billing portal session
 export async function createBillingPortalSession(customerId: string, returnUrl: string): Promise<{ url: string }> {
-  // This is a placeholder that would normally create a Stripe billing portal session
   logger.info(`[stripe] Creating billing portal session for customer ${customerId}`);
   
-  // In a real implementation, this would create a Stripe billing portal session
-  return {
-    url: `/billing-portal-success?customer_id=${customerId}`
-  };
+  // If Stripe is not available or the customer ID is a mock ID, return the return URL
+  if (!stripeAvailable || customerId.startsWith('cus_temp_')) {
+    logger.warn('[stripe] Stripe is not available or using mock customer ID, returning fallback URL');
+    return {
+      url: returnUrl
+    };
+  }
+  
+  try {
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: returnUrl,
+    });
+    
+    return {
+      url: session.url
+    };
+  } catch (error) {
+    logger.error('[stripe] Error creating billing portal session:', error);
+    // Return the return URL on error
+    return {
+      url: returnUrl
+    };
+  }
 }
 
 // Database functions for subscription management

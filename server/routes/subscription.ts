@@ -34,7 +34,7 @@ function ensureAuthenticated(req: any, res: any, next: any) {
 // Get current subscription
 router.get('/current', ensureAuthenticated, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
     
     try {
       // Attempt to get subscription from database
@@ -106,7 +106,9 @@ router.post('/create', ensureAuthenticated, async (req, res) => {
     }
     
     const { planId } = result.data;
-    const userId = req.user.id;
+    const userId = req.user!.id;
+    const userEmail = req.user!.email || '';
+    const userName = req.user!.username;
     
     // Get plan details
     const [plan] = await db
@@ -125,34 +127,70 @@ router.post('/create', ensureAuthenticated, async (req, res) => {
       return res.status(400).json({ error: 'User already has an active subscription' });
     }
     
-    // For now, implement a trial without Stripe integration
-    // In production, we would create a Stripe customer and subscription
-    
-    // Create a mock customer ID
-    const mockCustomerId = `cus_mock_${Date.now()}`;
-    
-    // Create a mock subscription ID
-    const mockSubscriptionId = `sub_mock_${Date.now()}`;
-    
-    // Create subscription with trial
-    const trialDays = 7; // 7-day trial
-    const subscription = await createOrUpdateUserSubscription(
-      userId,
-      planId,
-      mockCustomerId,
-      mockSubscriptionId,
-      trialDays
-    );
-    
-    // In a real implementation, we would create a Stripe checkout session
-    // and redirect the user to the Stripe checkout page
-    // For now, just return the subscription
-    
-    res.status(201).json({
-      subscription,
-      message: 'Free trial started successfully',
-      // In production, we would include a checkout URL: url: checkoutSession.url
-    });
+    try {
+      // Create a Stripe customer
+      const { id: customerId } = await createCustomer(
+        userEmail || `user-${userId}@example.com`,
+        userName
+      );
+      
+      // Create a checkout session with a trial period
+      const trialDays = 7; // 7-day trial
+      const baseUrl = req.headers.origin || 'http://localhost:3000';
+      
+      const checkoutSession = await createCheckoutSession({
+        priceId: plan.stripePriceId,
+        customerId: customerId,
+        successUrl: `${baseUrl}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${baseUrl}/subscription-plans`,
+        trialPeriodDays: trialDays,
+        metadata: {
+          userId: userId.toString(),
+          planId: planId,
+        },
+      });
+      
+      // Create subscription with trial in our database
+      const subscription = await createOrUpdateUserSubscription(
+        userId,
+        planId,
+        customerId,
+        'pending_payment', // Will be updated when subscription is paid
+        trialDays
+      );
+      
+      res.status(201).json({
+        subscription,
+        url: checkoutSession.url,
+        message: 'Checkout session created. Redirecting to payment page...',
+      });
+    } catch (stripeError) {
+      logger.error('[subscription] Stripe integration error:', stripeError);
+      
+      // Fallback to trial without payment if Stripe integration fails
+      logger.info('[subscription] Falling back to trial without payment method');
+      
+      // Create a temporary customer ID
+      const temporaryCustomerId = `cus_temp_${Date.now()}`;
+      
+      // Create a temporary subscription ID
+      const temporarySubscriptionId = `sub_temp_${Date.now()}`;
+      
+      // Create subscription with trial
+      const trialDays = 7; // 7-day trial
+      const subscription = await createOrUpdateUserSubscription(
+        userId,
+        planId,
+        temporaryCustomerId,
+        temporarySubscriptionId,
+        trialDays
+      );
+      
+      res.status(201).json({
+        subscription,
+        message: 'Free trial started successfully. Payment will be set up later.',
+      });
+    }
   } catch (error) {
     logger.error('[subscription] Error creating subscription:', error);
     res.status(500).json({ error: 'Failed to create subscription' });
@@ -173,7 +211,7 @@ router.patch('/change-plan', ensureAuthenticated, async (req, res) => {
     }
     
     const { planId } = result.data;
-    const userId = req.user.id;
+    const userId = req.user!.id;
     
     // Get plan details
     const [plan] = await db
@@ -217,7 +255,7 @@ router.patch('/change-plan', ensureAuthenticated, async (req, res) => {
 // Cancel subscription
 router.post('/cancel', ensureAuthenticated, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
     
     // Check for existing subscription
     const existingSubscription = await getUserSubscription(userId);
@@ -226,9 +264,9 @@ router.post('/cancel', ensureAuthenticated, async (req, res) => {
       return res.status(404).json({ error: 'No active subscription found' });
     }
     
-    // In production, we would cancel the Stripe subscription
-    // For now, just update the subscription in the database
+    const stripeSubscriptionId = existingSubscription.stripeSubscriptionId;
     
+    // Update the database first
     const [updatedSubscription] = await db
       .update(userSubscriptions)
       .set({
@@ -238,6 +276,19 @@ router.post('/cancel', ensureAuthenticated, async (req, res) => {
       })
       .where(eq(userSubscriptions.id, existingSubscription.id))
       .returning();
+    
+    // If there's a valid Stripe subscription ID, try to cancel it with Stripe
+    if (stripeSubscriptionId && !stripeSubscriptionId.startsWith('sub_temp_') && !stripeSubscriptionId.startsWith('pending_payment')) {
+      try {
+        // Cancel the subscription with Stripe
+        await cancelSubscription(stripeSubscriptionId);
+        
+        logger.info(`[subscription] Stripe subscription ${stripeSubscriptionId} canceled successfully`);
+      } catch (stripeError) {
+        // Log the error but don't fail the request since we've already updated our database
+        logger.error('[subscription] Error canceling Stripe subscription:', stripeError);
+      }
+    }
     
     res.json({
       subscription: updatedSubscription,
@@ -252,7 +303,7 @@ router.post('/cancel', ensureAuthenticated, async (req, res) => {
 // Reactivate canceled subscription
 router.post('/reactivate', ensureAuthenticated, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
     
     // Get the most recent subscription, even if canceled
     const [subscription] = await db
@@ -296,7 +347,7 @@ router.post('/reactivate', ensureAuthenticated, async (req, res) => {
 // Create billing portal session
 router.post('/billing-portal', ensureAuthenticated, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
     
     // Check for existing subscription
     const existingSubscription = await getUserSubscription(userId);
@@ -305,13 +356,39 @@ router.post('/billing-portal', ensureAuthenticated, async (req, res) => {
       return res.status(404).json({ error: 'No active subscription found' });
     }
     
-    // Mock billing portal URL
-    // In production, we would create a Stripe billing portal session
-    const portalUrl = `/account/billing?subscription=${existingSubscription.id}`;
+    // Get the Stripe customer ID
+    const stripeCustomerId = existingSubscription.stripeCustomerId;
     
-    res.json({
-      url: portalUrl,
-    });
+    if (!stripeCustomerId || stripeCustomerId.startsWith('cus_temp_')) {
+      // If there's no Stripe customer ID or it's a temporary one, redirect to subscription page
+      return res.json({
+        url: '/subscription-plans',
+        message: 'Please set up your payment method first',
+      });
+    }
+    
+    try {
+      // Create a Stripe billing portal session
+      const baseUrl = req.headers.origin || 'http://localhost:3000';
+      const session = await createBillingPortalSession(
+        stripeCustomerId,
+        `${baseUrl}/account/settings`
+      );
+      
+      res.json({
+        url: session.url,
+      });
+    } catch (stripeError) {
+      logger.error('[subscription] Stripe billing portal error:', stripeError);
+      
+      // Fallback to basic billing page if Stripe integration fails
+      const fallbackUrl = `/account/settings?subscription=${existingSubscription.id}`;
+      
+      res.json({
+        url: fallbackUrl,
+        message: 'Using basic billing page due to payment provider issues',
+      });
+    }
   } catch (error) {
     logger.error('[subscription] Error creating billing portal session:', error);
     res.status(500).json({ error: 'Failed to create billing portal session' });
