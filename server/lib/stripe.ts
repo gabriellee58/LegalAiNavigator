@@ -3,6 +3,7 @@
  * 
  * This module provides the necessary functions to manage Stripe subscriptions.
  * It requires the STRIPE_SECRET_KEY to be set in the environment variables.
+ * Enhanced with environment detection to support different Replit environments.
  */
 
 import { Request, Response } from 'express';
@@ -11,36 +12,71 @@ import { subscriptionPlans, userSubscriptions, userUsage } from '@shared/schema'
 import { eq, and, gte, lte, desc } from 'drizzle-orm';
 import { addDays, startOfDay, endOfDay, addMonths } from 'date-fns';
 import { logger } from '../lib/logger';
+import { getEnvironment, getStripeSecretKey } from '../utils/environment';
 
 // We'll need to handle the case when Stripe is not installed
 let stripe: any;
 let stripeAvailable = false;
+let attemptingStripeInit = false;
 
-// In ESM modules we need to use dynamic imports
-try {
-  // We'll try to initialize Stripe only if the API key is available
-  if (process.env.STRIPE_SECRET_KEY) {
+/**
+ * Initialize Stripe with the appropriate environment-specific API key
+ */
+export async function initializeStripe(): Promise<boolean> {
+  // Prevent multiple initialization attempts at the same time
+  if (attemptingStripeInit) {
+    return stripeAvailable;
+  }
+  
+  attemptingStripeInit = true;
+  
+  try {
+    // Get the appropriate API key for the current environment
+    const apiKey = getStripeSecretKey();
+    const environment = getEnvironment();
+    
+    if (!apiKey) {
+      logger.warn(`[stripe] No Stripe API key available for ${environment} environment, using mock implementation`);
+      return false;
+    }
+    
+    logger.info(`[stripe] Initializing Stripe for ${environment} environment`);
+    
     try {
       // Try to dynamically import Stripe - this will work if the package is installed
-      import('stripe').then(StripeModule => {
-        const Stripe = StripeModule.default;
-        stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-          apiVersion: '2023-10-16', // Use the latest API version
-        });
-        stripeAvailable = true;
-        logger.info('[stripe] Stripe integration initialized successfully');
-      }).catch(err => {
+      const StripeModule = await import('stripe').catch(err => {
         logger.warn('[stripe] Failed to import Stripe package, using mock implementation:', err);
+        return null;
       });
+      
+      if (!StripeModule) {
+        return false;
+      }
+      
+      const Stripe = StripeModule.default;
+      stripe = new Stripe(apiKey, {
+        apiVersion: '2023-10-16', // Use the latest API version
+      });
+      
+      stripeAvailable = true;
+      logger.info('[stripe] Stripe integration initialized successfully');
+      return true;
     } catch (importError) {
       logger.warn('[stripe] Failed to dynamically import Stripe, using mock implementation:', importError);
+      return false;
     }
-  } else {
-    logger.warn('[stripe] STRIPE_SECRET_KEY environment variable is not set, using mock implementation');
+  } catch (error) {
+    logger.error('[stripe] Error initializing Stripe:', error);
+    return false;
+  } finally {
+    attemptingStripeInit = false;
   }
-} catch (error) {
-  logger.warn('[stripe] Failed to initialize Stripe, using mock implementation:', error);
 }
+
+// Try to initialize Stripe immediately
+initializeStripe().catch(err => {
+  logger.error('[stripe] Failed to initialize Stripe:', err);
+});
 
 interface StripeCheckoutOptions {
   priceId: string;

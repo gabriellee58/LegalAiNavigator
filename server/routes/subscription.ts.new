@@ -33,7 +33,7 @@ function getBaseUrl(req: any): string {
   }
   
   // Otherwise use origin or default
-  return req.headers.origin || 'http://localhost:3000';
+  return req.headers?.origin || 'http://localhost:3000';
 }
 
 const router = Router();
@@ -69,7 +69,7 @@ router.get('/current', ensureAuthenticated, async (req, res) => {
         ...subscription,
         plan: plan || null
       });
-    } catch (error) {
+    } catch (error: any) {
       // If the error is a "relation does not exist" error, handle it gracefully
       if (error.message && (
         error.message.includes("relation \"user_subscriptions\" does not exist") ||
@@ -211,7 +211,7 @@ router.post('/create', ensureAuthenticated, async (req, res) => {
           message: 'Free trial started successfully. Payment will be set up later.',
         });
       }
-    } catch (dbError) {
+    } catch (dbError: any) {
       // Specific handling for database-related errors
       if (dbError && typeof dbError === 'object' && 'code' in dbError) {
         logger.error('[subscription] Database error creating subscription:', dbError);
@@ -246,8 +246,8 @@ router.post('/create', ensureAuthenticated, async (req, res) => {
         // For other Postgres errors
         return res.status(500).json({ 
           error: 'Database error occurred',
-          details: dbError.message,
-          code: dbError.code
+          details: String(dbError.message || 'Unknown database error'),
+          code: String(dbError.code)
         });
       }
       
@@ -378,7 +378,7 @@ router.post('/reactivate', ensureAuthenticated, async (req, res) => {
       .select()
       .from(userSubscriptions)
       .where(eq(userSubscriptions.userId, userId))
-      .orderBy({ createdAt: 'desc' })
+      .orderBy(desc(userSubscriptions.createdAt))
       .limit(1);
     
     if (!subscription) {
@@ -462,7 +462,7 @@ router.post('/billing-portal', ensureAuthenticated, async (req, res) => {
           message: 'Using basic billing page due to payment provider issues',
         });
       }
-    } catch (dbError) {
+    } catch (dbError: any) {
       // Specific handling for database-related errors
       if (dbError && typeof dbError === 'object' && 'code' in dbError) {
         logger.error('[subscription] Database error in billing portal:', dbError);
@@ -480,8 +480,8 @@ router.post('/billing-portal', ensureAuthenticated, async (req, res) => {
         // For other Postgres errors
         return res.status(500).json({ 
           error: 'Database error occurred',
-          details: dbError.message,
-          code: dbError.code
+          details: String(dbError.message || 'Unknown database error'),
+          code: String(dbError.code)
         });
       }
       
