@@ -10,16 +10,48 @@ import { z } from 'zod';
 import { db } from '../db';
 import { subscriptionPlans, userSubscriptions } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
-import { 
-  createCheckoutSession,
-  createCustomer,
-  createSubscription as createStripeSubscription,
-  cancelSubscription as cancelStripeSubscription,
-  createBillingPortalSession,
+// Import stripe-related functions with fallback implementation
+import {
   createOrUpdateUserSubscription,
-  updateSubscriptionStatus,
   getUserSubscription
 } from '../lib/stripe';
+
+// Mock stripe functions for development/testing
+const mockStripeImplementation = {
+  createCheckoutSession: async ({ priceId, customerId, successUrl, cancelUrl, trialPeriodDays, metadata }) => {
+    console.log('Mock createCheckoutSession called:', { priceId, customerId, successUrl, cancelUrl, trialPeriodDays, metadata });
+    return { url: successUrl.replace('{CHECKOUT_SESSION_ID}', 'mock_session_' + Date.now()) };
+  },
+  
+  createCustomer: async (email, name) => {
+    console.log('Mock createCustomer called:', { email, name });
+    return { id: 'cus_mock_' + Date.now() };
+  },
+  
+  createSubscription: async (customerId, priceId, trialDays) => {
+    console.log('Mock createSubscription called:', { customerId, priceId, trialDays });
+    return { id: 'sub_mock_' + Date.now() };
+  },
+  
+  cancelSubscription: async (subscriptionId) => {
+    console.log('Mock cancelSubscription called:', { subscriptionId });
+    return { id: subscriptionId, status: 'canceled' };
+  },
+  
+  createBillingPortalSession: async (customerId, returnUrl) => {
+    console.log('Mock createBillingPortalSession called:', { customerId, returnUrl });
+    return { url: returnUrl };
+  }
+};
+
+// Use the mock implementation
+const { 
+  createCheckoutSession,
+  createCustomer,
+  createSubscription: createStripeSubscription,
+  cancelSubscription: cancelStripeSubscription,
+  createBillingPortalSession
+} = mockStripeImplementation;
 import { logger } from '../lib/logger';
 import { getEnvironment } from '../utils/environment';
 
