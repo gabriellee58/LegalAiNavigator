@@ -169,11 +169,21 @@ router.post('/create', ensureAuthenticated, async (req, res) => {
     const userName = req.user!.fullName || req.user!.username;
     
     try {
+      // Check if planId is a string tier (basic, professional, enterprise) or a numeric ID
+      let planQuery;
+      if (isNaN(Number(planId))) {
+        // If planId is a string like "basic", "professional", etc. 
+        planQuery = eq(subscriptionPlans.tier, planId);
+      } else {
+        // If planId is a number
+        planQuery = eq(subscriptionPlans.id, parseInt(planId, 10));
+      }
+      
       // Get plan details
       const [plan] = await db
         .select()
         .from(subscriptionPlans)
-        .where(eq(subscriptionPlans.id, planId));
+        .where(planQuery);
       
       if (!plan) {
         return res.status(404).json({ error: 'Subscription plan not found' });
