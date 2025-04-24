@@ -101,28 +101,48 @@ router.get('/current', ensureAuthenticated, async (req, res) => {
         return res.status(404).json({ error: 'No active subscription found' });
       }
       
-      // Get plan details - check if planId is string or number
-      let plan;
+      // Get plan details based on planId
+      // It could be a string (tier name like "basic") or a numeric ID
+      let plan = null;
       
-      if (typeof subscription.planId === 'string') {
-        // Handle string planId (tier name)
-        const plans = await db
-          .select()
-          .from(subscriptionPlans)
-          .where(eq(subscriptionPlans.tier, subscription.planId));
-        plan = plans.length > 0 ? plans[0] : null;
-      } else {
-        // Handle numeric planId
-        const plans = await db
-          .select()
-          .from(subscriptionPlans)
-          .where(eq(subscriptionPlans.id, subscription.planId));
-        plan = plans.length > 0 ? plans[0] : null;
+      try {
+        // First, try to get plan by tier if planId is a string representing a tier
+        if (typeof subscription.planId === 'string' && isNaN(Number(subscription.planId))) {
+          const tierPlans = await db
+            .select()
+            .from(subscriptionPlans)
+            .where(eq(subscriptionPlans.tier, subscription.planId));
+          
+          if (tierPlans.length > 0) {
+            plan = tierPlans[0];
+          }
+        } 
+        // If that didn't work, try looking up by numeric ID
+        else {
+          const idToUse = typeof subscription.planId === 'string' 
+            ? parseInt(subscription.planId, 10) 
+            : subscription.planId;
+            
+          // Only query if we have a valid numeric ID
+          if (!isNaN(Number(idToUse))) {
+            const idPlans = await db
+              .select()
+              .from(subscriptionPlans)
+              .where(eq(subscriptionPlans.id, idToUse));
+              
+            if (idPlans.length > 0) {
+              plan = idPlans[0];
+            }
+          }
+        }
+      } catch (planError) {
+        // Log plan lookup error but don't fail the whole request
+        logger.error('[subscription] Error looking up plan details:', planError);
       }
       
       res.json({
         ...subscription,
-        plan: plan || null
+        plan: plan
       });
     } catch (error: any) {
       // If the error is a "relation does not exist" error, handle it gracefully

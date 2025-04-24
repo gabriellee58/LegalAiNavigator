@@ -1323,7 +1323,8 @@ export const jurisdictionComparisonsRelations = relations(jurisdictionComparison
 export const userSubscriptions = pgTable("user_subscriptions", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  planId: integer("plan_id").references(() => subscriptionPlans.id),
+  // Allow planId to be either a string tier name OR integer reference to a plan ID
+  planId: text("plan_id"),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
   status: text("status").notNull().default("trial"), // 'trial', 'active', 'canceled', 'expired', 'past_due'
@@ -1376,10 +1377,8 @@ export const userSubscriptionsRelations = relations(userSubscriptions, ({ one })
     fields: [userSubscriptions.userId],
     references: [users.id],
   }),
-  plan: one(subscriptionPlans, {
-    fields: [userSubscriptions.planId],
-    references: [subscriptionPlans.id],
-  }),
+  // We can't directly reference plan with string ID
+  // This relationship will need special handling in queries
 }));
 
 export const userUsageRelations = relations(userUsage, ({ one }) => ({

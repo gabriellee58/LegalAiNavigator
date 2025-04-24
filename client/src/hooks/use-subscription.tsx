@@ -14,7 +14,7 @@ import { SubscriptionPlanDefinition, getPlanById } from "@/data/subscription-pla
 export type UserSubscription = {
   id: number;
   userId: number;
-  planId: number | null;
+  planId: string | number | null;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
   status: string;
@@ -41,7 +41,7 @@ type SubscriptionContextType = {
   goToBillingPortal: () => Promise<void>;
 };
 
-export const SubscriptionContext = createContext<SubscriptionContextType | null>(null);
+const SubscriptionContext = createContext<SubscriptionContextType | null>(null);
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
@@ -86,7 +86,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
      (subscription.status === "trial" && trialDaysRemaining !== null && trialDaysRemaining > 0));
   
   // Get current plan details
-  const currentPlan = subscription?.planId ? getPlanById(subscription.planId.toString()) : null;
+  const currentPlan: SubscriptionPlanDefinition | null = 
+    subscription?.planId ? (getPlanById(subscription.planId.toString()) || null) : null;
 
   // Create a new subscription
   const createSubscriptionMutation = useMutation({
