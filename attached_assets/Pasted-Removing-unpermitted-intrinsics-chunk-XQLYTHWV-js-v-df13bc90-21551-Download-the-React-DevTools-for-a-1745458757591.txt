@@ -1,0 +1,67 @@
+Removing unpermitted intrinsics
+chunk-XQLYTHWV.js?v=df13bc90:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+firebase.ts:20 Firebase config status: Configured
+firebase.ts:100 Firebase auth configuration status: CONFIGURED
+DocumentPreviewModal.tsx:33 Using CDN PDF.js worker: https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.10.111/pdf.worker.min.js
+index.ts:18 Procedure data map keys: Array(5)
+index.ts:19 Family court procedure ID: family-court
+index.ts:20 Small claims procedure ID: small-claims
+index.ts:21 Administrative procedure ID: administrative-tribunals
+DocumentPreviewModal.tsx:41 PDF.js worker verified available at CDN
+queryClient.ts:205 Query: GET /api/user
+content-script.js:104442 current location https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/
+queryClient.ts:266 Query Success: GET /api/user Response received
+queryClient.ts:94 API Request: GET /api/subscriptions/current No body
+api/subscriptions/current:1 
+            
+            
+           Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+main.tsx:15 API Error (500) for GET /api/subscriptions/current: Object
+console.error @ main.tsx:15Understand this error
+main.tsx:15 API Request failed (attempt 1/2): ApiError: Error 500: Internal Server Error
+    at apiRequest (queryClient.ts:129:15)
+    at async queryFn (use-subscription.tsx:62:21)
+console.error @ main.tsx:15Understand this error
+queryClient.ts:101 Retry attempt 1/1 for GET /api/subscriptions/current
+api/subscriptions/current:1 
+            
+            
+           Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+main.tsx:15 API Error (500) for GET /api/subscriptions/current: Object
+console.error @ main.tsx:15Understand this error
+main.tsx:15 API Request failed (attempt 2/2): ApiError: Error 500: Internal Server Error
+    at apiRequest (queryClient.ts:129:15)
+    at async queryFn (use-subscription.tsx:62:21)
+console.error @ main.tsx:15Understand this error
+main.tsx:15 All 2 attempts failed for GET /api/subscriptions/current ApiError: Error 500: Internal Server Error
+    at apiRequest (queryClient.ts:129:15)
+    at async queryFn (use-subscription.tsx:62:21)
+console.error @ main.tsx:15Understand this error
+queryClient.ts:94 API Request: POST /api/subscriptions/create Object
+queryClient.ts:158 API Success: POST /api/subscriptions/create Response object received
+queryClient.ts:94 API Request: POST /api/subscriptions/create Object
+queryClient.ts:158 API Success: POST /api/subscriptions/create Response object received
+queryClient.ts:94 API Request: POST /api/subscriptions/create Object
+queryClient.ts:158 API Success: POST /api/subscriptions/create Response object received
+queryClient.ts:94 API Request: POST /api/subscriptions/create Object
+queryClient.ts:158 API Success: POST /api/subscriptions/create Response object received
+main.tsx:15 Error starting subscription: TypeError: res.json is not a function
+    at Object.mutationFn (use-subscription.tsx:97:33)
+console.error @ main.tsx:15Understand this error
+queryClient.ts:94 API Request: POST /api/subscriptions/create Object
+queryClient.ts:158 API Success: POST /api/subscriptions/create Response object received
+queryClient.ts:94 API Request: POST /api/subscriptions/create Object
+queryClient.ts:158 API Success: POST /api/subscriptions/create Response object received
+main.tsx:15 Error starting subscription: TypeError: res.json is not a function
+    at Object.mutationFn (use-subscription.tsx:97:33)
+console.error @ main.tsx:15Understand this error
+
+                
+          
+          
+          
+         Chrome is moving towards a new experience that allows users to choose to browse without third-party cookies.Understand this warning
+subscription-plans:1 
+            
+            
+           Failed to load resource: the server responded with a status of 503 (Service Unavailable)Understand this error
