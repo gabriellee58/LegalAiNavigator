@@ -10,6 +10,14 @@ import { useAuth } from "@/hooks/use-auth";
 import { differenceInDays } from "date-fns";
 import { SubscriptionPlanDefinition, getPlanById } from "@/data/subscription-plans";
 
+// Helper function for redirecting to Stripe checkout
+function redirectToStripeCheckout(url: string, delay = 500) {
+  console.log("Redirecting to Stripe checkout:", url);
+  setTimeout(() => {
+    window.location.href = url;
+  }, delay);
+}
+
 // Types
 export type UserSubscription = {
   id: number;
