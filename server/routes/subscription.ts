@@ -9,7 +9,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { db } from '../db';
 import { subscriptionPlans, userSubscriptions } from '@shared/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, desc, sql } from 'drizzle-orm';
 // Import stripe-related functions with fallback implementation
 import {
   createOrUpdateUserSubscription,
@@ -64,6 +64,7 @@ const {
 } = mockStripeImplementation;
 import { logger } from '../lib/logger';
 import { getEnvironment } from '../utils/environment';
+import { formatDateSafe, parseDateSafe, isDateInPast } from '../utils/dateUtils';
 
 // Function to get base URL for redirects
 function getBaseUrl(req: any): string {
@@ -87,6 +88,90 @@ function ensureAuthenticated(req: any, res: any, next: any) {
   }
   res.status(401).json({ error: 'Authentication required' });
 }
+
+// Check subscription status before initiating subscription creation
+router.get('/status-check', ensureAuthenticated, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    
+    try {
+      // Get subscription status from the database
+      const subscription = await getUserSubscription(userId);
+      
+      if (!subscription) {
+        return res.json({
+          hasSubscription: false,
+          canCreateNew: true,
+          message: 'No subscription found. User can create a new subscription.'
+        });
+      }
+      
+      // Default to true, will be set to false for active/trialing subscriptions
+      let canCreateNew = true;
+      let reason = '';
+      
+      // Check different subscription statuses
+      if (subscription.status === 'active') {
+        canCreateNew = false;
+        reason = 'User already has an active subscription';
+      } 
+      else if (subscription.status === 'trialing') {
+        canCreateNew = false;
+        reason = 'User has an active trial subscription';
+      }
+      else if (subscription.status === 'past_due') {
+        // Warning but allow
+        reason = 'User has a past due subscription, but can create a new one';
+      }
+      else if (subscription.status === 'canceled') {
+        // If it's canceled but still has access (within the current period)
+        if (subscription.currentPeriodEnd && !isDateInPast(subscription.currentPeriodEnd)) {
+          reason = `User has canceled subscription but still has access until ${formatDateSafe(subscription.currentPeriodEnd)}`;
+        } else {
+          reason = 'User has a canceled subscription that has expired';
+        }
+      }
+      
+      // Return the detailed status
+      return res.json({
+        hasSubscription: true,
+        canCreateNew,
+        subscriptionStatus: subscription.status,
+        details: {
+          id: subscription.id,
+          planId: subscription.planId,
+          status: subscription.status,
+          currentPeriodEnd: subscription.currentPeriodEnd,
+          trialEnd: subscription.trialEnd,
+          canceledAt: subscription.canceledAt
+        },
+        message: reason
+      });
+    } catch (error: any) {
+      // If the subscription tables don't exist yet
+      if (error.message && (
+        error.message.includes("relation \"user_subscriptions\" does not exist") ||
+        (error.code && error.code === '42P01') // PostgreSQL code for undefined_table
+      )) {
+        logger.warn('[subscription] The subscription tables have not been created yet.');
+        
+        return res.json({
+          hasSubscription: false,
+          canCreateNew: true,
+          message: 'No subscription tables exist. User can create a new subscription.'
+        });
+      }
+      
+      throw error;
+    }
+  } catch (error) {
+    logger.error('[subscription] Error checking subscription status:', error);
+    res.status(500).json({ 
+      error: 'Failed to check subscription status',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
 
 // Get current subscription
 router.get('/current', ensureAuthenticated, async (req, res) => {
@@ -224,11 +309,44 @@ router.post('/create', ensureAuthenticated, async (req, res) => {
         return res.status(404).json({ error: 'Subscription plan not found' });
       }
       
-      // Check for existing subscription
+      // Check for existing subscription in any state
       const existingSubscription = await getUserSubscription(userId);
       
-      if (existingSubscription && existingSubscription.status === 'active') {
-        return res.status(400).json({ error: 'User already has an active subscription' });
+      // Enhanced subscription status checking
+      if (existingSubscription) {
+        logger.info(`[subscription] User ${userId} attempted to create subscription while having status: ${existingSubscription.status}`);
+        
+        if (existingSubscription.status === 'active') {
+          return res.status(400).json({
+            error: 'Subscription Exists',
+            code: 'ACTIVE_SUBSCRIPTION',
+            message: 'User already has an active subscription',
+            details: {
+              subscriptionId: existingSubscription.id,
+              planId: existingSubscription.planId,
+              status: existingSubscription.status,
+              currentPeriodEnd: existingSubscription.currentPeriodEnd
+            }
+          });
+        }
+        
+        if (existingSubscription.status === 'trialing') {
+          return res.status(400).json({
+            error: 'Subscription Exists',
+            code: 'TRIAL_SUBSCRIPTION',
+            message: 'User currently has an active trial subscription',
+            details: {
+              subscriptionId: existingSubscription.id,
+              planId: existingSubscription.planId,
+              status: existingSubscription.status,
+              trialEnd: existingSubscription.trialEnd
+            }
+          });
+        }
+        
+        // For other statuses (like canceled, past_due, etc.), we allow creating a new subscription
+        // but we log it for tracking purposes
+        logger.info(`[subscription] Allowing new subscription for user with ${existingSubscription.status} subscription`);
       }
       
       try {
@@ -466,7 +584,7 @@ router.post('/reactivate', ensureAuthenticated, async (req, res) => {
       .select()
       .from(userSubscriptions)
       .where(eq(userSubscriptions.userId, userId))
-      .orderBy({ createdAt: 'desc' })
+      .orderBy(desc(userSubscriptions.createdAt))
       .limit(1);
     
     if (!subscription) {
