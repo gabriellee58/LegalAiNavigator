@@ -1,4 +1,14 @@
-import { Toast } from "@/components/ui/use-toast";
+import React from 'react';
+
+/**
+ * Toast interface for consistent typing
+ */
+export interface Toast {
+  title?: string;
+  description?: string;
+  variant?: 'default' | 'destructive';
+  // Don't include action as it's causing type incompatibility with useToast
+}
 
 /**
  * Types of subscription-related error responses from the server

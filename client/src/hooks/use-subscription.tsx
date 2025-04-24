@@ -9,6 +9,8 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { differenceInDays } from "date-fns";
 import { SubscriptionPlanDefinition, getPlanById } from "@/data/subscription-plans";
+import { handleSubscriptionError, createSubscriptionErrorToast, SubscriptionErrorType } from "@/utils/subscriptionErrorHandler";
+import { useTranslation } from "@/hooks/use-translation";
 
 // Helper function for redirecting to Stripe checkout
 function redirectToStripeCheckout(url: string, delay = 500) {
@@ -94,6 +96,7 @@ const SubscriptionContext = createContext<SubscriptionContextType | null>(null);
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { t } = useTranslation();
   
   // Fetch user's current subscription
   const {
@@ -217,9 +220,16 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       refetch();
     },
     onError: (error: Error) => {
-      // Don't show a toast here, let the component handle the error
-      // This prevents duplicate error toasts
-      console.error("Subscription creation error:", error.message);
+      // Log the error for debugging
+      console.error("Subscription creation error:", error);
+      
+      // Use our enhanced error handler but apply the result directly
+      const { title, description } = handleSubscriptionError(error, t);
+      toast({
+        title,
+        description,
+        variant: "destructive"
+      });
     },
   });
 
@@ -260,11 +270,9 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       refetch();
     },
     onError: (error: Error) => {
-      toast({
-        title: "Failed to update subscription",
-        description: error.message,
-        variant: "destructive",
-      });
+      console.error("Subscription update error:", error);
+      const toastConfig = createSubscriptionErrorToast(error, t);
+      toast(toastConfig);
     },
   });
 
