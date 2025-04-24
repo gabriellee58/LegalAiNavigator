@@ -37,6 +37,7 @@ import CourtProceduresStaticPage from "./pages/court-procedures-static";
 import CourtProcedureDetailPage from "./pages/court-procedure-detail";
 import NotarizationGuidePage from "./pages/notarization-guide";
 import SubscriptionPlansPage from "./pages/subscription-plans";
+import SubscriptionSuccessPage from "./pages/subscription/success";
 
 // Import legal domains browser
 import LegalDomainsPage from "./pages/legal-domains";
@@ -130,6 +131,7 @@ function Router() {
       <ProtectedRoute path="/timeline-estimator" component={TimelineEstimatorPage} />
       <ProtectedRoute path="/cost-estimator" component={CostEstimatorPage} />
       <ProtectedRoute path="/subscription-plans" component={SubscriptionPlansPage} />
+      <ProtectedRoute path="/subscription/success" component={SubscriptionSuccessPage} />
       <ProtectedRoute path="/jurisdiction-compare" component={JurisdictionCompare} />
       
       {/* Document Templates */}

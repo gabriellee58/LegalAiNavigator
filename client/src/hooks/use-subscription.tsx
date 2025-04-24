@@ -39,6 +39,7 @@ type SubscriptionContextType = {
   cancelSubscription: () => Promise<void>;
   reactivateSubscription: () => Promise<void>;
   goToBillingPortal: () => Promise<void>;
+  refetch: () => Promise<any>;
 };
 
 const SubscriptionContext = createContext<SubscriptionContextType | null>(null);
