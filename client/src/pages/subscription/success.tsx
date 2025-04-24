@@ -53,8 +53,9 @@ export default function SubscriptionSuccessPage() {
         
         if (status === 'already_active') {
           console.log('Subscription is already active');
-          // Still show success but with a different message
+          // Track already active status separately
           setIsSuccess(true);
+          setIsAlreadyActive(true);
           
           toast({
             title: "Subscription Active",
@@ -63,6 +64,7 @@ export default function SubscriptionSuccessPage() {
         } else {
           // Regular success flow
           setIsSuccess(true);
+          setIsAlreadyActive(false);
           
           toast({
             title: "Subscription Activated",
@@ -109,12 +111,25 @@ export default function SubscriptionSuccessPage() {
           </div>
         ) : isSuccess ? (
           <div className="space-y-6">
-            <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
-            <h1 className="text-2xl font-bold">Subscription Activated!</h1>
-            <p className="text-muted-foreground">
-              Your subscription has been successfully activated. You now have access to all the
-              features and benefits of your plan.
-            </p>
+            {isAlreadyActive ? (
+              <>
+                <InfoIcon className="h-16 w-16 text-blue-500 mx-auto" />
+                <h1 className="text-2xl font-bold">Subscription Already Active</h1>
+                <p className="text-muted-foreground">
+                  Your subscription is already active. There's no need to resubscribe at this time.
+                  You can continue enjoying all the features and benefits of your current plan.
+                </p>
+              </>
+            ) : (
+              <>
+                <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
+                <h1 className="text-2xl font-bold">Subscription Activated!</h1>
+                <p className="text-muted-foreground">
+                  Your subscription has been successfully activated. You now have access to all the
+                  features and benefits of your plan.
+                </p>
+              </>
+            )}
             
             <div className="space-y-4 pt-4">
               <Link href="/">
