@@ -330,6 +330,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         cancelSubscription,
         reactivateSubscription,
         goToBillingPortal,
+        refetch,
       }}
     >
       {children}

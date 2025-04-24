@@ -602,4 +602,60 @@ router.get('/plans', async (req, res) => {
   }
 });
 
+// Confirm subscription (after successful checkout)
+router.post('/confirm', ensureAuthenticated, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    
+    // Validate session ID from request
+    const schema = z.object({
+      sessionId: z.string(),
+    });
+    
+    const result = schema.safeParse(req.body);
+    
+    if (!result.success) {
+      return res.status(400).json({ error: 'Invalid request data', details: result.error });
+    }
+    
+    const { sessionId } = result.data;
+    
+    // Get existing subscription
+    const existingSubscription = await getUserSubscription(userId);
+    
+    if (!existingSubscription) {
+      return res.status(404).json({ error: 'No subscription found' });
+    }
+    
+    // In a real implementation, you'd retrieve the Stripe session to confirm payment
+    // Here we just update the status from pending_payment to active
+    if (existingSubscription.stripeSubscriptionId === 'pending_payment') {
+      // Update the subscription status to active and assign a mock subscription ID
+      const [updatedSubscription] = await db
+        .update(userSubscriptions)
+        .set({
+          stripeSubscriptionId: `sub_mock_${Date.now()}`,
+          status: 'active',
+          updatedAt: new Date(),
+        })
+        .where(eq(userSubscriptions.id, existingSubscription.id))
+        .returning();
+      
+      return res.json({
+        subscription: updatedSubscription,
+        message: 'Subscription confirmed successfully',
+      });
+    }
+    
+    // If already active, return success
+    res.json({
+      subscription: existingSubscription,
+      message: 'Subscription is already active',
+    });
+  } catch (error) {
+    logger.error('[subscription] Error confirming subscription:', error);
+    res.status(500).json({ error: 'Failed to confirm subscription' });
+  }
+});
+
 export default router;
