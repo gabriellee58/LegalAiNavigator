@@ -41,16 +41,28 @@ export default function SubscriptionDashboardPage() {
   const daysLeftInTrial = subscription?.trialEnd ? 
     Math.max(0, Math.ceil((new Date(subscription.trialEnd).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))) : 0;
   
-  // Calculate days left in billing period
+  // Calculate days left in billing period - safely handle null dates
   const daysLeftInPeriod = subscription?.currentPeriodEnd ? 
     Math.ceil((new Date(subscription.currentPeriodEnd).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 0;
   
-  // Calculate total days in period
+  // Calculate total days in period - safely handle null dates
   const totalDaysInPeriod = subscription?.currentPeriodStart && subscription?.currentPeriodEnd ? 
     Math.ceil((new Date(subscription.currentPeriodEnd).getTime() - new Date(subscription.currentPeriodStart).getTime()) / (1000 * 60 * 60 * 24)) : 30;
   
-  // Calculate percentage of period elapsed
-  const periodPercentage = Math.max(0, Math.min(100, 100 - (daysLeftInPeriod / totalDaysInPeriod * 100)));
+  // Calculate percentage of period elapsed - handle edge cases
+  const periodPercentage = totalDaysInPeriod > 0 ? 
+    Math.max(0, Math.min(100, 100 - (daysLeftInPeriod / totalDaysInPeriod * 100))) : 0;
+    
+  // Safe formatter for dates
+  const formatDateSafe = (date: string | Date | null): string => {
+    if (!date) return "N/A";
+    try {
+      return format(new Date(date), "MMMM dd, yyyy");
+    } catch (e) {
+      console.error("Date formatting error:", e);
+      return "Invalid date";
+    }
+  };
 
   async function handleCancelSubscription() {
     if (!subscription) return;
@@ -183,8 +195,8 @@ export default function SubscriptionDashboardPage() {
             </div>
             <div className="text-sm text-muted-foreground">
               {subscription.status === "canceled" ? 
-                t("Access until") + ": " + (subscription.currentPeriodEnd ? format(new Date(subscription.currentPeriodEnd), "MMMM dd, yyyy") : "N/A") :
-                t("Next billing date") + ": " + (subscription.currentPeriodEnd ? format(new Date(subscription.currentPeriodEnd), "MMMM dd, yyyy") : "N/A")}
+                t("Access until") + ": " + formatDateSafe(subscription.currentPeriodEnd) :
+                t("Next billing date") + ": " + formatDateSafe(subscription.currentPeriodEnd)}
             </div>
           </CardContent>
         </Card>
@@ -197,8 +209,8 @@ export default function SubscriptionDashboardPage() {
             <div className="space-y-2">
               <Progress value={periodPercentage} className="h-2" />
               <div className="text-sm text-muted-foreground flex justify-between">
-                <span>{t("Started")}: {subscription.currentPeriodStart ? format(new Date(subscription.currentPeriodStart), "MMM dd") : "N/A"}</span>
-                <span>{t("Ends")}: {subscription.currentPeriodEnd ? format(new Date(subscription.currentPeriodEnd), "MMM dd") : "N/A"}</span>
+                <span>{t("Started")}: {formatDateSafe(subscription.currentPeriodStart)}</span>
+                <span>{t("Ends")}: {formatDateSafe(subscription.currentPeriodEnd)}</span>
               </div>
               <div className="text-sm font-medium">
                 {daysLeftInPeriod} {t("days remaining")}
@@ -224,7 +236,7 @@ export default function SubscriptionDashboardPage() {
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>{t("Subscription Canceled")}</AlertTitle>
           <AlertDescription>
-            {t("Your subscription has been canceled but you still have access until")} {subscription.currentPeriodEnd ? format(new Date(subscription.currentPeriodEnd), "MMMM dd, yyyy") : "N/A"}.
+            {t("Your subscription has been canceled but you still have access until")} {formatDateSafe(subscription.currentPeriodEnd)}.
           </AlertDescription>
         </Alert>
       )}
@@ -250,14 +262,14 @@ export default function SubscriptionDashboardPage() {
               <TableRow>
                 <TableCell className="font-medium">{t("Current Period")}</TableCell>
                 <TableCell>
-                  {subscription.currentPeriodStart ? format(new Date(subscription.currentPeriodStart), "MMMM dd, yyyy") : "N/A"} - {subscription.currentPeriodEnd ? format(new Date(subscription.currentPeriodEnd), "MMMM dd, yyyy") : "N/A"}
+                  {formatDateSafe(subscription.currentPeriodStart)} - {formatDateSafe(subscription.currentPeriodEnd)}
                 </TableCell>
               </TableRow>
               {subscription.trialStart && subscription.trialEnd && (
                 <TableRow>
                   <TableCell className="font-medium">{t("Trial Period")}</TableCell>
                   <TableCell>
-                    {subscription.trialStart ? format(new Date(subscription.trialStart), "MMMM dd, yyyy") : "N/A"} - {subscription.trialEnd ? format(new Date(subscription.trialEnd), "MMMM dd, yyyy") : "N/A"}
+                    {formatDateSafe(subscription.trialStart)} - {formatDateSafe(subscription.trialEnd)}
                     {subscription.trialEnd && new Date() < new Date(subscription.trialEnd) && (
                       <span className="ml-2">({daysLeftInTrial} {t("days left")})</span>
                     )}

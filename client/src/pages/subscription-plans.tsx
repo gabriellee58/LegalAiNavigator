@@ -24,9 +24,16 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Check, X, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/hooks/use-translation";
+import {
+  Alert,
+  AlertTitle,
+  AlertDescription,
+} from "@/components/ui/alert";
 
 export default function SubscriptionPlansPage() {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const {
     subscription,
     currentPlan,
@@ -192,49 +199,76 @@ export default function SubscriptionPlansPage() {
   return (
     <div className="container mx-auto py-8">
       
+      {/* Alert banner for users with active subscriptions */}
+      {subscription && subscription.status === 'active' && (
+        <Alert className="max-w-4xl mx-auto mb-8 bg-primary/10 border-primary/20">
+          <AlertCircle className="h-4 w-4 text-primary" />
+          <AlertTitle>{t("Active Subscription Detected")}</AlertTitle>
+          <AlertDescription className="flex flex-col gap-2">
+            <p>{t("You already have an active")} <span className="font-semibold">{currentPlan?.name}</span> {t("subscription")}</p>
+            <p>{t("New subscriptions cannot be created while you have an active plan.")}</p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="self-start mt-2"
+              onClick={() => window.location.href = '/subscription/dashboard'}
+            >
+              {t("Manage Your Subscription")}
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <div className="space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold mb-2">Subscription Plans</h1>
+          <h1 className="text-3xl font-bold mb-2">{t("Subscription Plans")}</h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Choose the right plan for your legal needs. All plans include a free trial period.
+            {t("Choose the right plan for your legal needs. All plans include a free trial period.")}
           </p>
           
           {subscription && (
             <div className="mt-4 p-4 bg-muted rounded-lg max-w-lg mx-auto">
-              <h2 className="font-semibold text-lg">Your Subscription</h2>
+              <h2 className="font-semibold text-lg">{t("Your Subscription")}</h2>
               {isTrialActive ? (
                 <div className="flex items-center justify-center gap-2 mt-2">
                   <AlertCircle className="h-5 w-5 text-yellow-500" />
                   <p className="text-sm">
-                    Trial period: <span className="font-medium">{trialDaysRemaining} days remaining</span>
+                    {t("Trial period")}: <span className="font-medium">{trialDaysRemaining} {t("days remaining")}</span>
                   </p>
                 </div>
               ) : (
                 <p className="text-sm mt-2">
-                  You are currently on the <span className="font-semibold">{currentPlan?.name}</span> plan.
+                  {t("You are currently on the")} <span className="font-semibold">{currentPlan?.name}</span> {t("plan")}.
                 </p>
               )}
               
-              <div className="mt-4">
+              <div className="mt-4 flex justify-between">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => window.location.href = '/subscription/dashboard'}
+                >
+                  {t("View Dashboard")}
+                </Button>
+                
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="outline" size="sm">Cancel Subscription</Button>
+                    <Button variant="outline" size="sm">{t("Cancel Subscription")}</Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Cancel your subscription?</AlertDialogTitle>
+                      <AlertDialogTitle>{t("Cancel your subscription?")}</AlertDialogTitle>
                       <AlertDialogDescription>
-                        You will lose access to premium features at the end of your current billing cycle. 
-                        This action cannot be undone.
+                        {t("You will lose access to premium features at the end of your current billing cycle. This action cannot be undone.")}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
+                      <AlertDialogCancel>{t("Keep Subscription")}</AlertDialogCancel>
                       <AlertDialogAction 
                         onClick={handleCancelSubscription}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
-                        Confirm Cancellation
+                        {t("Confirm Cancellation")}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
