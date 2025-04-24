@@ -92,14 +92,26 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   // Create a new subscription
   const createSubscriptionMutation = useMutation({
     mutationFn: async (planId: string) => {
-      const res = await apiRequest("POST", "/api/subscriptions/create", { planId });
-      
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to create subscription");
+      try {
+        const res = await apiRequest("POST", "/api/subscriptions/create", { planId });
+        
+        // Check if res is already a parsed JSON object or a Response object
+        if (res && typeof res === 'object' && !('ok' in res)) {
+          // If it's already a JSON object, return it directly
+          return res;
+        }
+        
+        // Otherwise, handle as a Response object
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || "Failed to create subscription");
+        }
+        
+        return await res.json();
+      } catch (error) {
+        console.error("Error starting subscription:", error);
+        throw error;
       }
-      
-      return await res.json();
     },
     onSuccess: () => {
       toast({
@@ -112,7 +124,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     onError: (error: Error) => {
       toast({
         title: "Failed to create subscription",
-        description: error.message,
+        description: error.message || "Unknown subscription error",
         variant: "destructive",
       });
     },
@@ -121,14 +133,24 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   // Update subscription (change plan)
   const updateSubscriptionMutation = useMutation({
     mutationFn: async (planId: string) => {
-      const res = await apiRequest("PATCH", "/api/subscriptions/change-plan", { planId });
-      
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to update subscription");
+      try {
+        const res = await apiRequest("PATCH", "/api/subscriptions/change-plan", { planId });
+        
+        // Check if res is already a parsed JSON object
+        if (res && typeof res === 'object' && !('ok' in res)) {
+          return res;
+        }
+        
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || "Failed to update subscription");
+        }
+        
+        return await res.json();
+      } catch (error) {
+        console.error("Error updating subscription:", error);
+        throw error;
       }
-      
-      return await res.json();
     },
     onSuccess: () => {
       toast({
@@ -150,14 +172,24 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   // Cancel subscription
   const cancelSubscriptionMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/subscriptions/cancel");
-      
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to cancel subscription");
+      try {
+        const res = await apiRequest("POST", "/api/subscriptions/cancel");
+        
+        // Check if res is already a parsed JSON object
+        if (res && typeof res === 'object' && !('ok' in res)) {
+          return res;
+        }
+        
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || "Failed to cancel subscription");
+        }
+        
+        return await res.json();
+      } catch (error) {
+        console.error("Error canceling subscription:", error);
+        throw error;
       }
-      
-      return await res.json();
     },
     onSuccess: () => {
       toast({
@@ -179,14 +211,24 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   // Reactivate subscription
   const reactivateSubscriptionMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/subscriptions/reactivate");
-      
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to reactivate subscription");
+      try {
+        const res = await apiRequest("POST", "/api/subscriptions/reactivate");
+        
+        // Check if res is already a parsed JSON object
+        if (res && typeof res === 'object' && !('ok' in res)) {
+          return res;
+        }
+        
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || "Failed to reactivate subscription");
+        }
+        
+        return await res.json();
+      } catch (error) {
+        console.error("Error reactivating subscription:", error);
+        throw error;
       }
-      
-      return await res.json();
     },
     onSuccess: () => {
       toast({
@@ -208,14 +250,24 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   // Go to billing portal
   const billingPortalMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/subscriptions/billing-portal");
-      
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to access billing portal");
+      try {
+        const res = await apiRequest("POST", "/api/subscriptions/billing-portal");
+        
+        // Check if res is already a parsed JSON object
+        if (res && typeof res === 'object' && !('ok' in res)) {
+          return res;
+        }
+        
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || "Failed to access billing portal");
+        }
+        
+        return await res.json();
+      } catch (error) {
+        console.error("Error accessing billing portal:", error);
+        throw error;
       }
-      
-      return await res.json();
     },
     onSuccess: (data) => {
       // Redirect to billing portal URL
