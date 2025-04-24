@@ -231,12 +231,49 @@ export default function SubscriptionDashboardPage() {
       </div>
 
       {subscription.status === "trialing" && (
-        <Alert className="mb-8 bg-amber-50 border-amber-200">
-          <Clock className="h-4 w-4" />
-          <AlertTitle>{t("Trial Period")}</AlertTitle>
-          <AlertDescription>
-            {t("You are currently in a trial period. Your trial will end in")} {daysLeftInTrial} {t("days")}. 
-            {t("You will be charged after the trial ends unless you cancel.")}
+        <Alert 
+          className={`mb-8 ${daysLeftInTrial <= 3 
+            ? "bg-red-50 border-red-200" 
+            : "bg-amber-50 border-amber-200"}`}
+        >
+          <Clock className={`h-4 w-4 ${daysLeftInTrial <= 3 ? "text-red-500" : ""}`} />
+          <AlertTitle>
+            {daysLeftInTrial <= 3 
+              ? t("Trial Period Ending Soon") 
+              : t("Trial Period")}
+          </AlertTitle>
+          <AlertDescription className="flex flex-col gap-2">
+            <p>
+              {daysLeftInTrial <= 0 
+                ? t("Your trial has expired.")
+                : daysLeftInTrial === 1
+                  ? t("Your trial will end tomorrow.")
+                  : t("You are currently in a trial period. Your trial will end in") + " " + daysLeftInTrial + " " + t("days") + "."}
+            </p>
+            
+            {daysLeftInTrial <= 3 && daysLeftInTrial > 0 && (
+              <p className="font-medium">
+                {t("To continue using premium features, you will need to upgrade to a paid plan before your trial ends.")}
+              </p>
+            )}
+            
+            {daysLeftInTrial > 0 && (
+              <p>
+                {t("You will be charged after the trial ends unless you cancel.")}
+              </p>
+            )}
+            
+            {daysLeftInTrial <= 0 && (
+              <div className="flex mt-2">
+                <Button 
+                  variant="default" 
+                  size="sm"
+                  onClick={() => window.location.href = '/subscription-plans'}
+                >
+                  {t("Upgrade Now")}
+                </Button>
+              </div>
+            )}
           </AlertDescription>
         </Alert>
       )}
@@ -245,8 +282,26 @@ export default function SubscriptionDashboardPage() {
         <Alert className="mb-8 bg-amber-50 border-amber-200">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>{t("Subscription Canceled")}</AlertTitle>
-          <AlertDescription>
-            {t("Your subscription has been canceled but you still have access until")} {formatDateSafe(subscription.currentPeriodEnd)}.
+          <AlertDescription className="flex flex-col gap-2">
+            <p>
+              {t("Your subscription has been canceled but you still have access until")} {formatDateSafe(subscription.currentPeriodEnd)}.
+            </p>
+            {daysLeftInPeriod <= 7 && (
+              <p className="font-medium">
+                {daysLeftInPeriod <= 1 
+                  ? t("Your access will expire very soon.")
+                  : t("You have") + " " + daysLeftInPeriod + " " + t("days of access remaining.")}
+              </p>
+            )}
+            <div className="flex mt-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => window.location.href = '/subscription-plans'}
+              >
+                {t("Resubscribe")}
+              </Button>
+            </div>
           </AlertDescription>
         </Alert>
       )}
