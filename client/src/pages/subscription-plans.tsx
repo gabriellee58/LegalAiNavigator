@@ -42,6 +42,30 @@ export default function SubscriptionPlansPage() {
 
   const handleStartPlan = async (plan: SubscriptionPlanDefinition) => {
     try {
+      // Check if user has any existing subscription first
+      if (subscription) {
+        // Determine the message based on status
+        let title = "Subscription Already Exists";
+        let description = "You already have a subscription. ";
+        
+        if (subscription.status === 'active') {
+          description += "Please use the dashboard to manage your subscription.";
+        } else if (subscription.status === 'trial') {
+          description += "You are currently in a trial period. Please wait until your trial ends or cancel it before starting a new subscription.";
+        } else if (subscription.status === 'canceled') {
+          description += "Please reactivate your canceled subscription from the dashboard instead of creating a new one.";
+        } else {
+          description += "Please manage your existing subscription from the dashboard.";
+        }
+        
+        toast({
+          title,
+          description,
+          variant: "destructive",
+        });
+        return;
+      }
+      
       // Start subscription or trial
       console.log("Starting subscription for plan:", plan.id);
       await createSubscription(plan.id);
@@ -55,7 +79,7 @@ export default function SubscriptionPlansPage() {
       if (error.message && error.message.includes("already has an active subscription")) {
         toast({
           title: "Subscription Already Active",
-          description: "You already have an active subscription. Please manage your current plan instead.",
+          description: "You already have an active subscription. Please use the dashboard to manage your current plan instead.",
           variant: "destructive",
         });
       } else if (error.message && error.message.includes("must be logged in")) {
@@ -81,6 +105,16 @@ export default function SubscriptionPlansPage() {
 
   const handleChangePlan = async (plan: SubscriptionPlanDefinition) => {
     try {
+      // Don't allow changing plans if the current subscription is active
+      if (subscription?.status === 'active') {
+        toast({
+          title: "Cannot Change Plan",
+          description: "You already have an active subscription. Please use the dashboard to manage your subscription.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       // Update subscription to new plan
       await updateSubscription(plan.id);
       
@@ -88,8 +122,14 @@ export default function SubscriptionPlansPage() {
         title: "Plan updated",
         description: `Your subscription has been changed to ${plan.name}.`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error changing subscription:", error);
+      
+      toast({
+        title: "Failed to Change Plan",
+        description: error.message || "An error occurred while changing your plan. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -127,7 +167,12 @@ export default function SubscriptionPlansPage() {
       return true;
     }
     
-    // Disable if it's the user's current plan
+    // Disable if the user has any active subscription
+    if (subscription !== null && subscription.status === 'active') {
+      return true;
+    }
+    
+    // Disable if it's the user's current plan (even if not active)
     if (subscription !== null && currentPlan !== null && currentPlan.id === plan.id) {
       return true;
     }
