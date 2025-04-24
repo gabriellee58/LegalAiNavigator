@@ -57,6 +57,22 @@ export type UserSubscription = {
   updatedAt: Date | null;
 };
 
+// Subscription status check response type
+export type SubscriptionStatusCheckResponse = {
+  hasSubscription: boolean;
+  canCreateNew: boolean;
+  subscriptionStatus?: string;
+  details?: {
+    id: number;
+    planId: string | number;
+    status: string;
+    currentPeriodEnd?: string | null;
+    trialEnd?: string | null;
+    canceledAt?: string | null;
+  };
+  message: string;
+};
+
 type SubscriptionContextType = {
   subscription: UserSubscription | null;
   currentPlan: SubscriptionPlanDefinition | null;
@@ -64,6 +80,7 @@ type SubscriptionContextType = {
   isTrialActive: boolean;
   isSubscriptionActive: boolean;
   trialDaysRemaining: number | null;
+  checkSubscriptionStatus: () => Promise<SubscriptionStatusCheckResponse>;
   createSubscription: (planId: string) => Promise<void>;
   updateSubscription: (planId: string) => Promise<void>;
   cancelSubscription: () => Promise<void>;
@@ -364,8 +381,77 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  // Check subscription status before creating
+  const checkSubscriptionStatus = async (): Promise<SubscriptionStatusCheckResponse> => {
+    try {
+      // Check if user is authenticated
+      if (!user) {
+        throw new Error("You must be logged in to check subscription status");
+      }
+
+      console.log("Checking subscription status before creation");
+      const res = await apiRequest("GET", "/api/subscriptions/status-check");
+      
+      if (res.status === 401) {
+        throw new Error("Authentication required to check subscription status");
+      }
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to check subscription status");
+      }
+      
+      const responseData: SubscriptionStatusCheckResponse = await res.json();
+      console.log("Subscription status check:", responseData);
+      return responseData;
+    } catch (error) {
+      console.error("Error checking subscription status:", error);
+      // Return a default response indicating error
+      return {
+        hasSubscription: false,
+        canCreateNew: false,
+        message: error instanceof Error ? error.message : "Unknown error checking subscription status"
+      };
+    }
+  };
+
   // Helper functions for mutations
   const createSubscription = async (planId: string) => {
+    // First check subscription status
+    const statusCheck = await checkSubscriptionStatus();
+    
+    // If user already has a subscription and can't create new, explain why
+    if (statusCheck.hasSubscription && !statusCheck.canCreateNew) {
+      // Show an error message explaining why they can't create a new subscription
+      toast({
+        title: "Subscription Exists",
+        description: statusCheck.message,
+        variant: "destructive",
+      });
+      
+      // Show toast with information about existing subscription
+      if (statusCheck.details) {
+        toast({
+          title: "Manage Your Subscription",
+          description: `Visit your subscription dashboard to manage your existing subscription.`,
+          variant: "default",
+          action: (
+            <div className="flex gap-2">
+              <button
+                onClick={() => window.location.href = '/subscription/dashboard'}
+                className="bg-primary text-white px-3 py-1 rounded-md text-xs"
+              >
+                Go to Dashboard
+              </button>
+            </div>
+          ),
+        });
+      }
+      
+      return;
+    }
+    
+    // Otherwise proceed with creation
     await createSubscriptionMutation.mutateAsync(planId);
   };
 
@@ -394,6 +480,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         isTrialActive,
         isSubscriptionActive,
         trialDaysRemaining,
+        checkSubscriptionStatus,
         createSubscription,
         updateSubscription,
         cancelSubscription,

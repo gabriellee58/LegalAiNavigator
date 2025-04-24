@@ -40,6 +40,7 @@ export default function SubscriptionPlansPage() {
     isLoading,
     isTrialActive,
     trialDaysRemaining,
+    checkSubscriptionStatus,
     createSubscription,
     updateSubscription,
     cancelSubscription,
@@ -49,7 +50,45 @@ export default function SubscriptionPlansPage() {
 
   const handleStartPlan = async (plan: SubscriptionPlanDefinition) => {
     try {
-      // Check if user has any existing subscription first
+      // First, check subscription status through the API
+      const statusCheck = await checkSubscriptionStatus();
+      console.log("Subscription status check result:", statusCheck);
+      
+      // If user has a subscription and can't create a new one, show message
+      if (statusCheck.hasSubscription && !statusCheck.canCreateNew) {
+        toast({
+          title: "Subscription Already Exists",
+          description: statusCheck.message,
+          variant: "destructive",
+        });
+        
+        // Show toast with information about existing subscription
+        if (statusCheck.details) {
+          const planName = currentPlan?.name || "current plan";
+          
+          toast({
+            title: "Manage Your Subscription",
+            description: `You have a ${statusCheck.details.status} subscription to ${planName}. Visit your subscription dashboard to manage it.`,
+            variant: "default",
+            action: (
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => window.location.href = '/subscription/dashboard'}
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                >
+                  Go to Dashboard
+                </Button>
+              </div>
+            ),
+          });
+        }
+        
+        return;
+      }
+      
+      // Also check the local subscription state as a backup
       if (subscription) {
         // Determine the message based on status
         let title = "Subscription Already Exists";
