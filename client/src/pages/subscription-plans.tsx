@@ -43,26 +43,36 @@ export default function SubscriptionPlansPage() {
   const handleStartPlan = async (plan: SubscriptionPlanDefinition) => {
     try {
       // Start subscription or trial
+      console.log("Starting subscription for plan:", plan.id);
       await createSubscription(plan.id);
       
-      toast({
-        title: "Success!",
-        description: `Your ${plan.name} has been activated.`,
-      });
+      // Note: Success toast is shown by the mutation's onSuccess callback
+      // This toast will only show if the API doesn't return a redirect URL
     } catch (error: any) {
       console.error("Error starting subscription:", error);
       
-      // Handle specific error case for existing subscription
+      // Handle specific error cases
       if (error.message && error.message.includes("already has an active subscription")) {
         toast({
           title: "Subscription Already Active",
           description: "You already have an active subscription. Please manage your current plan instead.",
           variant: "destructive",
         });
+      } else if (error.message && error.message.includes("must be logged in")) {
+        toast({
+          title: "Authentication Required",
+          description: "You must be logged in to create a subscription. Please sign in or create an account.",
+          variant: "destructive",
+        });
+        
+        // Redirect to login page after a short delay
+        setTimeout(() => {
+          window.location.href = "/auth";
+        }, 1500);
       } else {
         toast({
           title: "Subscription Error",
-          description: "There was an error activating your subscription. Please try again.",
+          description: error.message || "There was an error activating your subscription. Please try again.",
           variant: "destructive",
         });
       }
@@ -225,7 +235,7 @@ export default function SubscriptionPlansPage() {
                 <Button
                   className="w-full"
                   variant={plan.isPopular ? "default" : "outline"}
-                  disabled={isLoading || (subscription && currentPlan && currentPlan.id === plan.id)}
+                  disabled={!!isLoading || (subscription && currentPlan && currentPlan.id === plan.id)}
                   onClick={() => {
                     if (!subscription) {
                       handleStartPlan(plan);

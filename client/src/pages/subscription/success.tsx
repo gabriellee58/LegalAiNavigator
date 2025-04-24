@@ -20,6 +20,16 @@ export default function SubscriptionSuccessPage() {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get('session_id');
   };
+  
+  // Get redirect origin from session storage if available
+  const getRedirectOrigin = () => {
+    try {
+      return sessionStorage.getItem('redirectOrigin') || null;
+    } catch (e) {
+      console.warn("Could not access session storage:", e);
+      return null;
+    }
+  };
 
   useEffect(() => {
     const sessionId = getSessionId();
@@ -132,9 +142,31 @@ export default function SubscriptionSuccessPage() {
             )}
             
             <div className="space-y-4 pt-4">
-              <Link href="/">
-                <Button className="w-full">Go to Dashboard</Button>
-              </Link>
+              {/* Use redirect origin if available, otherwise go to dashboard */}
+              <Button 
+                className="w-full"
+                onClick={() => {
+                  const redirectUrl = getRedirectOrigin();
+                  if (redirectUrl) {
+                    try {
+                      // Clear redirect origin from session storage
+                      sessionStorage.removeItem('redirectOrigin');
+                      
+                      // Try to navigate back to redirect origin
+                      window.location.href = redirectUrl;
+                    } catch (e) {
+                      console.error("Error redirecting to origin:", e);
+                      // Fallback to dashboard
+                      window.location.href = "/";
+                    }
+                  } else {
+                    // No redirect origin, go to dashboard
+                    window.location.href = "/";
+                  }
+                }}
+              >
+                Continue
+              </Button>
               <Link href="/subscription-plans">
                 <Button variant="outline" className="w-full">Manage Subscription</Button>
               </Link>

@@ -12,9 +12,31 @@ import { SubscriptionPlanDefinition, getPlanById } from "@/data/subscription-pla
 
 // Helper function for redirecting to Stripe checkout
 function redirectToStripeCheckout(url: string, delay = 500) {
+  if (!url) {
+    console.error("Cannot redirect: No URL provided");
+    return;
+  }
+  
   console.log("Redirecting to Stripe checkout:", url);
+  
+  // Store the current URL in sessionStorage to support return after checkout
+  try {
+    sessionStorage.setItem('redirectOrigin', window.location.href);
+  } catch (e) {
+    console.warn("Could not save current URL to session storage:", e);
+  }
+  
+  // Use a delay to ensure any state updates complete before redirect
   setTimeout(() => {
-    window.location.href = url;
+    // Validate URL before redirecting
+    try {
+      new URL(url); // Will throw if URL is invalid
+      window.location.href = url;
+    } catch (e) {
+      console.error("Invalid URL for redirect:", url, e);
+      // Fallback to subscription plans page if URL is invalid
+      window.location.href = "/subscription-plans";
+    }
   }, delay);
 }
 
@@ -61,23 +83,41 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     data: subscription,
     isLoading,
     refetch,
+    error,
   } = useQuery({
     queryKey: ["/api/subscriptions/current"],
     queryFn: async () => {
       try {
         // Only fetch if user is authenticated
-        if (!user) return null;
+        if (!user) {
+          console.log("No user authenticated, skipping subscription fetch");
+          return null;
+        }
         
+        console.log("Fetching subscription for user:", user.id);
         const res = await apiRequest("GET", "/api/subscriptions/current");
-        if (res.status === 404) return null; // No subscription
         
-        return await res.json();
+        if (res.status === 401) {
+          console.warn("Authentication required for subscription check");
+          return null; // User not authenticated
+        }
+        
+        if (res.status === 404) {
+          console.log("No subscription found for user");
+          return null; // No subscription
+        }
+        
+        const data = await res.json();
+        console.log("Subscription data retrieved:", data);
+        return data;
       } catch (error) {
+        console.error("Error fetching subscription:", error);
         // Silent failure for subscription check
         return null;
       }
     },
     enabled: !!user, // Only run if user is authenticated
+    retry: 1, // Only retry once to avoid flooding logs
   });
 
   // Calculate if trial is active and days remaining
@@ -102,18 +142,31 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const createSubscriptionMutation = useMutation({
     mutationFn: async (planId: string) => {
       try {
+        // Check if user is authenticated
+        if (!user) {
+          throw new Error("You must be logged in to create a subscription");
+        }
+
+        console.log("Creating subscription for plan:", planId);
         const res = await apiRequest("POST", "/api/subscriptions/create", { planId });
         
         // Check if res is already a parsed JSON object or a Response object
         if (res && typeof res === 'object' && !('ok' in res)) {
           // If it's already a JSON object, return it directly
+          console.log("Subscription response is already a JSON object:", res);
           return res;
+        }
+        
+        // Handle authentication errors
+        if (res.status === 401) {
+          throw new Error("Authentication required to create a subscription");
         }
         
         // Otherwise, handle as a Response object
         if (!res.ok) {
           const errorData = await res.json();
           const errorMessage = errorData.error || "Failed to create subscription";
+          console.error("Subscription error response:", errorData);
           
           // If the user already has an active subscription, throw a specific error
           if (errorMessage.includes("already has an active subscription")) {
@@ -123,7 +176,9 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           throw new Error(errorMessage);
         }
         
-        return await res.json();
+        const responseData = await res.json();
+        console.log("Subscription created successfully:", responseData);
+        return responseData;
       } catch (error) {
         console.error("Error starting subscription:", error);
         throw error;
