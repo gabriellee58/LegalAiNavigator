@@ -119,56 +119,60 @@ function Router() {
       <ProtectedRoute path="/document-generator" component={DocumentGeneratorPage} />
       <ProtectedRoute path="/document-generator/:id" component={DocumentGeneratorPage} />
       <ProtectedRoute path="/legal-research" component={LegalResearchPage} />
-      <ProtectedRoute path="/contract-analysis" component={ContractAnalysisPage} />
-      <ProtectedRoute path="/dispute-resolution" component={DisputeResolutionPage} />
-      <ProtectedRoute path="/dispute/:id" component={DisputeDetailPage} />
-      <ProtectedRoute path="/compliance-checker" component={ComplianceCheckerPage} />
+      <ProtectedRoute path="/contract-analysis" component={ContractAnalysisPage} requiresSubscription={true} />
+      <ProtectedRoute path="/dispute-resolution" component={DisputeResolutionPage} requiresSubscription={true} />
+      <ProtectedRoute path="/dispute/:id" component={DisputeDetailPage} requiresSubscription={true} />
+      <ProtectedRoute path="/compliance-checker" component={ComplianceCheckerPage} requiresSubscription={true} />
       <Route path="/court-procedures" component={CourtProceduresStaticPage} />
       <Route path="/court-procedures/:id" component={CourtProcedureDetailPage} />
       <Route path="/court-procedures-old" component={CourtProceduresPage} />
       <ProtectedRoute path="/notarization-guide" component={NotarizationGuidePage} />
-      <ProtectedRoute path="/document-navigator" component={DocumentNavigatorPage} />
-      <ProtectedRoute path="/timeline-estimator" component={TimelineEstimatorPage} />
-      <ProtectedRoute path="/cost-estimator" component={CostEstimatorPage} />
+      <ProtectedRoute path="/document-navigator" component={DocumentNavigatorPage} requiresSubscription={true} />
+      <ProtectedRoute path="/timeline-estimator" component={TimelineEstimatorPage} requiresSubscription={true} />
+      <ProtectedRoute path="/cost-estimator" component={CostEstimatorPage} requiresSubscription={true} />
       <ProtectedRoute path="/subscription-plans" component={SubscriptionPlansPage} />
       <ProtectedRoute path="/subscription/success" component={SubscriptionSuccessPage} />
-      <ProtectedRoute path="/jurisdiction-compare" component={JurisdictionCompare} />
+      <ProtectedRoute path="/jurisdiction-compare" component={JurisdictionCompare} requiresSubscription={true} />
       
-      {/* Document Templates */}
+      {/* Document Templates - Require subscription for specialized templates */}
       <ProtectedRoute path="/documents/all" component={DocumentTemplatesPage} />
-      <ProtectedRoute path="/documents/contract" component={DocumentTemplatesPage} />
-      <ProtectedRoute path="/documents/real-estate" component={DocumentTemplatesPage} />
-      <ProtectedRoute path="/documents/family" component={DocumentTemplatesPage} />
-      <ProtectedRoute path="/documents/employment" component={DocumentTemplatesPage} />
-      <ProtectedRoute path="/documents/immigration" component={DocumentTemplatesPage} />
-      <ProtectedRoute path="/documents/will" component={DocumentTemplatesPage} />
-      <ProtectedRoute path="/documents/personal-injury" component={DocumentTemplatesPage} />
+      <ProtectedRoute path="/documents/contract" component={DocumentTemplatesPage} requiresSubscription={true} />
+      <ProtectedRoute path="/documents/real-estate" component={DocumentTemplatesPage} requiresSubscription={true} />
+      <ProtectedRoute path="/documents/family" component={DocumentTemplatesPage} requiresSubscription={true} />
+      <ProtectedRoute path="/documents/employment" component={DocumentTemplatesPage} requiresSubscription={true} />
+      <ProtectedRoute path="/documents/immigration" component={DocumentTemplatesPage} requiresSubscription={true} />
+      <ProtectedRoute path="/documents/will" component={DocumentTemplatesPage} requiresSubscription={true} />
+      <ProtectedRoute path="/documents/personal-injury" component={DocumentTemplatesPage} requiresSubscription={true} />
       
       {/* Legal Domains - Static paths first, dynamic path last */}
       <ProtectedRoute path="/legal-domains" component={LegalDomainsPage} />
+      
+      {/* Basic legal domains accessible to all authenticated users */}
       <ProtectedRoute path="/legal-domains/family-law" component={FamilyLawPage} />
       <ProtectedRoute path="/legal-domains/real-estate" component={RealEstateLawPage} />
       <ProtectedRoute path="/legal-domains/business" component={BusinessLawPage} />
       <ProtectedRoute path="/legal-domains/employment" component={EmploymentLawPage} />
       <ProtectedRoute path="/legal-domains/immigration" component={ImmigrationLawPage} />
       <ProtectedRoute path="/legal-domains/personal-injury" component={PersonalInjuryLawPage} />
-      <ProtectedRoute path="/legal-domains/estate-planning" component={EstatePlanningPage} />
-      <ProtectedRoute path="/legal-domains/consumer-rights" component={ConsumerRightsPage} />
       <ProtectedRoute path="/legal-domains/criminal" component={CriminalLawPage} />
-      <ProtectedRoute path="/legal-domains/civil-litigation" component={CivilLitigationPage} />
-      <ProtectedRoute path="/legal-domains/indigenous-law" component={IndigenousLawPage} />
-      <ProtectedRoute path="/legal-domains/environmental" component={EnvironmentalLawPage} />
-      <ProtectedRoute path="/legal-domains/intellectual-property" component={IntellectualPropertyPage} />
-      <ProtectedRoute path="/legal-domains/human-rights" component={HumanRightsPage} />
-      <ProtectedRoute path="/legal-domains/insurance" component={InsuranceLawPage} />
-      <ProtectedRoute path="/legal-domains/administrative" component={AdministrativeLawPage} />
-      <ProtectedRoute path="/legal-domains/tax" component={TaxLawPage} />
-      <ProtectedRoute path="/legal-domains/constitutional" component={ConstitutionalLawPage} />
-      <ProtectedRoute path="/legal-domains/entertainment" component={EntertainmentLawPage} />
-      <ProtectedRoute path="/legal-domains/technology" component={TechnologyLawPage} />
-      <ProtectedRoute path="/legal-domains/youth-justice" component={YouthJusticePage} />
-      <ProtectedRoute path="/legal-domains/mediation" component={MediationPage} />
-      <ProtectedRoute path="/legal-domains/land-claims" component={LandClaimsPage} />
+      
+      {/* Specialized legal domains requiring subscription */}
+      <ProtectedRoute path="/legal-domains/estate-planning" component={EstatePlanningPage} requiresSubscription={true} />
+      <ProtectedRoute path="/legal-domains/consumer-rights" component={ConsumerRightsPage} requiresSubscription={true} />
+      <ProtectedRoute path="/legal-domains/civil-litigation" component={CivilLitigationPage} requiresSubscription={true} />
+      <ProtectedRoute path="/legal-domains/indigenous-law" component={IndigenousLawPage} requiresSubscription={true} />
+      <ProtectedRoute path="/legal-domains/environmental" component={EnvironmentalLawPage} requiresSubscription={true} />
+      <ProtectedRoute path="/legal-domains/intellectual-property" component={IntellectualPropertyPage} requiresSubscription={true} />
+      <ProtectedRoute path="/legal-domains/human-rights" component={HumanRightsPage} requiresSubscription={true} />
+      <ProtectedRoute path="/legal-domains/insurance" component={InsuranceLawPage} requiresSubscription={true} />
+      <ProtectedRoute path="/legal-domains/administrative" component={AdministrativeLawPage} requiresSubscription={true} />
+      <ProtectedRoute path="/legal-domains/tax" component={TaxLawPage} requiresSubscription={true} />
+      <ProtectedRoute path="/legal-domains/constitutional" component={ConstitutionalLawPage} requiresSubscription={true} />
+      <ProtectedRoute path="/legal-domains/entertainment" component={EntertainmentLawPage} requiresSubscription={true} />
+      <ProtectedRoute path="/legal-domains/technology" component={TechnologyLawPage} requiresSubscription={true} />
+      <ProtectedRoute path="/legal-domains/youth-justice" component={YouthJusticePage} requiresSubscription={true} />
+      <ProtectedRoute path="/legal-domains/mediation" component={MediationPage} requiresSubscription={true} />
+      <ProtectedRoute path="/legal-domains/land-claims" component={LandClaimsPage} requiresSubscription={true} />
       <ProtectedRoute path="/legal-domains/:id" component={DomainPage} />
       
       {/* Help and Settings */}
