@@ -119,6 +119,22 @@ export default function SubscriptionPlansPage() {
 
     return "Switch to This Plan";
   };
+  
+  // Helper function to determine if a plan button should be disabled
+  const isPlanButtonDisabled = (plan: SubscriptionPlanDefinition): boolean => {
+    // Disable while loading
+    if (isLoading === true) {
+      return true;
+    }
+    
+    // Disable if it's the user's current plan
+    if (subscription !== null && currentPlan !== null && currentPlan.id === plan.id) {
+      return true;
+    }
+    
+    // Not disabled by default
+    return false;
+  };
 
   // Set page title when component mounts
   useEffect(() => {
@@ -235,7 +251,7 @@ export default function SubscriptionPlansPage() {
                 <Button
                   className="w-full"
                   variant={plan.isPopular ? "default" : "outline"}
-                  disabled={!!isLoading || (subscription && currentPlan && currentPlan.id === plan.id)}
+                  disabled={isPlanButtonDisabled(plan)}
                   onClick={() => {
                     if (!subscription) {
                       handleStartPlan(plan);
