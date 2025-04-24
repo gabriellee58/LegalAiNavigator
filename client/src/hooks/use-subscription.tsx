@@ -113,7 +113,14 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // If the response contains a URL (for Stripe checkout), redirect to it
+      if (data && data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      
+      // Otherwise, just show a success message
       toast({
         title: "Subscription created",
         description: "Your subscription has been created successfully.",
@@ -152,7 +159,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // If the response contains a URL (for Stripe checkout), redirect to it
+      if (data && data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      
       toast({
         title: "Subscription updated",
         description: "Your subscription plan has been updated.",
