@@ -647,10 +647,11 @@ router.post('/confirm', ensureAuthenticated, async (req, res) => {
       });
     }
     
-    // If already active, return success
+    // If already active, return success with status code
     res.json({
       subscription: existingSubscription,
       message: 'Subscription is already active',
+      status: 'already_active'
     });
   } catch (error) {
     logger.error('[subscription] Error confirming subscription:', error);

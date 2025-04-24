@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle } from "lucide-react";
+import { Loader2, CheckCircle, InfoIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiRequest } from "@/lib/queryClient";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -12,6 +12,7 @@ export default function SubscriptionSuccessPage() {
   const { refetch } = useSubscription();
   const [isProcessing, setIsProcessing] = useState(true);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isAlreadyActive, setIsAlreadyActive] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Get session_id from URL query parameter
@@ -33,18 +34,41 @@ export default function SubscriptionSuccessPage() {
     const processSubscription = async () => {
       try {
         // Call the API to confirm subscription
-        await apiRequest("POST", "/api/subscriptions/confirm", { 
+        const response = await apiRequest("POST", "/api/subscriptions/confirm", { 
           sessionId 
         });
         
-        // Update UI
-        setIsSuccess(true);
+        let responseData;
+        if (response && typeof response === 'object') {
+          // If response is already parsed JSON
+          responseData = response;
+        } else if (response instanceof Response) {
+          // If it's a Response object, parse it
+          responseData = await response.json();
+        }
         
-        // Show success message
-        toast({
-          title: "Subscription activated",
-          description: "Your subscription has been successfully activated.",
-        });
+        // Check for already active status
+        const status = responseData?.status || '';
+        const message = responseData?.message || '';
+        
+        if (status === 'already_active') {
+          console.log('Subscription is already active');
+          // Still show success but with a different message
+          setIsSuccess(true);
+          
+          toast({
+            title: "Subscription Active",
+            description: "Your subscription is already active. You can continue using your plan.",
+          });
+        } else {
+          // Regular success flow
+          setIsSuccess(true);
+          
+          toast({
+            title: "Subscription Activated",
+            description: "Your subscription has been successfully activated.",
+          });
+        }
         
         // Refresh subscription data
         refetch();
@@ -53,7 +77,7 @@ export default function SubscriptionSuccessPage() {
         setErrorMessage("There was an error processing your subscription. Please contact support.");
         
         toast({
-          title: "Subscription error",
+          title: "Subscription Error",
           description: "There was an error processing your subscription.",
           variant: "destructive",
         });
