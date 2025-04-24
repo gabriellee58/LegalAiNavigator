@@ -49,8 +49,23 @@ export default function SubscriptionPlansPage() {
         title: "Success!",
         description: `Your ${plan.name} has been activated.`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error starting subscription:", error);
+      
+      // Handle specific error case for existing subscription
+      if (error.message && error.message.includes("already has an active subscription")) {
+        toast({
+          title: "Subscription Already Active",
+          description: "You already have an active subscription. Please manage your current plan instead.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Subscription Error",
+          description: "There was an error activating your subscription. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -210,7 +225,7 @@ export default function SubscriptionPlansPage() {
                 <Button
                   className="w-full"
                   variant={plan.isPopular ? "default" : "outline"}
-                  disabled={isLoading || (subscription && currentPlan?.id === plan.id)}
+                  disabled={isLoading || (subscription && currentPlan && currentPlan.id === plan.id)}
                   onClick={() => {
                     if (!subscription) {
                       handleStartPlan(plan);

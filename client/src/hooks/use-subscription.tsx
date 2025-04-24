@@ -105,7 +105,14 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         // Otherwise, handle as a Response object
         if (!res.ok) {
           const errorData = await res.json();
-          throw new Error(errorData.error || "Failed to create subscription");
+          const errorMessage = errorData.error || "Failed to create subscription";
+          
+          // If the user already has an active subscription, throw a specific error
+          if (errorMessage.includes("already has an active subscription")) {
+            throw new Error(errorMessage);
+          }
+          
+          throw new Error(errorMessage);
         }
         
         return await res.json();
@@ -130,11 +137,9 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       refetch();
     },
     onError: (error: Error) => {
-      toast({
-        title: "Failed to create subscription",
-        description: error.message || "Unknown subscription error",
-        variant: "destructive",
-      });
+      // Don't show a toast here, let the component handle the error
+      // This prevents duplicate error toasts
+      console.error("Subscription creation error:", error.message);
     },
   });
 
