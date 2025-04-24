@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle, AlertCircle, Clock, Calendar } from "lucide-react";
-import { format } from "date-fns";
+import { format } from "date-fns"; // Keep the direct import for now
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
@@ -53,6 +53,16 @@ export default function SubscriptionDashboardPage() {
   const periodPercentage = totalDaysInPeriod > 0 ? 
     Math.max(0, Math.min(100, 100 - (daysLeftInPeriod / totalDaysInPeriod * 100))) : 0;
     
+  // Get trial expiration status
+  const isTrialExpired = subscription?.trialEnd ? new Date(subscription.trialEnd) < new Date() : false;
+  
+  // Create a formatted text for days remaining in trial
+  const trialRemainingText = daysLeftInTrial <= 0 
+    ? "Trial expired" 
+    : daysLeftInTrial === 0 
+      ? "Trial expires today" 
+      : `${daysLeftInTrial} days remaining`;
+      
   // Safe formatter for dates
   const formatDateSafe = (date: string | Date | null): string => {
     if (!date) return "N/A";
