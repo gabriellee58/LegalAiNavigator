@@ -132,7 +132,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     onSuccess: (data) => {
       // If the response contains a URL (for Stripe checkout), redirect to it
       if (data && data.url) {
-        window.location.href = data.url;
+        redirectToStripeCheckout(data.url);
         return;
       }
       
@@ -176,7 +176,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     onSuccess: (data) => {
       // If the response contains a URL (for Stripe checkout), redirect to it
       if (data && data.url) {
-        window.location.href = data.url;
+        redirectToStripeCheckout(data.url);
         return;
       }
       
@@ -298,7 +298,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (data) => {
       // Redirect to billing portal URL
-      window.location.href = data.url;
+      redirectToStripeCheckout(data.url);
     },
     onError: (error: Error) => {
       toast({
