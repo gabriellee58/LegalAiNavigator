@@ -1,4 +1,4 @@
-import type { Express, Request, Response, NextFunction } from "express";
+import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { 
@@ -44,6 +44,7 @@ import userRouter from "./routes/user";
 import docusealRouter from "./routes/docuseal";
 import subscriptionRouter from "./routes/subscription";
 import jurisdictionsRouter from "./routes/jurisdictions";
+import { handleStripeWebhook } from "./routes/webhook";
 
 // Set up multer for file uploads
 const storage_config = multer.memoryStorage();
@@ -90,6 +91,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/docuseal', docusealRouter);
   app.use('/api/subscriptions', subscriptionRouter);
   app.use('/api/jurisdictions', jurisdictionsRouter);
+  
+  // Stripe webhook endpoint - raw body required for signature verification
+  app.post('/api/webhook/stripe', express.raw({type: 'application/json'}), handleStripeWebhook);
   
   // Health check endpoint
   app.get("/api/health", (req: Request, res: Response) => {

@@ -38,6 +38,7 @@ import CourtProcedureDetailPage from "./pages/court-procedure-detail";
 import NotarizationGuidePage from "./pages/notarization-guide";
 import SubscriptionPlansPage from "./pages/subscription-plans";
 import SubscriptionSuccessPage from "./pages/subscription/success";
+import SubscriptionDashboardPage from "./pages/subscription/dashboard";
 
 // Import legal domains browser
 import LegalDomainsPage from "./pages/legal-domains";
@@ -132,6 +133,7 @@ function Router() {
       <ProtectedRoute path="/cost-estimator" component={CostEstimatorPage} requiresSubscription={true} />
       <ProtectedRoute path="/subscription-plans" component={SubscriptionPlansPage} />
       <ProtectedRoute path="/subscription/success" component={SubscriptionSuccessPage} />
+      <ProtectedRoute path="/subscription/dashboard" component={SubscriptionDashboardPage} />
       <ProtectedRoute path="/jurisdiction-compare" component={JurisdictionCompare} requiresSubscription={true} />
       
       {/* Document Templates - Require subscription for specialized templates */}

@@ -1,384 +1,333 @@
-import { useState, useEffect } from "react";
-import { useSubscription } from "@/hooks/use-subscription";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useSubscription } from "@/hooks/use-subscription";
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Calendar, CreditCard, Download, HelpCircle, Users, CheckCircle2 } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
+import { Loader2, CheckCircle, AlertCircle, Clock, Calendar } from "lucide-react";
+import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Link } from "wouter";
-import { differenceInDays } from "date-fns";
-
-interface UsageMetric {
-  name: string;
-  used: number;
-  limit: number;
-  unit: string;
-  icon: React.ReactNode;
-}
+import { apiRequest } from "@/lib/queryClient";
+import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
+import { useTranslation } from "@/hooks/use-translation";
 
 export default function SubscriptionDashboardPage() {
   const { user } = useAuth();
-  const { 
-    subscription, 
-    currentPlan, 
-    isLoading, 
-    isTrialActive, 
-    isSubscriptionActive,
-    trialDaysRemaining,
-    goToBillingPortal,
-    cancelSubscription,
-    reactivateSubscription
-  } = useSubscription();
+  const { t } = useTranslation();
+  const { subscription, isLoading } = useSubscription();
+  const { toast } = useToast();
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [upgradeLoading, setUpgradeLoading] = useState(false);
+
+  // Calculate days left in trial if applicable
+  const daysLeftInTrial = subscription?.trialEnd ? 
+    Math.max(0, Math.ceil((new Date(subscription.trialEnd).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))) : 0;
   
-  const [usageMetrics, setUsageMetrics] = useState<UsageMetric[]>([]);
-  const [isLoadingUsage, setIsLoadingUsage] = useState(false);
+  // Calculate days left in billing period
+  const daysLeftInPeriod = subscription?.currentPeriodEnd ? 
+    Math.ceil((new Date(subscription.currentPeriodEnd).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 0;
   
-  // Load usage metrics when component mounts
-  useEffect(() => {
-    if (isSubscriptionActive && currentPlan) {
-      fetchUsageMetrics();
-    }
-  }, [isSubscriptionActive, currentPlan]);
+  // Calculate total days in period
+  const totalDaysInPeriod = subscription?.currentPeriodStart && subscription?.currentPeriodEnd ? 
+    Math.ceil((new Date(subscription.currentPeriodEnd).getTime() - new Date(subscription.currentPeriodStart).getTime()) / (1000 * 60 * 60 * 24)) : 30;
   
-  const fetchUsageMetrics = async () => {
-    setIsLoadingUsage(true);
+  // Calculate percentage of period elapsed
+  const periodPercentage = Math.max(0, Math.min(100, 100 - (daysLeftInPeriod / totalDaysInPeriod * 100)));
+
+  async function handleCancelSubscription() {
+    if (!subscription) return;
+    
+    setCancelLoading(true);
     try {
-      // This would be replaced with an actual API call in production
-      // For now, we'll use some mock data
-      setTimeout(() => {
-        setUsageMetrics([
-          {
-            name: "Document Generations",
-            used: 12,
-            limit: currentPlan?.features.find(f => f.name.includes("Generate"))?.limit?.split(" ")[0] 
-              ? parseInt(currentPlan.features.find(f => f.name.includes("Generate"))?.limit?.split(" ")[0] || "50") 
-              : 50,
-            unit: "documents",
-            icon: <Download className="h-5 w-5 text-muted-foreground" />
-          },
-          {
-            name: "Contract Analyses",
-            used: 3,
-            limit: currentPlan?.features.find(f => f.name.includes("Analyze"))?.limit?.split(" ")[0]
-              ? parseInt(currentPlan.features.find(f => f.name.includes("Analyze"))?.limit?.split(" ")[0] || "20")
-              : 20,
-            unit: "analyses",
-            icon: <BarChart className="h-5 w-5 text-muted-foreground" />
-          },
-          {
-            name: "Research Queries",
-            used: 8,
-            limit: currentPlan?.features.find(f => f.name.includes("Research"))?.limit?.split(" ")[0]
-              ? parseInt(currentPlan.features.find(f => f.name.includes("Research"))?.limit?.split(" ")[0] || "100")
-              : 100,
-            unit: "queries",
-            icon: <HelpCircle className="h-5 w-5 text-muted-foreground" />
-          }
-        ]);
-        setIsLoadingUsage(false);
-      }, 800);
-    } catch (error) {
-      console.error("Error fetching usage metrics:", error);
-      setIsLoadingUsage(false);
+      const res = await apiRequest("POST", "/api/subscriptions/cancel", { 
+        subscriptionId: subscription.stripeSubscriptionId 
+      });
+      
+      if (res.ok) {
+        toast({
+          title: t("Subscription canceled"),
+          description: t("Your subscription will end at the end of the current billing period."),
+        });
+      } else {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to cancel subscription");
+      }
+    } catch (error: any) {
+      toast({
+        title: t("Error"),
+        description: error.message || t("An error occurred while canceling your subscription."),
+        variant: "destructive",
+      });
+    } finally {
+      setCancelLoading(false);
     }
-  };
-  
-  // Handle billing portal navigation
-  const handleBillingPortal = async () => {
+  }
+
+  async function handleUpgradeSubscription(planId: string) {
+    setUpgradeLoading(true);
     try {
-      await goToBillingPortal();
-    } catch (error) {
-      console.error("Error navigating to billing portal:", error);
+      const res = await apiRequest("POST", "/api/subscriptions/upgrade", { planId });
+      
+      if (res.ok) {
+        const data = await res.json();
+        
+        // Store the return URL in session storage before redirecting
+        sessionStorage.setItem('subscription_return_url', window.location.href);
+        
+        // Redirect to Stripe Checkout
+        window.location.href = data.url;
+      } else {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to upgrade subscription");
+      }
+    } catch (error: any) {
+      toast({
+        title: t("Error"),
+        description: error.message || t("An error occurred while upgrading your subscription."),
+        variant: "destructive",
+      });
+    } finally {
+      setUpgradeLoading(false);
+    }
+  }
+
+  // Helper function to render subscription status badge
+  const renderStatusBadge = (status: string) => {
+    switch (status) {
+      case "active":
+        return <Badge variant="default" className="bg-green-500"><CheckCircle className="w-3 h-3 mr-1" /> {t("Active")}</Badge>;
+      case "trialing":
+        return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" /> {t("Trial")}</Badge>;
+      case "canceled":
+        return <Badge variant="destructive"><AlertCircle className="w-3 h-3 mr-1" /> {t("Canceled")}</Badge>;
+      case "past_due":
+        return <Badge variant="destructive"><AlertCircle className="w-3 h-3 mr-1" /> {t("Past Due")}</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
-  // Handle subscription cancellation
-  const handleCancelSubscription = async () => {
-    try {
-      await cancelSubscription();
-    } catch (error) {
-      console.error("Error canceling subscription:", error);
-    }
-  };
-  
-  // Handle subscription reactivation
-  const handleReactivateSubscription = async () => {
-    try {
-      await reactivateSubscription();
-    } catch (error) {
-      console.error("Error reactivating subscription:", error);
-    }
-  };
-  
-  // Format billing period dates
-  const formatDate = (date: Date | null | string) => {
-    if (!date) return "N/A";
-    return new Date(date).toLocaleDateString("en-CA", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-  
-  // Calculate days remaining in billing period
-  const getDaysRemaining = () => {
-    if (!subscription?.currentPeriodEnd) return null;
-    
-    const endDate = new Date(subscription.currentPeriodEnd);
-    const now = new Date();
-    return Math.max(0, differenceInDays(endDate, now));
-  };
-  
-  const daysRemaining = getDaysRemaining();
-  
-  return (
-    <div className="container mx-auto py-8">
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Subscription Dashboard</h1>
-          <p className="text-muted-foreground">
-            Manage your subscription and monitor your usage.
-          </p>
-        </div>
-        
-        {isLoading ? (
-          <div className="flex items-center justify-center h-40">
-            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
-          </div>
-        ) : !subscription ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>No Active Subscription</CardTitle>
-              <CardDescription>
-                You don't have an active subscription. Choose a plan to get started.
-              </CardDescription>
-            </CardHeader>
-            <CardFooter>
-              <Link href="/subscription-plans">
-                <Button>View Subscription Plans</Button>
-              </Link>
-            </CardFooter>
-          </Card>
-        ) : (
-          <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList>
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="usage">Usage</TabsTrigger>
-              <TabsTrigger value="billing">Billing</TabsTrigger>
-            </TabsList>
-            
-            {/* Overview Tab */}
-            <TabsContent value="overview" className="space-y-6">
-              <Card>
-                <CardHeader className="pb-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle>Your Plan: {currentPlan?.name}</CardTitle>
-                      <CardDescription className="mt-1">
-                        {currentPlan?.description}
-                      </CardDescription>
-                    </div>
-                    <Badge variant={subscription.status === "active" ? "default" : 
-                           subscription.status === "trial" ? "secondary" : 
-                           subscription.status === "canceled" ? "destructive" : 
-                           "outline"}>
-                      {subscription.status === "active" ? "Active" : 
-                       subscription.status === "trial" ? "Trial" : 
-                       subscription.status === "canceled" ? "Canceled" : 
-                       subscription.status}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="pb-2">
-                  <div className="grid gap-4">
-                    {isTrialActive && (
-                      <div className="bg-muted p-3 rounded-md flex items-center gap-3">
-                        <Calendar className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm font-medium">Trial Period</p>
-                          <p className="text-sm text-muted-foreground">
-                            {trialDaysRemaining} day{trialDaysRemaining !== 1 ? "s" : ""} remaining in your trial
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="bg-muted p-3 rounded-md flex items-center gap-3">
-                      <CreditCard className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm font-medium">Billing Period</p>
-                        <p className="text-sm text-muted-foreground">
-                          {formatDate(subscription.currentPeriodStart)} to {formatDate(subscription.currentPeriodEnd)}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    {daysRemaining !== null && !isTrialActive && (
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>Current period: {daysRemaining} day{daysRemaining !== 1 ? "s" : ""} remaining</span>
-                          <span>{Math.round((daysRemaining / 30) * 100)}%</span>
-                        </div>
-                        <Progress value={Math.round((daysRemaining / 30) * 100)} />
-                      </div>
-                    )}
-                    
-                    {/* Feature highlights */}
-                    <div className="bg-muted p-3 rounded-md">
-                      <p className="text-sm font-medium mb-2">Plan Features:</p>
-                      <ul className="space-y-1">
-                        {currentPlan?.features.slice(0, 5).map((feature, index) => (
-                          <li key={index} className="text-sm flex items-start gap-2">
-                            <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
-                            <span className="text-sm">{feature.name} {feature.limit && <span className="text-muted-foreground">({feature.limit})</span>}</span>
-                          </li>
-                        ))}
-                        {currentPlan && currentPlan.features.length > 5 && (
-                          <li className="text-sm text-muted-foreground">+ {currentPlan.features.length - 5} more features</li>
-                        )}
-                      </ul>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex flex-col sm:flex-row gap-2">
-                  <Link href="/subscription-plans" className="w-full sm:w-auto">
-                    <Button variant="outline" className="w-full">Change Plan</Button>
-                  </Link>
-                  
-                  {subscription.status === "active" && (
-                    <Button variant="outline" className="w-full sm:w-auto" onClick={handleBillingPortal}>
-                      Manage Billing
-                    </Button>
-                  )}
-                  
-                  {subscription.status === "active" && (
-                    <Button 
-                      variant="destructive" 
-                      className="w-full sm:w-auto"
-                      onClick={handleCancelSubscription}
-                    >
-                      Cancel Subscription
-                    </Button>
-                  )}
-                  
-                  {subscription.status === "canceled" && (
-                    <Button 
-                      variant="default" 
-                      className="w-full sm:w-auto"
-                      onClick={handleReactivateSubscription}
-                    >
-                      Reactivate Subscription
-                    </Button>
-                  )}
-                </CardFooter>
-              </Card>
-            </TabsContent>
-            
-            {/* Usage Tab */}
-            <TabsContent value="usage" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Resource Usage</CardTitle>
-                  <CardDescription>
-                    Monitor your resource usage for the current billing period.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {isLoadingUsage ? (
-                    <div className="flex items-center justify-center h-40">
-                      <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
-                    </div>
-                  ) : (
-                    <div className="grid gap-6">
-                      {usageMetrics.map((metric, index) => (
-                        <div key={index} className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              {metric.icon}
-                              <span className="text-sm font-medium">{metric.name}</span>
-                            </div>
-                            <span className="text-sm">
-                              {metric.used} / {metric.limit} {metric.unit}
-                            </span>
-                          </div>
-                          <Progress value={(metric.used / metric.limit) * 100} />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-                <CardFooter>
-                  <Button variant="outline" onClick={fetchUsageMetrics} disabled={isLoadingUsage}>
-                    Refresh Usage Data
-                  </Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-            
-            {/* Billing Tab */}
-            <TabsContent value="billing" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Billing Information</CardTitle>
-                  <CardDescription>
-                    View and manage your billing details and payment history.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid gap-3">
-                    <div className="flex justify-between items-center py-2 border-b">
-                      <span className="font-medium">Subscription ID</span>
-                      <span className="text-sm text-muted-foreground">{subscription.stripeSubscriptionId || "N/A"}</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b">
-                      <span className="font-medium">Current Plan</span>
-                      <span className="text-sm">{currentPlan?.name}</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b">
-                      <span className="font-medium">Price</span>
-                      <span className="text-sm">${currentPlan?.price}/month</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b">
-                      <span className="font-medium">Billing Period</span>
-                      <span className="text-sm">
-                        {formatDate(subscription.currentPeriodStart)} - {formatDate(subscription.currentPeriodEnd)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b">
-                      <span className="font-medium">Status</span>
-                      <Badge variant={subscription.status === "active" ? "default" : 
-                          subscription.status === "trial" ? "secondary" : 
-                          subscription.status === "canceled" ? "destructive" : 
-                          "outline"}>
-                        {subscription.status === "active" ? "Active" : 
-                          subscription.status === "trial" ? "Trial" : 
-                          subscription.status === "canceled" ? "Canceled" : 
-                          subscription.status}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between items-center py-2">
-                      <span className="font-medium">Next Billing Date</span>
-                      <span className="text-sm">
-                        {subscription.status === "canceled" ? "Not applicable" : formatDate(subscription.currentPeriodEnd)}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex flex-col sm:flex-row gap-2">
-                  <Button className="w-full sm:w-auto" onClick={handleBillingPortal}>
-                    Manage Payment Methods
-                  </Button>
-                  <Button variant="outline" className="w-full sm:w-auto" onClick={handleBillingPortal}>
-                    View Invoices
-                  </Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        )}
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh] p-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
+    );
+  }
+
+  if (!subscription) {
+    return (
+      <div className="container max-w-5xl py-8">
+        <h1 className="text-3xl font-bold mb-6">{t("Subscription Dashboard")}</h1>
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("No Active Subscription")}</CardTitle>
+            <CardDescription>{t("You currently don't have an active subscription.")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground mb-4">
+              {t("Upgrade to a premium plan to access all features of the platform.")}
+            </p>
+            <Button 
+              onClick={() => window.location.href = '/subscription-plans'}
+              variant="default"
+            >
+              {t("View Subscription Plans")}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container max-w-5xl py-8">
+      <h1 className="text-3xl font-bold mb-6">{t("Subscription Dashboard")}</h1>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">{t("Plan")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold capitalize">{subscription.planId}</div>
+            <div className="text-sm text-muted-foreground">{t("Subscription Type")}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">{t("Status")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-xl mb-1">
+              {renderStatusBadge(subscription.status)}
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {subscription.status === "canceled" ? 
+                t("Access until") + ": " + (subscription.currentPeriodEnd ? format(new Date(subscription.currentPeriodEnd), "MMMM dd, yyyy") : "N/A") :
+                t("Next billing date") + ": " + (subscription.currentPeriodEnd ? format(new Date(subscription.currentPeriodEnd), "MMMM dd, yyyy") : "N/A")}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">{t("Billing Period")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Progress value={periodPercentage} className="h-2" />
+              <div className="text-sm text-muted-foreground flex justify-between">
+                <span>{t("Started")}: {subscription.currentPeriodStart ? format(new Date(subscription.currentPeriodStart), "MMM dd") : "N/A"}</span>
+                <span>{t("Ends")}: {subscription.currentPeriodEnd ? format(new Date(subscription.currentPeriodEnd), "MMM dd") : "N/A"}</span>
+              </div>
+              <div className="text-sm font-medium">
+                {daysLeftInPeriod} {t("days remaining")}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {subscription.status === "trialing" && (
+        <Alert className="mb-8 bg-amber-50 border-amber-200">
+          <Clock className="h-4 w-4" />
+          <AlertTitle>{t("Trial Period")}</AlertTitle>
+          <AlertDescription>
+            {t("You are currently in a trial period. Your trial will end in")} {daysLeftInTrial} {t("days")}. 
+            {t("You will be charged after the trial ends unless you cancel.")}
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {subscription.status === "canceled" && (
+        <Alert className="mb-8 bg-amber-50 border-amber-200">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>{t("Subscription Canceled")}</AlertTitle>
+          <AlertDescription>
+            {t("Your subscription has been canceled but you still have access until")} {subscription.currentPeriodEnd ? format(new Date(subscription.currentPeriodEnd), "MMMM dd, yyyy") : "N/A"}.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>{t("Subscription Details")}</CardTitle>
+          <CardDescription>
+            {t("Manage your current subscription and billing information")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableBody>
+              <TableRow>
+                <TableCell className="font-medium">{t("Plan")}</TableCell>
+                <TableCell className="capitalize">{subscription.planId}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-medium">{t("Status")}</TableCell>
+                <TableCell>{renderStatusBadge(subscription.status)}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-medium">{t("Current Period")}</TableCell>
+                <TableCell>
+                  {subscription.currentPeriodStart ? format(new Date(subscription.currentPeriodStart), "MMMM dd, yyyy") : "N/A"} - {subscription.currentPeriodEnd ? format(new Date(subscription.currentPeriodEnd), "MMMM dd, yyyy") : "N/A"}
+                </TableCell>
+              </TableRow>
+              {subscription.trialStart && subscription.trialEnd && (
+                <TableRow>
+                  <TableCell className="font-medium">{t("Trial Period")}</TableCell>
+                  <TableCell>
+                    {subscription.trialStart ? format(new Date(subscription.trialStart), "MMMM dd, yyyy") : "N/A"} - {subscription.trialEnd ? format(new Date(subscription.trialEnd), "MMMM dd, yyyy") : "N/A"}
+                    {subscription.trialEnd && new Date() < new Date(subscription.trialEnd) && (
+                      <span className="ml-2">({daysLeftInTrial} {t("days left")})</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              )}
+              <TableRow>
+                <TableCell className="font-medium">{t("Customer ID")}</TableCell>
+                <TableCell className="font-mono text-sm">{subscription.stripeCustomerId}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-medium">{t("Subscription ID")}</TableCell>
+                <TableCell className="font-mono text-sm">{subscription.stripeSubscriptionId}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </CardContent>
+        <CardFooter className="flex-col items-start space-y-2 sm:flex-row sm:items-center sm:space-x-2 sm:space-y-0 border-t p-6">
+          {subscription.status !== "canceled" && (
+            <Button 
+              variant="destructive" 
+              onClick={handleCancelSubscription}
+              disabled={cancelLoading}
+            >
+              {cancelLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {t("Cancel Subscription")}
+            </Button>
+          )}
+          
+          {subscription.status === "canceled" && (
+            <Button 
+              variant="default" 
+              onClick={() => window.location.href = '/subscription-plans'}
+            >
+              {t("Resubscribe")}
+            </Button>
+          )}
+          
+          {subscription.planId === "basic" && subscription.status !== "canceled" && (
+            <Button 
+              variant="outline" 
+              onClick={() => handleUpgradeSubscription("professional")}
+              disabled={upgradeLoading}
+              className="ml-auto"
+            >
+              {upgradeLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {t("Upgrade to Professional")}
+            </Button>
+          )}
+        </CardFooter>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("Need Help?")}</CardTitle>
+          <CardDescription>
+            {t("Contact support for any billing or subscription issues")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">
+            {t("If you have any questions about your subscription or need assistance with billing issues, please don't hesitate to contact our support team.")}
+          </p>
+        </CardContent>
+        <CardFooter>
+          <Button variant="outline" className="w-full sm:w-auto">
+            {t("Contact Support")}
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   );
 }
