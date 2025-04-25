@@ -271,8 +271,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     },
     onError: (error: Error) => {
       console.error("Subscription update error:", error);
-      const toastConfig = createSubscriptionErrorToast(error, t);
-      toast(toastConfig);
+      // Use our enhanced error handler but apply the result directly
+      const { title, description } = handleSubscriptionError(error, t);
+      toast({
+        title,
+        description,
+        variant: "destructive"
+      });
     },
   });
 
@@ -307,10 +312,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       refetch();
     },
     onError: (error: Error) => {
+      console.error("Subscription cancel error:", error);
+      // Use our enhanced error handler but apply the result directly
+      const { title, description } = handleSubscriptionError(error, t);
       toast({
-        title: "Failed to cancel subscription",
-        description: error.message,
-        variant: "destructive",
+        title,
+        description,
+        variant: "destructive"
       });
     },
   });
@@ -346,10 +354,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       refetch();
     },
     onError: (error: Error) => {
+      console.error("Subscription reactivation error:", error);
+      // Use our enhanced error handler but apply the result directly
+      const { title, description } = handleSubscriptionError(error, t);
       toast({
-        title: "Failed to reactivate subscription",
-        description: error.message,
-        variant: "destructive",
+        title,
+        description,
+        variant: "destructive"
       });
     },
   });
@@ -381,10 +392,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       redirectToStripeCheckout(data.url);
     },
     onError: (error: Error) => {
+      console.error("Billing portal access error:", error);
+      // Use our enhanced error handler but apply the result directly
+      const { title, description } = handleSubscriptionError(error, t);
       toast({
-        title: "Failed to access billing portal",
-        description: error.message,
-        variant: "destructive",
+        title,
+        description,
+        variant: "destructive"
       });
     },
   });

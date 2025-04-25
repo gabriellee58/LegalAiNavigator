@@ -22,6 +22,8 @@ export enum SubscriptionErrorType {
   STRIPE_ERROR = "stripe_error",
   INVALID_PLAN = "invalid_plan",
   SERVICE_UNAVAILABLE = "service_unavailable",
+  AUTHENTICATION_REQUIRED = "authentication_required",
+  STATUS_CHECK_FAILED = "status_check_failed",
   UNKNOWN = "unknown",
 }
 
@@ -97,6 +99,16 @@ export function handleSubscriptionError(
         case SubscriptionErrorType.SERVICE_UNAVAILABLE:
           title = translate("Service Unavailable");
           description = translate("The subscription service is temporarily unavailable. Please try again later.");
+          break;
+          
+        case SubscriptionErrorType.AUTHENTICATION_REQUIRED:
+          title = translate("Authentication Required");
+          description = translate("You must be logged in to manage your subscription. Please sign in and try again.");
+          break;
+          
+        case SubscriptionErrorType.STATUS_CHECK_FAILED:
+          title = translate("Subscription Check Failed");
+          description = translate("We couldn't verify your subscription status. Please try again later or contact support.");
           break;
           
         default:
