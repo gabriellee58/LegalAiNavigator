@@ -284,4 +284,61 @@ export function setupAuth(app: Express) {
       next(err);
     }
   });
+
+  // Google Authentication endpoint
+  app.post("/api/google-auth", async (req, res, next) => {
+    try {
+      const { email, displayName, photoURL, uid } = req.body;
+      
+      if (!email || !uid) {
+        return res.status(400).json({ message: "Email and uid are required" });
+      }
+      
+      // First, check if a user with this Firebase UID exists
+      let user = await storage.getUserByFirebaseUid(uid);
+      
+      if (!user) {
+        // Then check if a user with this email exists
+        user = await storage.getUserByEmail(email);
+        
+        if (user) {
+          // User exists with this email, update their Firebase UID
+          user = await storage.updateUser(user.id, { firebaseUid: uid });
+        } else {
+          // Create a new user with Firebase information
+          // Generate a random password since we won't use it (user will login via Google)
+          const randomPassword = Math.random().toString(36).slice(-10);
+          const hashedPassword = await hashPassword(randomPassword);
+          
+          // Extract username from email (removing any special characters)
+          const username = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '');
+          
+          // Create user
+          user = await storage.createUser({
+            username,
+            password: hashedPassword,
+            email,
+            fullName: displayName || null,
+            preferredLanguage: 'en',
+            firebaseUid: uid,
+            photoURL: photoURL || null,
+            role: 'user'
+          });
+        }
+      }
+      
+      // Log the user in by creating a session
+      req.login(user, (err) => {
+        if (err) {
+          return next(err);
+        }
+        
+        // Return the user data
+        return res.status(200).json(user);
+      });
+    } catch (err) {
+      console.error('Google auth error:', err);
+      next(err);
+    }
+  });
 }

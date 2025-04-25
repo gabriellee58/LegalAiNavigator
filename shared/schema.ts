@@ -8,11 +8,13 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  email: text("email").unique(),
   fullName: text("full_name"),
   preferredLanguage: text("preferred_language").default("en"),
   role: text("role").notNull().default("user"),
   createdAt: timestamp("created_at").defaultNow(),
   firebaseUid: text("firebase_uid").unique(), // For Google authentication
+  photoURL: text("photo_url"),
 });
 
 // Role schema
@@ -46,10 +48,12 @@ const userSchema = createInsertSchema(users);
 export const insertUserSchema = userSchema.pick({
   username: true,
   password: true,
+  email: true,
   fullName: true,
   preferredLanguage: true,
   role: true,
   firebaseUid: true,
+  photoURL: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
