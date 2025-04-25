@@ -69,8 +69,12 @@ export async function signInWithGoogle(): Promise<FirebaseUser | null> {
 // Handle the redirect result from Google sign-in
 export async function handleGoogleRedirect(): Promise<FirebaseUser | null> {
   try {
+    console.log("Starting handleGoogleRedirect, checking for redirect results...");
+    
     // Get the result of the redirect sign-in
     const result = await getRedirectResult(auth);
+    
+    console.log("Redirect result received:", result ? "Success" : "No result");
     
     if (!result) {
       console.log("No redirect result found");
@@ -79,6 +83,13 @@ export async function handleGoogleRedirect(): Promise<FirebaseUser | null> {
     
     // Convert Firebase user to our FirebaseUser interface
     const user = result.user;
+    console.log("Firebase user details:", { 
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+      photoURL: user.photoURL ? "has photo" : "no photo" 
+    });
+    
     return {
       uid: user.uid,
       email: user.email,
@@ -87,6 +98,10 @@ export async function handleGoogleRedirect(): Promise<FirebaseUser | null> {
     };
   } catch (error) {
     console.error("Error handling Google redirect:", error);
+    // Log specific Firebase errors for debugging
+    if (error.code) {
+      console.error(`Firebase error code: ${error.code}`);
+    }
     throw error;
   }
 }
