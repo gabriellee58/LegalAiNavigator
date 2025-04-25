@@ -10,8 +10,9 @@ import { differenceInDays } from "date-fns";
 import { SubscriptionPlanDefinition, getPlanById } from "@/data/subscription-plans";
 import { handleSubscriptionError, createSubscriptionErrorToast, SubscriptionErrorType } from "@/utils/subscriptionErrorHandler";
 import { useTranslation } from "@/hooks/use-translation";
-// Import AuthContext directly to avoid circular dependency
-import { AuthContext } from "@/hooks/use-auth";
+// Import AuthContext and User type directly to avoid circular dependency
+import { AuthContext, type AuthContextType } from "@/hooks/use-auth";
+import type { User } from "@shared/schema";
 
 // Helper function for redirecting to Stripe checkout
 function redirectToStripeCheckout(url: string, delay = 500) {
