@@ -37,29 +37,52 @@ export default function AuthPage() {
   const [location, navigate] = useLocation();
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // Handle Google OAuth redirect
+  // Handle Firebase Authentication redirect
   useEffect(() => {
     const handleRedirect = async () => {
-      if (window.location.hash.includes('access_token')) {
-        try {
-          // Clear any previous errors
-          setAuthError(null);
+      try {
+        // Clear any previous errors
+        setAuthError(null);
+        
+        // Import handleGoogleRedirect dynamically to avoid circular dependencies
+        const { handleGoogleRedirect } = await import('@/lib/firebase');
+        const googleUser = await handleGoogleRedirect();
+        
+        if (googleUser) {
+          console.log("Received user from Google redirect:", googleUser);
           
-          // Import handleGoogleRedirect dynamically to avoid circular dependencies
-          const { handleGoogleRedirect } = await import('@/lib/firebase');
-          const googleUser = await handleGoogleRedirect();
-          
-          if (googleUser) {
-            // Successful redirect - we should now be logged in
-            navigate("/");
+          // We have a Firebase user, send it to our backend to create/login
+          try {
+            const userData = await apiRequest("POST", "/api/google-auth", {
+              email: googleUser.email,
+              displayName: googleUser.displayName,
+              photoURL: googleUser.photoURL,
+              uid: googleUser.uid
+            });
+            
+            // Update the query cache with the user data
+            queryClient.setQueryData(["/api/user"], userData);
+            
+            // Navigate to home page or saved redirect URL
+            const savedRedirect = sessionStorage.getItem('redirectAfterLogin');
+            if (savedRedirect) {
+              sessionStorage.removeItem('redirectAfterLogin');
+              navigate(savedRedirect);
+            } else {
+              navigate("/");
+            }
+          } catch (error) {
+            console.error("Error authenticating with backend:", error);
+            setAuthError("Failed to complete authentication with server. Please try again.");
           }
-        } catch (error) {
-          console.error("Error handling Google redirect:", error);
-          setAuthError("Failed to complete Google sign-in. Please try again.");
         }
+      } catch (error) {
+        console.error("Error handling Google redirect:", error);
+        setAuthError("Failed to complete Google sign-in. Please try again.");
       }
     };
     
+    // Run the redirect handler on component mount
     handleRedirect();
   }, [navigate]);
 
