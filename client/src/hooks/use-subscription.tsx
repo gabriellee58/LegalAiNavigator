@@ -133,19 +133,38 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           return null; // No subscription
         }
         
+        // Only check if there is an error response for non-2xx status codes
         if (!res.ok) {
-          console.error("Error response from subscription API:", res.status);
+          console.error("Error response from subscription API status:", {
+            status: res.status,
+            statusText: res.statusText
+          });
           return null; // Any other error status
         }
         
-        const data = await res.json();
-        console.log("Subscription data retrieved:", data);
+        console.log("Subscription API successful response:", res.status);
         
-        // Validate subscription data
-        if (data && data.id && data.status) {
-          return data;
-        } else {
-          console.warn("Subscription data not in expected format:", data);
+        try {
+          const data = await res.json();
+          console.log("Subscription data retrieved:", data);
+          
+          // Validate subscription data with more detailed logging
+          if (data && typeof data === 'object') {
+            if (data.id && data.status) {
+              return data;
+            } else {
+              console.warn("Subscription data missing required fields:", {
+                hasId: !!data.id,
+                hasStatus: !!data.status,
+                data
+              });
+            }
+          } else {
+            console.warn("Subscription data is not an object:", data);
+          }
+          return null;
+        } catch (parseError) {
+          console.error("Error parsing subscription response:", parseError);
           return null;
         }
       } catch (error) {

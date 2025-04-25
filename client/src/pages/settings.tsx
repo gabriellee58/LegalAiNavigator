@@ -235,13 +235,13 @@ export default function SettingsPage() {
                         </div>
                         <div className="grid grid-cols-2 gap-2 text-sm">
                           <span className="text-muted-foreground">Next Billing Date:</span>
-                          <span>{subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd).toLocaleDateString() : 'N/A'}</span>
+                          <span>{subscription?.currentPeriodEnd ? new Date(subscription.currentPeriodEnd).toLocaleDateString() : 'N/A'}</span>
                         </div>
                         <div className="grid grid-cols-2 gap-2 text-sm">
                           <span className="text-muted-foreground">Payment Method:</span>
                           <span className="flex items-center">
                             <CreditCard className="mr-1 h-4 w-4" />
-                            •••• •••• •••• {(subscription as any).lastFour || "1234"}
+                            •••• •••• •••• {(subscription as any)?.lastFour || "1234"}
                           </span>
                         </div>
                       </div>
