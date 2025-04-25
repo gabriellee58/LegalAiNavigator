@@ -38,8 +38,7 @@ export type UpdatePasswordData = UpdatePasswordDataType;
 export type AuthContextType = AuthContextInterface;
 
 // Create context
-const AuthContext = createContext<AuthContextInterface | null>(null);
-export { AuthContext };
+export const AuthContext = createContext<AuthContextInterface | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();

@@ -6,11 +6,12 @@ import {
 } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { useAuth } from "@/hooks/use-auth";
 import { differenceInDays } from "date-fns";
 import { SubscriptionPlanDefinition, getPlanById } from "@/data/subscription-plans";
 import { handleSubscriptionError, createSubscriptionErrorToast, SubscriptionErrorType } from "@/utils/subscriptionErrorHandler";
 import { useTranslation } from "@/hooks/use-translation";
+// Import AuthContext directly to avoid circular dependency
+import { AuthContext } from "@/hooks/use-auth";
 
 // Helper function for redirecting to Stripe checkout
 function redirectToStripeCheckout(url: string, delay = 500) {
@@ -93,10 +94,14 @@ type SubscriptionContextType = {
 
 const SubscriptionContext = createContext<SubscriptionContextType | null>(null);
 
+// Pass the user from higher up instead of using useAuth to avoid circular dependency
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
-  const { user } = useAuth();
   const { t } = useTranslation();
+  
+  // Get user from AuthContext directly to avoid circular dependency
+  const authContext = useContext(AuthContext);
+  const user = authContext?.user || null;
   
   // Fetch user's current subscription
   const {
