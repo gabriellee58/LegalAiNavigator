@@ -173,10 +173,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutationFn: async () => {
       try {
         // Import Firebase functions dynamically to avoid circular dependencies
-        const { signInWithGoogle, isConfigured } = await import('@/lib/firebase');
+        const { signInWithGoogle, isConfigured, isAuthorizedDomain } = await import('@/lib/firebase');
         
         if (!isConfigured) {
           throw new Error("Google Sign-in is temporarily unavailable. Please use email/password login.");
+        }
+        
+        // Check if current domain is authorized for Firebase auth
+        if (!isAuthorizedDomain()) {
+          console.warn("Current domain is not authorized for Firebase auth:", window.location.hostname);
+          throw new Error(
+            "Google sign-in is not available on this domain. Please use email/password login or access the site from canadianlegalai.site"
+          );
         }
         
         // This will redirect to Google sign-in page and won't return here
@@ -194,6 +202,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           throw new Error("Sign-in was cancelled. Please try again.");
         } else if (error.code === 'auth/network-request-failed') {
           throw new Error("Network error. Please check your connection and try again.");
+        } else if (error.code === 'auth/unauthorized-domain' || error.name === 'UnauthorizedDomainError') {
+          throw new Error("Google sign-in is not available on this domain. Please use email/password login or access the site from canadianlegalai.site");
         } else if (error.message) {
           throw new Error(error.message);
         } else {
@@ -202,10 +212,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     },
     onError: (error: Error) => {
+      // Don't show destructive toast for domain authorization issues
+      const isUnauthorizedDomain = error.message?.includes("not available on this domain");
+      
       toast({
-        title: "Authentication Error",
+        title: isUnauthorizedDomain ? "Authentication Notice" : "Authentication Error",
         description: error.message || "An error occurred during sign-in. Please try again.",
-        variant: "destructive",
+        variant: isUnauthorizedDomain ? "default" : "destructive",
       });
       console.error("Authentication error:", error);
     },

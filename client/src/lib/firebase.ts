@@ -54,9 +54,28 @@ googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
 
+// Check if the current domain is in the list of authorized domains for Firebase
+export function isAuthorizedDomain(): boolean {
+  const authorizedDomains = [
+    'canadianlegalai.firebaseapp.com',
+    'canadianlegalai.web.app',
+    'canadianlegalai.site',
+    'www.canadianlegalai.site'
+  ];
+  
+  const currentDomain = window.location.hostname;
+  return authorizedDomains.includes(currentDomain);
+}
+
 // Sign in with Google function
 export async function signInWithGoogle(): Promise<FirebaseUser | null> {
   try {
+    // Check if the current domain is authorized for Firebase auth
+    if (!isAuthorizedDomain()) {
+      console.warn("Current domain is not authorized for Firebase auth:", window.location.hostname);
+      throw new Error("auth/unauthorized-domain");
+    }
+    
     console.log("Starting Google sign-in with redirect...");
     // Using redirect for better mobile experience
     await signInWithRedirect(auth, googleProvider);
@@ -66,6 +85,13 @@ export async function signInWithGoogle(): Promise<FirebaseUser | null> {
     console.error("Error initiating Google sign-in:", error);
     if (error && error.code) {
       console.error(`Firebase error code: ${error.code}`);
+    } else if (error.message === "auth/unauthorized-domain") {
+      // Custom error when running on unauthorized domain
+      const customError = new Error(
+        "Google sign-in is not available on this domain. Please use email/password login or access the site from canadianlegalai.site"
+      );
+      customError.name = "UnauthorizedDomainError";
+      throw customError;
     }
     throw error;
   }
