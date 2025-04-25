@@ -350,7 +350,7 @@ export default function AuthPage() {
                       variant="outline"
                       className="w-full flex items-center justify-center gap-2"
                       onClick={() => googleSignInMutation.mutate()}
-                      disabled={googleSignInMutation.isPending}
+                      disabled={googleSignInMutation.isPending || isDomainAuthorized === false} title={isDomainAuthorized === false ? "Google sign-in is not available on this domain" : ""}
                     >
                       {googleSignInMutation.isPending ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -499,7 +499,7 @@ export default function AuthPage() {
                       variant="outline"
                       className="w-full flex items-center justify-center gap-2"
                       onClick={() => googleSignInMutation.mutate()}
-                      disabled={googleSignInMutation.isPending}
+                      disabled={googleSignInMutation.isPending || isDomainAuthorized === false} title={isDomainAuthorized === false ? "Google sign-in is not available on this domain" : ""}
                     >
                       {googleSignInMutation.isPending ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
