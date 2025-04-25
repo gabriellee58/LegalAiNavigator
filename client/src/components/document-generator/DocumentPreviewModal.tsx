@@ -27,29 +27,15 @@ import { exportAsText, printDocument, generatePDF } from "@/lib/documentExport";
 // Set the PDF.js worker path - ensure it works with our current environment
 if (typeof window !== 'undefined') {
   try {
-    // Try to use CDN worker - verify the CDN is accessible
-    const workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-    pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
-    console.log("Using CDN PDF.js worker:", workerSrc);
+    // Set worker directly to empty string to use built-in worker
+    // This is more reliable than trying to use CDN which can be blocked
+    pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+    console.log("Using built-in PDF.js worker for better reliability");
     
-    // Verify worker availability with a HEAD request (no actual download)
-    fetch(workerSrc, { method: 'HEAD' })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`Worker not available at CDN: ${response.status}`);
-        }
-        console.log("PDF.js worker verified available at CDN");
-      })
-      .catch(err => {
-        console.warn("PDF.js worker might not be available at CDN:", err.message);
-        // Fallback strategy will be used in generatePdfFromText if needed
-      });
+    // The empty worker source tells PDF.js to use the built-in worker
+    // which is slower but more reliable as it doesn't depend on external CDNs
   } catch (err) {
     console.error("Error setting up PDF.js worker:", err);
-    
-    // Fallback to blank worker URL (slower but works without external dependencies)
-    pdfjsLib.GlobalWorkerOptions.workerSrc = '';
-    console.warn("Using PDF.js without worker - performance may be affected");
   }
 }
 
