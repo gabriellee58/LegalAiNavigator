@@ -121,6 +121,15 @@ export async function handleGoogleRedirect(): Promise<FirebaseUser | null> {
       photoURL: user.photoURL ? "has photo" : "no photo" 
     });
     
+    // Validate required fields to avoid downstream errors
+    if (!user.uid) {
+      throw new Error("Firebase user is missing UID");
+    }
+    
+    if (!user.email) {
+      console.warn("Firebase user is missing email, this might cause issues with account creation");
+    }
+    
     return {
       uid: user.uid,
       email: user.email,
@@ -129,10 +138,29 @@ export async function handleGoogleRedirect(): Promise<FirebaseUser | null> {
     };
   } catch (error: any) {
     console.error("Error handling Google redirect:", error);
-    // Log specific Firebase errors for debugging
+    
+    // Enhanced error logging and handling for Firebase errors
     if (error && error.code) {
       console.error(`Firebase error code: ${error.code}`);
+      
+      // Provide more specific error messages based on Firebase error codes
+      switch (error.code) {
+        case 'auth/account-exists-with-different-credential':
+          throw new Error('An account already exists with the same email address but different sign-in credentials. Please sign in using your original method.');
+        case 'auth/cancelled-popup-request':
+        case 'auth/popup-closed-by-user':
+          throw new Error('Sign-in was cancelled. Please try again.');
+        case 'auth/network-request-failed':
+          throw new Error('Network error. Please check your internet connection and try again.');
+        case 'auth/popup-blocked':
+          throw new Error('Sign-in popup was blocked by your browser. Please enable popups for this site.');
+        case 'auth/unauthorized-domain':
+          throw new Error('This domain is not authorized for Firebase authentication. Please try a different sign-in method.');
+        default:
+          throw new Error(`Authentication error: ${error.message || 'Unknown error'}`);
+      }
     }
+    
     throw error;
   }
 }

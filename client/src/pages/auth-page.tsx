@@ -74,12 +74,25 @@ export default function AuthPage() {
           
           // We have a Firebase user, send it to our backend to create/login
           try {
-            const userData = await apiRequest("POST", "/api/google-auth", {
-              email: googleUser.email,
-              displayName: googleUser.displayName,
-              photoURL: googleUser.photoURL,
-              uid: googleUser.uid
+            const response = await fetch('/api/google-auth', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                email: googleUser.email,
+                displayName: googleUser.displayName,
+                photoURL: googleUser.photoURL,
+                uid: googleUser.uid
+              }),
+              credentials: 'include'
             });
+            
+            if (!response.ok) {
+              throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+            }
+            
+            const userData = await response.json();
             
             // Update the query cache with the user data
             queryClient.setQueryData(["/api/user"], userData);
@@ -92,14 +105,14 @@ export default function AuthPage() {
             } else {
               navigate("/");
             }
-          } catch (error) {
+          } catch (error: any) {
             console.error("Error authenticating with backend:", error);
-            setAuthError("Failed to complete authentication with server. Please try again.");
+            setAuthError(`Failed to complete authentication with server: ${error.message || 'Unknown error'}. Please try again.`);
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error handling Google redirect:", error);
-        setAuthError("Failed to complete Google sign-in. Please try again.");
+        setAuthError(`Failed to complete Google sign-in: ${error.message || 'Unknown error'}. Please try again.`);
       }
     };
     

@@ -333,8 +333,23 @@ export function setupAuth(app: Express) {
           return next(err);
         }
         
-        // Return the user data
-        return res.status(200).json(user);
+        // Make sure user is not undefined before returning
+        if (!user) {
+          return res.status(500).json({ message: "Failed to authenticate user" });
+        }
+        
+        // Set proper content type and return user data
+        res.setHeader('Content-Type', 'application/json');
+        return res.status(200).json({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          fullName: user.fullName,
+          preferredLanguage: user.preferredLanguage,
+          role: user.role,
+          photoURL: user.photoURL,
+          // Don't return password hash
+        });
       });
     } catch (err) {
       console.error('Google auth error:', err);
