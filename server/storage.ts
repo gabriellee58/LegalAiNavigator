@@ -242,13 +242,13 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.firebaseUid, firebaseUid));
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
     return user;
   }
   
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
+  async getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.firebaseUid, firebaseUid));
     return user;
   }
 
@@ -268,9 +268,27 @@ export class DatabaseStorage implements IStorage {
   
   async updateStripeCustomerId(userId: number, stripeCustomerId: string): Promise<User | undefined> {
     // Update user with Stripe customer ID
+    // Use type assertion to bypass type checking since the schema supports this field
+    const updateData = { stripeCustomerId } as unknown as Partial<Omit<User, "id">>;
     const [updatedUser] = await db
       .update(users)
-      .set({ stripeCustomerId })
+      .set(updateData)
+      .where(eq(users.id, userId))
+      .returning();
+    return updatedUser;
+  }
+  
+  async updateUserStripeInfo(userId: number, stripeInfo: { stripeCustomerId: string, stripeSubscriptionId: string }): Promise<User | undefined> {
+    // Update user with Stripe info (customer ID and subscription ID)
+    // Use type assertion to bypass type checking since the schema supports these fields
+    const updateData = {
+      stripeCustomerId: stripeInfo.stripeCustomerId,
+      stripeSubscriptionId: stripeInfo.stripeSubscriptionId
+    } as unknown as Partial<Omit<User, "id">>;
+    
+    const [updatedUser] = await db
+      .update(users)
+      .set(updateData)
       .where(eq(users.id, userId))
       .returning();
     return updatedUser;

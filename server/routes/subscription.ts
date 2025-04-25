@@ -777,4 +777,113 @@ router.post('/confirm', ensureAuthenticated, async (req, res) => {
   }
 });
 
+// API endpoint for getting or creating a subscription for Stripe integration
+router.post('/get-or-create-subscription', ensureAuthenticated, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    
+    // Check if user has a Stripe customer ID
+    let user = req.user;
+    
+    // If user doesn't have a Stripe customer ID, create one
+    if (!user.stripeCustomerId) {
+      // Create a Stripe customer
+      const userEmail = user.email || `user-${userId}@example.com`;
+      const userName = user.fullName || user.username;
+      
+      try {
+        // Create a Stripe customer
+        const { id: customerId } = await createCustomer(
+          userEmail,
+          userName
+        );
+        
+        // Update user with Stripe customer ID
+        user = await db.update(userSubscriptions)
+          .set({ stripeCustomerId: customerId })
+          .where(eq(userSubscriptions.userId, userId))
+          .returning();
+      } catch (stripeError) {
+        logger.error('[subscription] Error creating Stripe customer:', stripeError);
+        return res.status(500).json({ 
+          error: 'Failed to create Stripe customer',
+          message: stripeError instanceof Error ? stripeError.message : 'Unknown error'
+        });
+      }
+    }
+    
+    // Get the subscription from the database
+    const subscription = await getUserSubscription(userId);
+    
+    // If subscription exists and is active, return clientSecret from latest_invoice.payment_intent
+    if (subscription && 
+        (subscription.status === 'active' || subscription.status === 'trialing') && 
+        subscription.stripeSubscriptionId) {
+      // Since we're using the mock implementation, we'll just return a mock client secret
+      const mockClientSecret = `pi_mock_${Date.now()}_secret_${Math.random().toString(36).slice(2)}`;
+      
+      return res.json({
+        subscriptionId: subscription.stripeSubscriptionId,
+        clientSecret: mockClientSecret
+      });
+    }
+    
+    // Otherwise, create a new subscription
+    // In a real implementation, this would use the provided Stripe API keys
+    
+    // Get the professional plan by default
+    const plans = await db
+      .select()
+      .from(subscriptionPlans)
+      .where(eq(subscriptionPlans.tier, 'professional'));
+      
+    const plan = plans.length > 0 ? plans[0] : null;
+    
+    if (!plan) {
+      return res.status(404).json({ error: 'Default subscription plan not found' });
+    }
+    
+    // Create a subscription with a trial period
+    const trialDays = 7; // 7-day trial
+    
+    try {
+      // Create a Stripe subscription
+      const { id: subscriptionId } = await createStripeSubscription(
+        user.stripeCustomerId,
+        plan.stripePriceId,
+        trialDays
+      );
+      
+      // Create or update subscription in our database
+      const newSubscription = await createOrUpdateUserSubscription(
+        userId,
+        plan.id.toString(),
+        user.stripeCustomerId,
+        subscriptionId,
+        trialDays
+      );
+      
+      // In a real implementation, this would include the client secret from the payment intent
+      const mockClientSecret = `pi_mock_${Date.now()}_secret_${Math.random().toString(36).slice(2)}`;
+      
+      return res.json({
+        subscriptionId: subscriptionId,
+        clientSecret: mockClientSecret
+      });
+    } catch (stripeError) {
+      logger.error('[subscription] Error creating Stripe subscription:', stripeError);
+      return res.status(500).json({ 
+        error: 'Failed to create Stripe subscription',
+        message: stripeError instanceof Error ? stripeError.message : 'Unknown error'
+      });
+    }
+  } catch (error) {
+    logger.error('[subscription] Error in get-or-create-subscription:', error);
+    res.status(500).json({ 
+      error: 'Failed to process subscription request',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 export default router;
