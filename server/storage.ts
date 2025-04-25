@@ -47,6 +47,7 @@ export interface IStorage {
   getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, userData: Partial<Omit<User, "id">>): Promise<User | undefined>;
+  updateStripeCustomerId(userId: number, stripeCustomerId: string): Promise<User | undefined>;
   
   // Password reset token operations
   createPasswordResetToken(userId: number, token: string, expiresAt: Date): Promise<PasswordResetToken>;
@@ -256,6 +257,16 @@ export class DatabaseStorage implements IStorage {
       .update(users)
       .set(userData)
       .where(eq(users.id, id))
+      .returning();
+    return updatedUser;
+  }
+  
+  async updateStripeCustomerId(userId: number, stripeCustomerId: string): Promise<User | undefined> {
+    // Update user with Stripe customer ID
+    const [updatedUser] = await db
+      .update(users)
+      .set({ stripeCustomerId })
+      .where(eq(users.id, userId))
       .returning();
     return updatedUser;
   }

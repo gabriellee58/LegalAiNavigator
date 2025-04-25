@@ -205,22 +205,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { email, displayName, uid } = parsed.data;
       const fullName = displayName || email.split('@')[0];
 
-      // Check if user exists
-      let user = await storage.getUserByUsername(email);
+      // Check if user already exists by Firebase UID
+      let user = await storage.getUserByFirebaseUid(uid);
       
       if (!user) {
-        // Create a new user with the Google info
-        const randomPassword = Math.random().toString(36).slice(-10);
-        user = await storage.createUser({
-          username: email,
-          password: randomPassword, // Will be hashed by storage
-          fullName: fullName,
-          preferredLanguage: "en",
-          firebaseUid: uid
-        });
-      } else {
-        // Update user with Firebase UID if not present
-        if (!user.firebaseUid) {
+        // Not found by Firebase UID, try to find by email/username
+        user = await storage.getUserByUsername(email);
+        
+        if (!user) {
+          // Create a new user if not found at all
+          const randomPassword = Math.random().toString(36).slice(-10) + 
+                                Math.random().toString(36).slice(-10);
+          
+          user = await storage.createUser({
+            username: email,
+            password: randomPassword, // Will be hashed by storage
+            fullName: fullName,
+            preferredLanguage: "en",
+            firebaseUid: uid
+          });
+        } else {
+          // User found by email but no Firebase UID, update with the Firebase UID
           user = await storage.updateUser(user.id, {
             firebaseUid: uid,
             fullName: user.fullName || fullName

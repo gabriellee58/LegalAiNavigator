@@ -13,6 +13,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input";
 import { t } from "@/lib/i18n";
 import { Separator } from "@/components/ui/separator";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 // Login form schema
 const loginSchema = z.object({
