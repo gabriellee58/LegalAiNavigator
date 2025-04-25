@@ -133,11 +133,28 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           return null; // No subscription
         }
         
+        if (!res.ok) {
+          console.error("Error response from subscription API:", res.status);
+          return null; // Any other error status
+        }
+        
         const data = await res.json();
         console.log("Subscription data retrieved:", data);
-        return data;
+        
+        // Validate subscription data
+        if (data && data.id && data.status) {
+          return data;
+        } else {
+          console.warn("Subscription data not in expected format:", data);
+          return null;
+        }
       } catch (error) {
-        console.error("Error fetching subscription:", error);
+        // Provide more context for the error
+        if (error instanceof Error) {
+          console.error("Error fetching subscription:", error.message, error.stack);
+        } else {
+          console.error("Unknown error fetching subscription:", error);
+        }
         // Silent failure for subscription check
         return null;
       }

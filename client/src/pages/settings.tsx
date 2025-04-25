@@ -19,7 +19,7 @@ export default function SettingsPage() {
   const [currentTab, setCurrentTab] = useState("profile");
   const { toast } = useToast();
   const { user, updateProfileMutation, updatePasswordMutation } = useAuth();
-  const { subscription, currentPlan, isLoading: isSubscriptionLoading, isTrialActive, trialDaysRemaining } = useSubscription();
+  const { subscription, currentPlan, isLoading: isSubscriptionLoading, isTrialActive, trialDaysRemaining, isSubscriptionActive } = useSubscription();
   
   // Form states
   const [fullName, setFullName] = useState(user?.fullName || "");
@@ -201,7 +201,7 @@ export default function SettingsPage() {
                     <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
                     <span className="ml-2">Loading subscription information...</span>
                   </div>
-                ) : subscription ? (
+                ) : isSubscriptionActive ? (
                   <div className="space-y-6">
                     <div className="p-4 bg-muted rounded-lg">
                       <div className="flex items-center justify-between mb-4">
