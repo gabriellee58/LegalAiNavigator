@@ -7,7 +7,6 @@ import {
 import { insertUserSchema, User, InsertUser } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { onAuthChange } from "@/lib/firebase";
 
 // Define all types here
 interface AuthContextInterface {
@@ -215,24 +214,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Firebase auth state effect
   useEffect(() => {
-    const unsubscribe = onAuthChange(async (firebaseUser) => {
-      // If Firebase user exists but our session doesn't, attempt to 
-      // login on our backend with the Firebase credentials
-      if (firebaseUser && !user) {
-        try {
-          const userData = await apiRequest("POST", "/api/google-auth", {
-            email: firebaseUser.email,
-            displayName: firebaseUser.displayName,
-            photoURL: firebaseUser.photoURL,
-            uid: firebaseUser.uid
-          });
-          
-          queryClient.setQueryData(["/api/user"], userData);
-        } catch (err) {
-          console.error("Error synchronizing with Firebase auth:", err);
-        }
+    let unsubscribe: () => void = () => {};
+    
+    async function setupAuthListener() {
+      try {
+        // Dynamically import Firebase functions to avoid circular dependencies
+        const firebaseFunctions = await import('@/lib/firebase');
+        
+        // Setup the auth listener
+        unsubscribe = firebaseFunctions.onAuthChange(async (firebaseUser) => {
+          // If Firebase user exists but our session doesn't, attempt to 
+          // login on our backend with the Firebase credentials
+          if (firebaseUser && !user) {
+            try {
+              const userData = await apiRequest("POST", "/api/google-auth", {
+                email: firebaseUser.email,
+                displayName: firebaseUser.displayName,
+                photoURL: firebaseUser.photoURL,
+                uid: firebaseUser.uid
+              });
+              
+              queryClient.setQueryData(["/api/user"], userData);
+            } catch (err) {
+              console.error("Error synchronizing with Firebase auth:", err);
+            }
+          }
+        });
+      } catch (error) {
+        console.error("Failed to set up Firebase auth listener:", error);
       }
-    });
+    }
+    
+    setupAuthListener();
     
     return () => unsubscribe();
   }, [user]);

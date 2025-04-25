@@ -57,11 +57,16 @@ googleProvider.setCustomParameters({
 // Sign in with Google function
 export async function signInWithGoogle(): Promise<FirebaseUser | null> {
   try {
+    console.log("Starting Google sign-in with redirect...");
     // Using redirect for better mobile experience
     await signInWithRedirect(auth, googleProvider);
-    return null; // This will never be reached due to the redirect
-  } catch (error) {
+    // This will never be reached due to the redirect
+    return null;
+  } catch (error: any) {
     console.error("Error initiating Google sign-in:", error);
+    if (error && error.code) {
+      console.error(`Firebase error code: ${error.code}`);
+    }
     throw error;
   }
 }
@@ -96,10 +101,10 @@ export async function handleGoogleRedirect(): Promise<FirebaseUser | null> {
       displayName: user.displayName,
       photoURL: user.photoURL
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error handling Google redirect:", error);
     // Log specific Firebase errors for debugging
-    if (error.code) {
+    if (error && error.code) {
       console.error(`Firebase error code: ${error.code}`);
     }
     throw error;
@@ -109,6 +114,8 @@ export async function handleGoogleRedirect(): Promise<FirebaseUser | null> {
 // Sign out user
 export async function signOutUser(): Promise<boolean> {
   try {
+    console.log("Starting sign-out process...");
+    
     // Sign out from Firebase
     await signOut(auth);
     
@@ -118,9 +125,13 @@ export async function signOutUser(): Promise<boolean> {
       credentials: 'include'
     });
     
+    console.log("Sign-out completed successfully");
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in signOutUser:", error);
+    if (error && error.code) {
+      console.error(`Firebase error code: ${error.code}`);
+    }
     return false;
   }
 }
