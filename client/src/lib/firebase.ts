@@ -1,7 +1,16 @@
-// Firebase Types
-// Since we're having issues with the Firebase package, we'll define our own interfaces
-// to match what we need from Firebase
+// Import Firebase SDK
+import { initializeApp } from "firebase/app";
+import { 
+  getAuth, 
+  GoogleAuthProvider, 
+  signInWithRedirect, 
+  getRedirectResult, 
+  signOut, 
+  onAuthStateChanged,
+  User as FirebaseAuthUser
+} from "firebase/auth";
 
+// Export our own user interface that matches what we need
 export interface FirebaseUser {
   uid: string;
   email: string | null;
@@ -9,75 +18,91 @@ export interface FirebaseUser {
   photoURL: string | null;
 }
 
-// Check if Firebase config is set
-const isFirebaseConfigured = Boolean(
+// Initialize Firebase with config from environment variables
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+};
+
+// Check if all required Firebase config values are present
+export const isConfigured = Boolean(
   import.meta.env.VITE_FIREBASE_API_KEY && 
   import.meta.env.VITE_FIREBASE_AUTH_DOMAIN &&
   import.meta.env.VITE_FIREBASE_PROJECT_ID &&
   import.meta.env.VITE_FIREBASE_APP_ID
 );
 
-console.log(`Firebase config status: ${isFirebaseConfigured ? 'Configured' : 'Not configured'}`);
+console.log(`Firebase config status: ${isConfigured ? 'Configured' : 'Not configured'}`);
 
-// Mock Firebase auth object for compatibility
-const auth = {
-  currentUser: null,
-  onAuthStateChanged: (callback: (user: any) => void) => {
-    // Return empty unsubscribe function
-    return () => {};
-  },
-  signOut: async () => {}
-};
+// Initialize Firebase app
+const app = initializeApp(firebaseConfig);
 
-// Clean up unused references
-const signInWithPopup = undefined;
-const provider = undefined;
-const getRedirectResult = undefined;
+// Initialize Firebase auth
+const auth = getAuth(app);
+export { auth };
 
-// Alternative implementation for Google sign-in without Firebase SDK
+// Create Google Auth provider
+const googleProvider = new GoogleAuthProvider();
+
+// Configure Google Auth provider
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
+
+// Sign in with Google function
 export async function signInWithGoogle(): Promise<FirebaseUser | null> {
   try {
-    // Since we don't have Firebase SDK working, we'll use a different approach
-    // Redirect user to Google OAuth URL with proper scopes
-    const redirectUrl = `${window.location.origin}/auth`;
-    
-    // For now, we'll just redirect to the Google sign-in page on our production site
-    window.location.href = `https://canadianlegalai.site/auth?redirect_uri=${encodeURIComponent(redirectUrl)}`;
-    
-    // This will never execute due to the redirect, but needed for TypeScript
-    return null;
+    // Using redirect for better mobile experience
+    await signInWithRedirect(auth, googleProvider);
+    return null; // This will never be reached due to the redirect
   } catch (error) {
     console.error("Error initiating Google sign-in:", error);
     throw error;
   }
 }
 
-// Handle redirect after Google sign-in
+// Handle the redirect result from Google sign-in
 export async function handleGoogleRedirect(): Promise<FirebaseUser | null> {
   try {
-    // In a real implementation, this would parse the token from the URL
-    // For now, we'll just return null as we can't complete the flow
-    console.log("Redirect handling not fully implemented yet");
-    return null;
+    // Get the result of the redirect sign-in
+    const result = await getRedirectResult(auth);
+    
+    if (!result) {
+      console.log("No redirect result found");
+      return null;
+    }
+    
+    // Convert Firebase user to our FirebaseUser interface
+    const user = result.user;
+    return {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+      photoURL: user.photoURL
+    };
   } catch (error) {
     console.error("Error handling Google redirect:", error);
     throw error;
   }
 }
 
-// Sign out user 
+// Sign out user
 export async function signOutUser(): Promise<boolean> {
   try {
-    // Clear local storage and cookies
-    localStorage.removeItem('user');
-    document.cookie = 'connect.sid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-
-    // Call backend logout
+    // Sign out from Firebase
+    await signOut(auth);
+    
+    // Also call backend logout to clear server-side session
     await fetch('/api/logout', {
       method: 'POST',
       credentials: 'include'
     });
-
+    
     return true;
   } catch (error) {
     console.error("Error in signOutUser:", error);
@@ -85,20 +110,23 @@ export async function signOutUser(): Promise<boolean> {
   }
 }
 
-// Mock auth state change 
+// Listen for auth state changes
 export function onAuthChange(callback: (user: FirebaseUser | null) => void): () => void {
-  // Since we don't have real Firebase auth, just return a no-op function
-  callback(null);
-  return () => {};
+  return onAuthStateChanged(auth, (user) => {
+    if (user) {
+      callback({
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL
+      });
+    } else {
+      callback(null);
+    }
+  });
 }
 
-export { auth };
-
-// Check if Firebase is configured
-export const isConfigured = isFirebaseConfigured;
-
-console.log('Firebase auth configuration status:', isConfigured ? 'CONFIGURED' : 'NOT CONFIGURED');
-
+// Log errors for debugging
 window.addEventListener('unhandledrejection', function(event) {
   if (event.reason && typeof event.reason.message === 'string' && 
       event.reason.message.includes('Failed to fetch')) {

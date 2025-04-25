@@ -174,38 +174,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const googleSignInMutation = useMutation({
     mutationFn: async () => {
       try {
+        // Import Firebase functions dynamically to avoid circular dependencies
         const { signInWithGoogle, isConfigured } = await import('@/lib/firebase');
         
         if (!isConfigured) {
           throw new Error("Google Sign-in is temporarily unavailable. Please use email/password login.");
         }
         
-        const result = await signInWithGoogle();
+        // This will redirect to Google sign-in page and won't return here
+        // The actual authentication will be handled in the AuthPage component
+        // when redirected back from Google
+        await signInWithGoogle();
         
-        if (!result) {
-          throw new Error("Authentication was cancelled. Please try again or use email/password login.");
-        }
-
-        // Handle successful Firebase auth
-        const userData = await apiRequest("POST", "/api/google-auth", {
-          email: result.email,
-          displayName: result.displayName,
-          photoURL: result.photoURL,
-          uid: result.uid
-        });
-        
-        queryClient.setQueryData(["/api/user"], userData);
-        return userData;
+        // This will never be reached due to the redirect
+        return {} as User;
       } catch (error: any) {
         // Handle specific Firebase errors
         if (error.code === 'auth/popup-blocked') {
-          throw new Error("Pop-up was blocked. Please enable pop-ups and try again.");
-        } else if (error.code === 'auth/popup-closed-by-user') {
-          throw new Error("Sign-in window was closed. Please try again.");
+          throw new Error("Redirect was blocked. Please try again.");
+        } else if (error.code === 'auth/cancelled-popup-request') {
+          throw new Error("Sign-in was cancelled. Please try again.");
         } else if (error.code === 'auth/network-request-failed') {
           throw new Error("Network error. Please check your connection and try again.");
+        } else if (error.message) {
+          throw new Error(error.message);
+        } else {
+          throw new Error("An error occurred during sign-in. Please try again.");
         }
-        throw error;
       }
     },
     onError: (error: Error) => {
