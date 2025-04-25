@@ -37,6 +37,22 @@ export default function AuthPage() {
   const { user, isLoading, loginMutation, registerMutation, googleSignInMutation } = useAuth();
   const [location, navigate] = useLocation();
   const [authError, setAuthError] = useState<string | null>(null);
+  const [isDomainAuthorized, setIsDomainAuthorized] = useState<boolean | null>(null);
+
+  // Check if current domain is authorized for Firebase auth
+  useEffect(() => {
+    const checkDomain = async () => {
+      try {
+        const { isAuthorizedDomain } = await import('@/lib/firebase');
+        setIsDomainAuthorized(isAuthorizedDomain());
+      } catch (error) {
+        console.error("Error checking domain authorization:", error);
+        setIsDomainAuthorized(false);
+      }
+    };
+    
+    checkDomain();
+  }, []);
 
   // Handle Firebase Authentication redirect
   useEffect(() => {
@@ -46,7 +62,11 @@ export default function AuthPage() {
         setAuthError(null);
         
         // Import handleGoogleRedirect dynamically to avoid circular dependencies
-        const { handleGoogleRedirect } = await import('@/lib/firebase');
+        const { handleGoogleRedirect, isAuthorizedDomain } = await import('@/lib/firebase');
+        
+        // Set domain authorization status
+        setIsDomainAuthorized(isAuthorizedDomain());
+        
         const googleUser = await handleGoogleRedirect();
         
         if (googleUser) {
@@ -233,6 +253,14 @@ export default function AuthPage() {
                     <p className="font-medium">{authError}</p>
                   )}
                 </div>
+              </div>
+            )}
+            
+            {/* Display domain authorization warning */}
+            {isDomainAuthorized === false && (
+              <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-600 text-sm">
+                <p className="font-medium">Google Sign-in Domain Restriction</p>
+                <p>Google sign-in is not available on this domain. Please use email/password login instead, or access the site from <a href="https://canadianlegalai.site" className="underline font-medium">canadianlegalai.site</a>.</p>
               </div>
             )}
             
