@@ -73,8 +73,8 @@ export function GoogleAuthDebug() {
         queryClient.setQueryData(["/api/user"], data);
         setStatus(`Authentication successful! User data cached.`);
       }
-    } catch (error) {
-      setStatus(`Error: ${error.message}`);
+    } catch (error: any) {
+      setStatus(`Error: ${error?.message || 'Unknown error'}`);
       setResponse(JSON.stringify(error, null, 2));
     }
   };
@@ -97,8 +97,8 @@ export function GoogleAuthDebug() {
       } else {
         setResponse(`No response body or unauthorized`);
       }
-    } catch (error) {
-      setStatus(`Error: ${error.message}`);
+    } catch (error: any) {
+      setStatus(`Error: ${error?.message || 'Unknown error'}`);
       setResponse(JSON.stringify(error, null, 2));
     }
   };

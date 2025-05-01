@@ -343,9 +343,9 @@ export function setupAuth(app: Express) {
               role: 'user'
             });
             console.log("[Google Auth] Successfully created new user with ID:", user.id);
-          } catch (createError) {
-            console.error("[Google Auth] Error creating user:", createError);
-            return res.status(500).json({ message: "Failed to create user account: " + (createError.message || 'Unknown error') });
+          } catch (error: any) {
+            console.error("[Google Auth] Error creating user:", error);
+            return res.status(500).json({ message: "Failed to create user account: " + (error?.message || 'Unknown error') });
           }
         }
       } else {
@@ -354,31 +354,45 @@ export function setupAuth(app: Express) {
       
       console.log("[Google Auth] Creating user session with passport login");
       
+      // Make sure user is not undefined before logging in
+      if (!user) {
+        console.error("[Google Auth] User is undefined before login attempt");
+        return res.status(500).json({ message: "Failed to authenticate user" });
+      }
+      
+      // We now know user is defined, create a properly typed user object for passport
+      const sessionUser: Express.User = {
+        id: user.id,
+        username: user.username,
+        email: user.email || '',
+        password: user.password,
+        fullName: user.fullName,
+        preferredLanguage: user.preferredLanguage,
+        role: user.role,
+        createdAt: user.createdAt,
+        firebaseUid: user.firebaseUid,
+        photoURL: user.photoURL
+      };
+        
       // Log the user in by creating a session
-      req.login(user, (err) => {
+      req.login(sessionUser, (err) => {
         if (err) {
           console.error("[Google Auth] Session creation error:", err);
           return next(err);
         }
         
-        // Make sure user is not undefined before returning
-        if (!user) {
-          console.error("[Google Auth] User is undefined after login attempt");
-          return res.status(500).json({ message: "Failed to authenticate user" });
-        }
-        
-        console.log("[Google Auth] Successfully created session for user:", user.id);
+        console.log("[Google Auth] Successfully created session for user:", user!.id);
         
         // Set proper content type and return user data
         res.setHeader('Content-Type', 'application/json');
         return res.status(200).json({
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          fullName: user.fullName,
-          preferredLanguage: user.preferredLanguage,
-          role: user.role,
-          photoURL: user.photoURL,
+          id: user!.id,
+          username: user!.username,
+          email: user!.email,
+          fullName: user!.fullName,
+          preferredLanguage: user!.preferredLanguage,
+          role: user!.role,
+          photoURL: user!.photoURL,
           // Don't return password hash
         });
       });
