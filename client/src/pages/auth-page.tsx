@@ -60,20 +60,47 @@ export default function AuthPage() {
       try {
         // Clear any previous errors
         setAuthError(null);
+        console.log("Starting Google redirect handler...");
         
         // Import handleGoogleRedirect dynamically to avoid circular dependencies
         const { handleGoogleRedirect, isAuthorizedDomain } = await import('@/lib/firebase');
         
         // Set domain authorization status
         setIsDomainAuthorized(isAuthorizedDomain());
+        console.log("Domain authorization status:", isAuthorizedDomain());
         
-        const googleUser = await handleGoogleRedirect();
+        // First check if we have a user in localStorage (as backup from a previous redirect)
+        let googleUser = null;
+        
+        try {
+          const storedUser = localStorage.getItem('firebaseAuthUser');
+          if (storedUser) {
+            console.log("Found stored Firebase user from previous redirect");
+            googleUser = JSON.parse(storedUser);
+            // Clear the stored user to avoid reusing it inappropriately
+            localStorage.removeItem('firebaseAuthUser');
+          }
+        } catch (storageError) {
+          console.warn("Error reading from localStorage:", storageError);
+        }
+        
+        // If we don't have a stored user, try to get one from the redirect
+        if (!googleUser) {
+          console.log("No stored user found, checking for redirect result...");
+          googleUser = await handleGoogleRedirect();
+        }
         
         if (googleUser) {
-          console.log("Received user from Google redirect:", googleUser);
+          console.log("Successfully got user from Google authentication:", {
+            uid: googleUser.uid,
+            email: googleUser.email,
+            hasDisplayName: !!googleUser.displayName,
+            hasPhoto: !!googleUser.photoURL
+          });
           
           // We have a Firebase user, send it to our backend to create/login
           try {
+            console.log("Sending Firebase user to backend...");
             const response = await fetch('/api/google-auth', {
               method: 'POST',
               headers: {
@@ -89,26 +116,38 @@ export default function AuthPage() {
             });
             
             if (!response.ok) {
-              throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+              const errorText = await response.text();
+              console.error("Backend auth failed:", {
+                status: response.status,
+                statusText: response.statusText,
+                body: errorText
+              });
+              throw new Error(`Server returned ${response.status}: ${errorText || response.statusText}`);
             }
             
             const userData = await response.json();
+            console.log("Backend auth successful, received user data");
             
             // Update the query cache with the user data
             queryClient.setQueryData(["/api/user"], userData);
+            console.log("Updated query cache with user data");
             
             // Navigate to home page or saved redirect URL
             const savedRedirect = sessionStorage.getItem('redirectAfterLogin');
             if (savedRedirect) {
+              console.log("Redirecting to saved URL:", savedRedirect);
               sessionStorage.removeItem('redirectAfterLogin');
               navigate(savedRedirect);
             } else {
+              console.log("Redirecting to home page");
               navigate("/");
             }
           } catch (error: any) {
             console.error("Error authenticating with backend:", error);
             setAuthError(`Failed to complete authentication with server: ${error.message || 'Unknown error'}. Please try again.`);
           }
+        } else {
+          console.log("No Google user found from redirect or storage");
         }
       } catch (error: any) {
         console.error("Error handling Google redirect:", error);

@@ -7,6 +7,8 @@ import {
   getRedirectResult, 
   signOut, 
   onAuthStateChanged,
+  browserLocalPersistence,
+  setPersistence,
   User as FirebaseAuthUser
 } from "firebase/auth";
 
@@ -42,10 +44,10 @@ console.log(`Firebase config status: ${isConfigured ? 'Configured' : 'Not config
 // Initialize Firebase app
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firebase auth with persistence
+// Initialize Firebase auth
 const auth = getAuth(app);
-// Set persistence to LOCAL (persists even when the browser is closed)
-auth.setPersistence('local').catch(error => {
+// Set persistence to local (persists even when browser is closed)
+setPersistence(auth, browserLocalPersistence).catch(error => {
   console.error("Firebase persistence setting failed:", error);
 });
 export { auth };
