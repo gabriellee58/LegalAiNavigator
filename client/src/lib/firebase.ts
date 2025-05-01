@@ -42,8 +42,12 @@ console.log(`Firebase config status: ${isConfigured ? 'Configured' : 'Not config
 // Initialize Firebase app
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firebase auth
+// Initialize Firebase auth with persistence
 const auth = getAuth(app);
+// Set persistence to LOCAL (persists even when the browser is closed)
+auth.setPersistence('local').catch(error => {
+  console.error("Firebase persistence setting failed:", error);
+});
 export { auth };
 
 // Create Google Auth provider
@@ -124,6 +128,19 @@ export async function handleGoogleRedirect(): Promise<FirebaseUser | null> {
     // Validate required fields to avoid downstream errors
     if (!user.uid) {
       throw new Error("Firebase user is missing UID");
+    }
+    
+    // Store Firebase auth information in localStorage as a backup
+    try {
+      localStorage.setItem('firebaseAuthUser', JSON.stringify({
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL
+      }));
+      console.log("Firebase auth user stored in localStorage as backup");
+    } catch (storageError) {
+      console.warn("Could not store auth user in localStorage:", storageError);
     }
     
     if (!user.email) {
