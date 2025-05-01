@@ -90,8 +90,13 @@ export function setupAuth(app: Express) {
           const sessionUser: Express.User = {
             id: user.id,
             username: user.username,
+            email: user.email || '',
+            password: user.password,
+            role: user.role,
             fullName: user.fullName || undefined,
-            preferredLanguage: user.preferredLanguage || undefined
+            preferredLanguage: user.preferredLanguage || undefined,
+            firebaseUid: user.firebaseUid || undefined,
+            photoURL: user.photoURL || undefined
           };
           return done(null, sessionUser);
         }
@@ -114,8 +119,13 @@ export function setupAuth(app: Express) {
       const sessionUser: Express.User = {
         id: user.id,
         username: user.username,
+        email: user.email || '',
+        password: user.password,
+        role: user.role,
         fullName: user.fullName || undefined,
-        preferredLanguage: user.preferredLanguage || undefined
+        preferredLanguage: user.preferredLanguage || undefined,
+        firebaseUid: user.firebaseUid || undefined,
+        photoURL: user.photoURL || undefined
       };
       done(null, sessionUser);
     } catch (err) {
@@ -139,8 +149,13 @@ export function setupAuth(app: Express) {
       const sessionUser: Express.User = {
         id: user.id,
         username: user.username,
+        email: user.email || '',
+        password: user.password,
+        role: user.role,
         fullName: user.fullName || undefined,
-        preferredLanguage: user.preferredLanguage || undefined
+        preferredLanguage: user.preferredLanguage || undefined,
+        firebaseUid: user.firebaseUid || undefined,
+        photoURL: user.photoURL || undefined
       };
 
       req.login(sessionUser, (err) => {
@@ -166,12 +181,16 @@ export function setupAuth(app: Express) {
         
         try {
           // User is already sanitized in the LocalStrategy
-          // Make sure the user object is serializable
+          // Make sure the user object is serializable - omit password for security
           const safeUser = {
             id: user.id,
             username: user.username,
+            email: user.email || '',
+            role: user.role,
             fullName: user.fullName || undefined,
-            preferredLanguage: user.preferredLanguage || undefined
+            preferredLanguage: user.preferredLanguage || undefined,
+            firebaseUid: user.firebaseUid || undefined,
+            photoURL: user.photoURL || undefined
           };
           
           // Send response with proper error handling
@@ -242,8 +261,13 @@ export function setupAuth(app: Express) {
       const sessionUser: Express.User = {
         id: updatedUser.id,
         username: updatedUser.username,
+        email: updatedUser.email || '',
+        password: updatedUser.password,
+        role: updatedUser.role,
         fullName: updatedUser.fullName || undefined,
-        preferredLanguage: updatedUser.preferredLanguage || undefined
+        preferredLanguage: updatedUser.preferredLanguage || undefined,
+        firebaseUid: updatedUser.firebaseUid || undefined,
+        photoURL: updatedUser.photoURL || undefined
       };
       
       // Update the session

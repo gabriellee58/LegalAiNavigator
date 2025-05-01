@@ -573,10 +573,21 @@ export default function AuthPage() {
             </CardContent>
           </Tabs>
           <CardFooter className="flex flex-col space-y-4">
-            <div className="text-sm text-center text-muted-foreground">
-              {activeTab === "login" 
-                ? t("Don't have an account? Switch to Register") 
-                : t("Already have an account? Switch to Login")}
+            <div className="flex flex-col space-y-2">
+              <div className="text-sm text-center text-muted-foreground">
+                {activeTab === "login" 
+                  ? t("Don't have an account? Switch to Register") 
+                  : t("Already have an account? Switch to Login")}
+              </div>
+              
+              {/* Add debug link only in development environment */}
+              {process.env.NODE_ENV !== "production" && (
+                <div className="text-xs text-center">
+                  <Link href="/auth-debug" className="text-primary hover:underline">
+                    Authentication Debug
+                  </Link>
+                </div>
+              )}
             </div>
           </CardFooter>
         </Card>
