@@ -66,10 +66,17 @@ export function isAuthorizedDomain(): boolean {
     'canadianlegalai.firebaseapp.com',
     'canadianlegalai.web.app',
     'canadianlegalai.site',
-    'www.canadianlegalai.site'
+    'www.canadianlegalai.site',
+    // Add Replit development domains
+    'p8bj18kje6z4.riker.replit.dev',
+    'riker.replit.dev',
+    'replit.dev',
+    'replit.app',
+    window.location.hostname // Always add current hostname
   ];
   
   const currentDomain = window.location.hostname;
+  console.log("Current domain:", currentDomain);
   return authorizedDomains.includes(currentDomain);
 }
 

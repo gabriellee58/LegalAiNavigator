@@ -19,6 +19,7 @@ import DocumentNavigatorPage from "@/pages/document-navigator";
 import TimelineEstimatorPage from "@/pages/timeline-estimator";
 import CostEstimatorPage from "@/pages/cost-estimator";
 import AuthPage from "@/pages/auth-page";
+import AuthDebugPage from "@/pages/auth-debug";
 import NotFound from "@/pages/not-found";
 import ProfilePage from "@/pages/profile";
 import LogoutPage from "@/pages/logout";
@@ -200,6 +201,7 @@ function Router() {
       <ProtectedRoute path="/admin/feedback" component={AdminFeedbackPage} />
       
       <Route path="/auth" component={AuthPage} />
+      <Route path="/auth-debug" component={AuthDebugPage} />
       <Route path="/password-reset" component={PasswordResetPage} />
       {/* Fallback to 404 */}
       <Route component={NotFound} />

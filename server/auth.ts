@@ -288,23 +288,38 @@ export function setupAuth(app: Express) {
   // Google Authentication endpoint
   app.post("/api/google-auth", async (req, res, next) => {
     try {
+      console.log("[Google Auth] Received request:", {
+        hasEmail: !!req.body.email,
+        hasUid: !!req.body.uid,
+        hasDisplayName: !!req.body.displayName,
+        body: JSON.stringify(req.body)
+      });
+      
       const { email, displayName, photoURL, uid } = req.body;
       
       if (!email || !uid) {
+        console.log("[Google Auth] Missing required fields:", { email: !!email, uid: !!uid });
         return res.status(400).json({ message: "Email and uid are required" });
       }
+      
+      console.log("[Google Auth] Looking for existing user with Firebase UID:", uid);
       
       // First, check if a user with this Firebase UID exists
       let user = await storage.getUserByFirebaseUid(uid);
       
       if (!user) {
+        console.log("[Google Auth] No user found with Firebase UID, checking email:", email);
+        
         // Then check if a user with this email exists
         user = await storage.getUserByEmail(email);
         
         if (user) {
+          console.log("[Google Auth] Found existing user with matching email, updating Firebase UID");
           // User exists with this email, update their Firebase UID
           user = await storage.updateUser(user.id, { firebaseUid: uid });
         } else {
+          console.log("[Google Auth] No existing user found, creating new user");
+          
           // Create a new user with Firebase information
           // Generate a random password since we won't use it (user will login via Google)
           const randomPassword = Math.random().toString(36).slice(-10);
@@ -313,30 +328,46 @@ export function setupAuth(app: Express) {
           // Extract username from email (removing any special characters)
           const username = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '');
           
+          console.log("[Google Auth] Creating new user with username:", username);
+          
           // Create user
-          user = await storage.createUser({
-            username,
-            password: hashedPassword,
-            email,
-            fullName: displayName || null,
-            preferredLanguage: 'en',
-            firebaseUid: uid,
-            photoURL: photoURL || null,
-            role: 'user'
-          });
+          try {
+            user = await storage.createUser({
+              username,
+              password: hashedPassword,
+              email,
+              fullName: displayName || null,
+              preferredLanguage: 'en',
+              firebaseUid: uid,
+              photoURL: photoURL || null,
+              role: 'user'
+            });
+            console.log("[Google Auth] Successfully created new user with ID:", user.id);
+          } catch (createError) {
+            console.error("[Google Auth] Error creating user:", createError);
+            return res.status(500).json({ message: "Failed to create user account: " + (createError.message || 'Unknown error') });
+          }
         }
+      } else {
+        console.log("[Google Auth] Found existing user with Firebase UID, ID:", user.id);
       }
+      
+      console.log("[Google Auth] Creating user session with passport login");
       
       // Log the user in by creating a session
       req.login(user, (err) => {
         if (err) {
+          console.error("[Google Auth] Session creation error:", err);
           return next(err);
         }
         
         // Make sure user is not undefined before returning
         if (!user) {
+          console.error("[Google Auth] User is undefined after login attempt");
           return res.status(500).json({ message: "Failed to authenticate user" });
         }
+        
+        console.log("[Google Auth] Successfully created session for user:", user.id);
         
         // Set proper content type and return user data
         res.setHeader('Content-Type', 'application/json');
@@ -352,7 +383,7 @@ export function setupAuth(app: Express) {
         });
       });
     } catch (err) {
-      console.error('Google auth error:', err);
+      console.error('[Google Auth] Unexpected error:', err);
       next(err);
     }
   });
