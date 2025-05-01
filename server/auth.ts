@@ -11,8 +11,14 @@ import { User } from "@shared/schema";
 type UserSession = {
   id: number;
   username: string;
-  fullName?: string;
-  preferredLanguage?: string;
+  email: string | null;
+  password: string;
+  role: string;
+  fullName?: string | null;
+  preferredLanguage?: string | null;
+  createdAt?: Date | null;
+  firebaseUid?: string | null;
+  photoURL?: string | null;
 }
 
 // Define the structure that Express will use for the session user
@@ -366,12 +372,12 @@ export function setupAuth(app: Express) {
         username: user.username,
         email: user.email || '',
         password: user.password,
-        fullName: user.fullName,
-        preferredLanguage: user.preferredLanguage,
         role: user.role,
-        createdAt: user.createdAt,
-        firebaseUid: user.firebaseUid,
-        photoURL: user.photoURL
+        fullName: user.fullName || undefined,
+        preferredLanguage: user.preferredLanguage || undefined,
+        createdAt: user.createdAt || undefined,
+        firebaseUid: user.firebaseUid || undefined,
+        photoURL: user.photoURL || undefined
       };
         
       // Log the user in by creating a session
