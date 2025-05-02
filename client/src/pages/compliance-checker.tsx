@@ -5,13 +5,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { useState, useRef } from "react";
-import { AlertCircle, CheckCircle, Clock, ShieldCheck, XCircle, Loader2, FileText, Trash2 } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { AlertCircle, CheckCircle, Clock, ShieldCheck, XCircle, Loader2, FileText, Trash2, Calendar } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useQuery } from "@tanstack/react-query";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
 
 interface UploadedFile {
   name: string;
@@ -357,9 +360,26 @@ export default function ComplianceCheckerPage() {
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">{t("compliance_supporting_documents")}</label>
+                      <Alert className="mb-3">
+                        <FileText className="h-4 w-4" />
+                        <AlertTitle>{t("acceptable_document_types")}</AlertTitle>
+                        <AlertDescription>
+                          <p>{t("acceptable_document_description")}</p>
+                          <div className="mt-2 grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1 text-sm">
+                            <div>• PDF {t("documents")}</div>
+                            <div>• Word (.doc, .docx)</div>
+                            <div>• Excel (.xls, .xlsx)</div>
+                            <div>• Text (.txt, .rtf)</div>
+                            <div>• CSV {t("files")}</div>
+                            <div>• JSON {t("files")}</div>
+                            <div>• {t("images")} (.jpg, .png)</div>
+                            <div>• {t("scans")} (.tiff, .gif, .bmp)</div>
+                          </div>
+                        </AlertDescription>
+                      </Alert>
                       <input
                         type="file"
-                        accept=".pdf,.doc,.docx,.txt"
+                        accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.json,.csv,.jpg,.jpeg,.png,.gif,.bmp,.tiff,.webp,.rtf"
                         multiple
                         onChange={handleFileUpload}
                         ref={fileInputRef}

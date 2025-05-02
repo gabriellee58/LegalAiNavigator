@@ -6,7 +6,7 @@ import { isAuthenticated } from '../auth';
 import { analyzeComplianceWithAI } from '../lib/complianceService';
 import { db } from '../db';
 import { complianceChecks } from '@shared/schema';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, desc } from 'drizzle-orm';
 import { config } from '../config';
 import path from 'path';
 import fs from 'fs';
@@ -145,22 +145,36 @@ complianceRouter.get('/history', isAuthenticated, asyncHandler(async (req: Reque
     const userId = req.user?.id;
     
     // Get compliance check history from database
-    const history = await db.select({
-      id: complianceChecks.id,
-      businessType: complianceChecks.businessType,
-      jurisdiction: complianceChecks.jurisdiction,
-      score: complianceChecks.score,
-      status: complianceChecks.status,
-      createdAt: complianceChecks.createdAt,
-      description: complianceChecks.description,
-      complianceArea: complianceChecks.complianceArea,
-    })
-    .from(complianceChecks)
-    .where(and(
-      eq(complianceChecks.userId, userId),
-      eq(complianceChecks.completed, true)
-    ))
-    .orderBy(complianceChecks.createdAt);
+    let history = [];
+    
+    if (userId) {
+      history = await db.select({
+        id: complianceChecks.id,
+        businessType: complianceChecks.businessType,
+        jurisdiction: complianceChecks.jurisdiction,
+        score: complianceChecks.score,
+        status: complianceChecks.status,
+        createdAt: complianceChecks.createdAt,
+        description: complianceChecks.description,
+        complianceArea: complianceChecks.complianceArea,
+      })
+      .from(complianceChecks)
+      .where(eq(complianceChecks.userId, userId))
+      .orderBy(sql`${complianceChecks.createdAt} DESC`);
+    } else {
+      history = await db.select({
+        id: complianceChecks.id,
+        businessType: complianceChecks.businessType,
+        jurisdiction: complianceChecks.jurisdiction,
+        score: complianceChecks.score,
+        status: complianceChecks.status,
+        createdAt: complianceChecks.createdAt,
+        description: complianceChecks.description,
+        complianceArea: complianceChecks.complianceArea,
+      })
+      .from(complianceChecks)
+      .orderBy(desc(complianceChecks.createdAt));
+    }
     
     return res.json(history);
   } catch (error) {
