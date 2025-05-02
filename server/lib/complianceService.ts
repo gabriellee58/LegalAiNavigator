@@ -7,6 +7,21 @@ import { generateChatResponse } from './aiService';
  * Analyze business compliance with AI
  * This function will use the central AI service with built-in fallbacks
  */
+/**
+ * Helper function to truncate document content to prevent token limit issues
+ */
+function truncateDocument(text: string, maxLength: number = 5000): string {
+  if (!text || text.length <= maxLength) return text;
+  
+  // If document is too long, truncate it with a note
+  return text.substring(0, maxLength) + 
+    `\n\n[Document truncated due to length. Only the first ${maxLength} characters are shown.]`;
+}
+
+/**
+ * Analyze business compliance with AI
+ * This function will use the central AI service with built-in fallbacks
+ */
 export async function analyzeComplianceWithAI(
   request: ComplianceCheckRequest
 ): Promise<ComplianceResult> {
@@ -16,10 +31,27 @@ export async function analyzeComplianceWithAI(
   const startTime = Date.now();
   
   try {
-    // Extract text from documents if any
-    const documentTexts = documents
-      .filter(doc => doc.content)
-      .map(doc => `Document: ${doc.name}\nContent: ${extractTextFromDocument(doc)}`);
+    // Extract text from documents if any, with size limits to prevent token issues
+    // Set a reasonable max length for each document
+    const MAX_DOCUMENT_LENGTH = 5000; // characters per document
+    const MAX_TOTAL_DOCUMENTS_LENGTH = 20000; // characters for all documents combined
+    
+    // Process documents with limits
+    let totalDocumentLength = 0;
+    const documentTexts: string[] = [];
+    
+    for (const doc of documents.filter(d => d.content)) {
+      const extractedText = extractTextFromDocument(doc);
+      const truncatedText = truncateDocument(extractedText, MAX_DOCUMENT_LENGTH);
+      
+      // Check if adding this document would exceed our total limit
+      if (totalDocumentLength + truncatedText.length > MAX_TOTAL_DOCUMENTS_LENGTH) {
+        documentTexts.push(`Document: ${doc.name}\n[Content omitted due to size constraints]`);
+      } else {
+        documentTexts.push(`Document: ${doc.name}\nContent: ${truncatedText}`);
+        totalDocumentLength += truncatedText.length;
+      }
+    }
     
     // Generate the prompt
     const prompt = generateCompliancePrompt(businessType, jurisdiction, description, documentTexts);
@@ -46,7 +78,21 @@ export async function analyzeComplianceWithAI(
     
   } catch (error) {
     console.error('Compliance analysis error:', error);
-    throw error;
+    
+    // Return a fallback response instead of throwing
+    return {
+      score: 50,
+      status: 'needs_attention',
+      issues: [
+        {
+          title: 'Compliance Analysis Error',
+          description: 'We encountered an error analyzing your business compliance.',
+          severity: 'medium',
+          recommendation: 'Please try again with smaller document sizes or contact support if the problem persists.'
+        }
+      ],
+      compliant: []
+    };
   }
 }
 
@@ -119,36 +165,70 @@ function extractTextFromDocument(document: DocumentInfo): string {
 /**
  * Parse compliance result from AI response
  */
-function parseComplianceResult(response: string): ComplianceResult {
+function parseComplianceResult(response: string | any): ComplianceResult {
+  // First check if response is already an object (not a string)
+  if (typeof response === 'object' && response !== null) {
+    // Check if it's an error response from the AI service
+    if (response.error === true) {
+      console.log('Received error response from AI service:', response.errorType);
+      
+      // Return a fallback response for error case
+      return {
+        score: 50,
+        status: 'needs_attention',
+        issues: [
+          {
+            title: 'Compliance Analysis Error',
+            description: 'We encountered an error analyzing your business compliance.',
+            severity: 'medium',
+            recommendation: 'Please try again or contact support if the problem persists.'
+          }
+        ],
+        compliant: []
+      };
+    }
+    
+    // If it looks like it might already be a ComplianceResult, validate it
+    if (response.score !== undefined && response.status !== undefined) {
+      return response as ComplianceResult;
+    }
+  }
+  
+  // If we got this far, assume it's a string that needs parsing
   try {
-    // Try to directly parse as JSON
-    const parsedResult = JSON.parse(response) as ComplianceResult;
+    // Only try to parse if it's a string
+    const parsedResult = typeof response === 'string' 
+      ? JSON.parse(response) as ComplianceResult 
+      : response;
     
     // Ensure the response has the required fields
-    if (!parsedResult.score && !parsedResult.status) {
-      throw new Error('Invalid response format');
+    if (parsedResult.score === undefined && parsedResult.status === undefined) {
+      throw new Error('Invalid response format - missing required fields');
     }
     
     // Return the parsed result
     return parsedResult;
   } catch (jsonError) {
-    // If direct parsing fails, try to extract JSON from the response
+    // If direct parsing fails, try to extract JSON from the response (only if it's a string)
     try {
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const jsonStr = jsonMatch[0];
-        const parsedResult = JSON.parse(jsonStr) as ComplianceResult;
-        
-        if (!parsedResult.score && !parsedResult.status) {
-          throw new Error('Invalid extracted JSON format');
+      if (typeof response === 'string') {
+        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const jsonStr = jsonMatch[0];
+          const parsedResult = JSON.parse(jsonStr) as ComplianceResult;
+          
+          if (parsedResult.score === undefined && parsedResult.status === undefined) {
+            throw new Error('Invalid extracted JSON format - missing required fields');
+          }
+          
+          return parsedResult;
         }
-        
-        return parsedResult;
       }
       throw new Error('Could not extract JSON from response');
     } catch (extractError) {
       console.error('Error parsing compliance result:', extractError);
-      console.error('Original response:', response);
+      console.error('Original response type:', typeof response);
+      console.error('Original response:', JSON.stringify(response).substring(0, 500) + '...');
       
       // As a fallback, construct a basic response
       return {

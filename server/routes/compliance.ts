@@ -155,20 +155,62 @@ complianceRouter.get('/history', isAuthenticated, asyncHandler(async (req: Reque
       return res.status(401).json({ message: "Unauthorized access" });
     }
     
-    // Get compliance check history from database
-    const history = await db.select({
+    // Get compliance check history from database - only select columns we know exist
+    // Start with the columns we know exist
+    const selectObj: any = {
       id: complianceChecks.id,
       businessType: complianceChecks.businessType,
       jurisdiction: complianceChecks.jurisdiction,
-      score: complianceChecks.score,
-      status: complianceChecks.status,
-      createdAt: complianceChecks.createdAt,
-      description: complianceChecks.description,
       complianceArea: complianceChecks.complianceArea,
-    })
-    .from(complianceChecks)
-    .where(eq(complianceChecks.userId, userId))
-    .orderBy(desc(complianceChecks.createdAt));
+      createdAt: complianceChecks.createdAt
+    };
+
+    // Dynamically add other columns that might not exist in older DB schemas
+    try {
+      // Check if table has the description column using rawSQL
+      const descriptionExists = await db.execute(
+        `SELECT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'compliance_checks' AND column_name = 'description'
+        ) as exists`
+      );
+      
+      if (descriptionExists[0]?.exists === true) {
+        selectObj.description = complianceChecks.description;
+      }
+      
+      // Check for score column
+      const scoreExists = await db.execute(
+        `SELECT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'compliance_checks' AND column_name = 'score'
+        ) as exists`
+      );
+      
+      if (scoreExists[0]?.exists === true) {
+        selectObj.score = complianceChecks.score;
+      }
+      
+      // Check for status column
+      const statusExists = await db.execute(
+        `SELECT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'compliance_checks' AND column_name = 'status'
+        ) as exists`
+      );
+      
+      if (statusExists[0]?.exists === true) {
+        selectObj.status = complianceChecks.status;
+      }
+    } catch (error) {
+      console.log('Error checking column existence:', error);
+      // Continue with basic columns if this fails
+    }
+    
+    const history = await db.select(selectObj)
+      .from(complianceChecks)
+      .where(eq(complianceChecks.userId, userId))
+      .orderBy(desc(complianceChecks.createdAt));
     
     // Always return an array, even if empty
     return res.json(history || []);
