@@ -19,8 +19,9 @@ initializeConfig();
 enhanceDbClient(db);
 
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+// Increase JSON body parser size limit to handle larger file uploads (default is ~1MB)
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
 // Add Content Security Policy middleware to allow unsafe-eval for Firebase
 app.use((req, res, next) => {

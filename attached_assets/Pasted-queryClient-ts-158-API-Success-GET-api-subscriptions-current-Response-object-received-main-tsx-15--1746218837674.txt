@@ -1,0 +1,53 @@
+queryClient.ts:158 API Success: GET /api/subscriptions/current Response object received
+main.tsx:15 Error response from subscription API HTTP status: Object
+console.error @ main.tsx:15Understand this error
+queryClient.ts:205 Query: GET /api/compliance/history
+api/compliance/history:1 
+            
+            
+           Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+main.tsx:15 Query Error (500) for GET /api/compliance/history: Object
+console.error @ main.tsx:15Understand this error
+queryClient.ts:205 Query: GET /api/compliance/history
+api/compliance/history:1 
+            
+            
+           Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+main.tsx:15 Query Error (500) for GET /api/compliance/history: Object
+console.error @ main.tsx:15Understand this error
+queryClient.ts:205 Query: GET /api/compliance/history
+api/compliance/history:1 
+            
+            
+           Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+main.tsx:15 Query Error (500) for GET /api/compliance/history: Object
+console.error @ main.tsx:15Understand this error
+queryClient.ts:94 API Request: POST /api/compliance/check Object
+api/compliance/check:1 
+            
+            
+           Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+main.tsx:15 API Error (500) for POST /api/compliance/check: Object
+console.error @ main.tsx:15Understand this error
+main.tsx:15 API Request failed (attempt 1/2): ApiError: Internal Server Error
+    at apiRequest (queryClient.ts:129:15)
+    at async handleSubmit (compliance-checker.tsx:170:24)
+console.error @ main.tsx:15Understand this error
+queryClient.ts:101 Retry attempt 1/1 for POST /api/compliance/check
+api/compliance/check:1 
+            
+            
+           Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+main.tsx:15 API Error (500) for POST /api/compliance/check: Object
+console.error @ main.tsx:15Understand this error
+main.tsx:15 API Request failed (attempt 2/2): ApiError: Internal Server Error
+    at apiRequest (queryClient.ts:129:15)
+    at async handleSubmit (compliance-checker.tsx:170:24)
+console.error @ main.tsx:15Understand this error
+main.tsx:15 All 2 attempts failed for POST /api/compliance/check ApiError: Internal Server Error
+    at apiRequest (queryClient.ts:129:15)
+    at async handleSubmit (compliance-checker.tsx:170:24)
+console.error @ main.tsx:15Understand this error
+main.tsx:15 Compliance check error: ApiError: Internal Server Error
+    at apiRequest (queryClient.ts:129:15)
+    at async handleSubmit (compliance-checker.tsx:170:24)
