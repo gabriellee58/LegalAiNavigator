@@ -108,6 +108,11 @@ complianceRouter.post('/check', isAuthenticated, asyncHandler(async (req: Reques
 
     // Save the compliance check results to database
     try {
+      // Make sure the score is converted to an integer
+      const score = typeof complianceResult.score === 'number' 
+        ? Math.round(complianceResult.score) 
+        : 0;
+        
       await db.insert(complianceChecks).values({
         userId: userId,
         businessType,
@@ -115,14 +120,16 @@ complianceRouter.post('/check', isAuthenticated, asyncHandler(async (req: Reques
         description,
         complianceArea: 'general', // Default area
         checkResults: complianceResult,
-        score: complianceResult.score || 0,
+        score: score,
         status: complianceResult.status || 'needs_attention',
         completed: true
       });
       
       console.log(`Compliance check saved to database for user ${userId}`);
-    } catch (dbError) {
-      console.error("Error saving compliance check to database:", dbError);
+    } catch (error) {
+      const dbError = error as Error;
+      console.error("Error saving compliance check to database:", dbError.message);
+      console.error(dbError.stack || dbError);
       // Continue with the response even if there was a database error
     }
     
@@ -144,41 +151,31 @@ complianceRouter.get('/history', isAuthenticated, asyncHandler(async (req: Reque
   try {
     const userId = req.user?.id;
     
-    // Get compliance check history from database
-    let history = [];
-    
-    if (userId) {
-      history = await db.select({
-        id: complianceChecks.id,
-        businessType: complianceChecks.businessType,
-        jurisdiction: complianceChecks.jurisdiction,
-        score: complianceChecks.score,
-        status: complianceChecks.status,
-        createdAt: complianceChecks.createdAt,
-        description: complianceChecks.description,
-        complianceArea: complianceChecks.complianceArea,
-      })
-      .from(complianceChecks)
-      .where(eq(complianceChecks.userId, userId))
-      .orderBy(sql`${complianceChecks.createdAt} DESC`);
-    } else {
-      history = await db.select({
-        id: complianceChecks.id,
-        businessType: complianceChecks.businessType,
-        jurisdiction: complianceChecks.jurisdiction,
-        score: complianceChecks.score,
-        status: complianceChecks.status,
-        createdAt: complianceChecks.createdAt,
-        description: complianceChecks.description,
-        complianceArea: complianceChecks.complianceArea,
-      })
-      .from(complianceChecks)
-      .orderBy(sql`${complianceChecks.createdAt} DESC`);
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized access" });
     }
     
-    return res.json(history);
-  } catch (error) {
-    console.error("Error fetching compliance history:", error);
+    // Get compliance check history from database
+    const history = await db.select({
+      id: complianceChecks.id,
+      businessType: complianceChecks.businessType,
+      jurisdiction: complianceChecks.jurisdiction,
+      score: complianceChecks.score,
+      status: complianceChecks.status,
+      createdAt: complianceChecks.createdAt,
+      description: complianceChecks.description,
+      complianceArea: complianceChecks.complianceArea,
+    })
+    .from(complianceChecks)
+    .where(eq(complianceChecks.userId, userId))
+    .orderBy(desc(complianceChecks.createdAt));
+    
+    // Always return an array, even if empty
+    return res.json(history || []);
+  } catch (err) {
+    const error = err as Error;
+    console.error("Error fetching compliance history:", error.message);
+    console.error(error.stack || error);
     return res.status(500).json({
       message: "An error occurred while fetching compliance history"
     });
