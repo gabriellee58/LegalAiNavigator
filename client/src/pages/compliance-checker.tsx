@@ -37,12 +37,25 @@ export default function ComplianceCheckerPage() {
     const files = event.target.files;
     if (!files || files.length === 0) return;
     
-    // Validate file types: PDF, DOC, DOCX, TXT, etc.
+    // Validate file types: PDF, DOC, DOCX, TXT, images, etc.
     const allowedTypes = [
+      // Documents
       'application/pdf',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'text/plain'
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/plain',
+      'application/rtf',
+      'application/json',
+      'text/csv',
+      // Images
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/bmp',
+      'image/tiff',
+      'image/webp'
     ];
     
     // Max file size is 10MB

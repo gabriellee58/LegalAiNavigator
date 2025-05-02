@@ -6,6 +6,7 @@ import { isAuthenticated } from '../auth';
 import { analyzeComplianceWithAI } from '../lib/complianceService';
 import { db } from '../db';
 import { complianceChecks } from '@shared/schema';
+import { eq, and, sql } from 'drizzle-orm';
 import { config } from '../config';
 import path from 'path';
 import fs from 'fs';
@@ -155,8 +156,11 @@ complianceRouter.get('/history', isAuthenticated, asyncHandler(async (req: Reque
       complianceArea: complianceChecks.complianceArea,
     })
     .from(complianceChecks)
-    .where(sql`${complianceChecks.userId} = ${userId} AND ${complianceChecks.completed} = true`)
-    .orderBy(complianceChecks.createdAt, 'desc');
+    .where(and(
+      eq(complianceChecks.userId, userId),
+      eq(complianceChecks.completed, true)
+    ))
+    .orderBy(complianceChecks.createdAt);
     
     return res.json(history);
   } catch (error) {
