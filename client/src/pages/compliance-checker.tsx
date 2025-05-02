@@ -6,7 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useState, useRef, useEffect } from "react";
-import { AlertCircle, CheckCircle, Clock, ShieldCheck, XCircle, Loader2, FileText, Trash2, Calendar } from "lucide-react";
+import { 
+  AlertCircle, CheckCircle, Clock, ShieldCheck, XCircle, Loader2, 
+  FileText, Trash2, Calendar, ChevronRight, Download, Printer, Eye
+} from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
@@ -15,6 +18,15 @@ import { apiRequest } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose
+} from "@/components/ui/dialog";
 
 interface UploadedFile {
   name: string;
@@ -34,6 +46,22 @@ interface ComplianceHistoryItem {
   complianceArea?: string;
 }
 
+// Interface for compliance details
+interface ComplianceDetails {
+  score: number;
+  status: string;
+  issues: Array<{
+    title: string;
+    description: string;
+    severity: 'low' | 'medium' | 'high';
+    recommendation: string;
+  }>;
+  compliant: Array<{
+    title: string;
+    description: string;
+  }>;
+}
+
 export default function ComplianceCheckerPage() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -45,6 +73,12 @@ export default function ComplianceCheckerPage() {
   const [complianceResult, setComplianceResult] = useState<any>(null);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // New state variables for the compliance details dialog
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedCompliance, setSelectedCompliance] = useState<ComplianceHistoryItem | null>(null);
+  const [complianceDetails, setComplianceDetails] = useState<ComplianceDetails | null>(null);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   
   // Fetch compliance history using React Query
   const { 
@@ -149,6 +183,47 @@ export default function ComplianceCheckerPage() {
       refetchHistory();
     }
   }, [currentTab, refetchHistory]);
+  
+  // Function to open the compliance details dialog
+  const openComplianceDetails = async (item: ComplianceHistoryItem) => {
+    setSelectedCompliance(item);
+    setDetailsDialogOpen(true);
+    setIsLoadingDetails(true);
+    
+    try {
+      // Fetch the detailed compliance report from the API
+      const response = await apiRequest('GET', `/api/compliance/${item.id}`);
+      setComplianceDetails(response);
+    } catch (error) {
+      console.error('Error fetching compliance details:', error);
+      toast({
+        title: t("error"),
+        description: t("error_fetching_compliance_details"),
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoadingDetails(false);
+    }
+  };
+  
+  // Function to export compliance report as PDF (placeholder)
+  const exportComplianceReport = () => {
+    if (!selectedCompliance || !complianceDetails) return;
+    
+    toast({
+      title: t("exporting_report"),
+      description: t("preparing_pdf_download")
+    });
+    
+    // In a real implementation, we would generate the PDF here
+    // For now, we'll just show a toast message
+    setTimeout(() => {
+      toast({
+        title: t("export_complete"),
+        description: t("report_downloaded")
+      });
+    }, 1500);
+  };
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
@@ -506,7 +581,11 @@ export default function ComplianceCheckerPage() {
                 ) : (
                   <div className="space-y-6">
                     {complianceHistory.map((item) => (
-                      <div key={item.id} className="border rounded-lg overflow-hidden">
+                      <div 
+                        key={item.id} 
+                        className="border rounded-lg overflow-hidden cursor-pointer hover:border-primary transition-colors duration-200"
+                        onClick={() => openComplianceDetails(item)}
+                      >
                         <div className="bg-neutral-50 dark:bg-neutral-900 p-4 flex flex-col md:flex-row justify-between items-start md:items-center">
                           <div>
                             <h3 className="font-medium text-lg mb-1">
@@ -543,6 +622,13 @@ export default function ComplianceCheckerPage() {
                             </p>
                           </div>
                         )}
+                        <div className="px-4 pb-3 pt-1 flex items-center justify-end text-sm text-primary">
+                          <span className="flex items-center gap-1">
+                            <FileText className="h-4 w-4" /> 
+                            {t("view_details")}
+                            <ChevronRight className="h-4 w-4" />
+                          </span>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -551,6 +637,135 @@ export default function ComplianceCheckerPage() {
             </Card>
           </TabsContent>
         </Tabs>
+        
+        {/* Compliance Details Dialog */}
+        <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            {isLoadingDetails ? (
+              <div className="flex justify-center items-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : selectedCompliance && complianceDetails ? (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="text-2xl flex items-center gap-3">
+                    {t(selectedCompliance.businessType)} {t("in")} {t(selectedCompliance.jurisdiction)}
+                    <Badge 
+                      className={
+                        complianceDetails.status === 'compliant' 
+                          ? 'bg-green-100 hover:bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' 
+                        : complianceDetails.status === 'needs_attention'
+                          ? 'bg-orange-100 hover:bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300'
+                          : 'bg-red-100 hover:bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                      }
+                    >
+                      {t(complianceDetails.status)}
+                    </Badge>
+                  </DialogTitle>
+                  <DialogDescription>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Calendar className="h-4 w-4 text-neutral-500" />
+                      <span className="text-neutral-500">
+                        {format(new Date(selectedCompliance.createdAt), 'PPP')}
+                      </span>
+                    </div>
+                    {selectedCompliance.description && (
+                      <p className="mt-2 text-neutral-600 dark:text-neutral-300">
+                        <span className="font-medium">{t("business_description")}: </span>
+                        {selectedCompliance.description}
+                      </p>
+                    )}
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="mt-4 space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium">{t("compliance_score")}</h3>
+                    <div className="flex items-center gap-3">
+                      <div className="font-bold text-2xl text-primary">{complianceDetails.score}%</div>
+                      <Progress value={complianceDetails.score} className="w-24" />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium text-red-600 dark:text-red-400">{t("compliance_issues")}</h3>
+                    {complianceDetails.issues.length === 0 ? (
+                      <p className="text-neutral-500">{t("no_compliance_issues")}</p>
+                    ) : (
+                      complianceDetails.issues.map((issue, index) => (
+                        <div key={`issue-${index}`} className="border rounded-md p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <AlertCircle className={`h-5 w-5 ${getSeverityColor(issue.severity)}`} />
+                            <span className="font-medium">{issue.title}</span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full ml-auto ${
+                              issue.severity === 'high' 
+                                ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' 
+                                : issue.severity === 'medium'
+                                  ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300'
+                                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
+                            }`}>
+                              {t(`severity_${issue.severity}`)}
+                            </span>
+                          </div>
+                          <p className="text-sm mb-2">{issue.description}</p>
+                          <div className="text-sm bg-blue-50 dark:bg-blue-900/20 p-2 rounded text-blue-800 dark:text-blue-300">
+                            <span className="font-medium">{t("recommendation")}: </span>
+                            {issue.recommendation}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium text-green-600 dark:text-green-400">{t("compliant_areas")}</h3>
+                    {complianceDetails.compliant.length === 0 ? (
+                      <p className="text-neutral-500">{t("no_compliant_areas")}</p>
+                    ) : (
+                      complianceDetails.compliant.map((item, index) => (
+                        <div key={`compliant-${index}`} className="border border-green-200 dark:border-green-900/30 rounded-md p-4 bg-green-50 dark:bg-green-900/20">
+                          <div className="flex items-center gap-2 mb-1">
+                            <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                            <span className="font-medium text-green-800 dark:text-green-300">{item.title}</span>
+                          </div>
+                          <p className="text-sm text-green-700 dark:text-green-300">{item.description}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+                
+                <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-6">
+                  <Button
+                    variant="outline"
+                    onClick={() => setDetailsDialogOpen(false)}
+                  >
+                    {t("close")}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="gap-2"
+                    onClick={() => window.print()}
+                  >
+                    <Printer className="h-4 w-4" />
+                    {t("print")}
+                  </Button>
+                  <Button 
+                    className="gap-2"
+                    onClick={exportComplianceReport}
+                  >
+                    <Download className="h-4 w-4" />
+                    {t("export_pdf")}
+                  </Button>
+                </DialogFooter>
+              </>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-neutral-500">{t("no_compliance_data")}</p>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );

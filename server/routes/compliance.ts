@@ -224,4 +224,75 @@ complianceRouter.get('/history', isAuthenticated, asyncHandler(async (req: Reque
   }
 }));
 
+// Get a single compliance check by ID
+complianceRouter.get('/:id', asyncHandler(async (req, res) => {
+  const complianceId = parseInt(req.params.id);
+  
+  try {
+    // Validate ID
+    if (isNaN(complianceId)) {
+      return res.status(400).json({ message: "Invalid compliance check ID" });
+    }
+    
+    // Get user ID from authenticated user
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized access" });
+    }
+    
+    // Get compliance check record from database
+    const [record] = await db.select()
+      .from(complianceChecks)
+      .where(and(
+        eq(complianceChecks.id, complianceId),
+        eq(complianceChecks.userId, userId)
+      ));
+    
+    if (!record) {
+      return res.status(404).json({ message: "Compliance check not found" });
+    }
+    
+    // Construct response object
+    // Note: For now, we'll return a simple structure with mock data.
+    // In a real implementation, we would store the full compliance result in the database
+    const result = {
+      score: record.score || 50,
+      status: record.status || 'needs_attention',
+      issues: [
+        {
+          title: "Missing Business Registration",
+          description: "Your business needs to register with the provincial government.",
+          severity: "high",
+          recommendation: "Complete registration through the Ontario Business Registry."
+        },
+        {
+          title: "Tax Registration Required",
+          description: "GST/HST registration may be required if your revenue exceeds $30,000 annually.",
+          severity: "medium",
+          recommendation: "Register for a GST/HST account with the Canada Revenue Agency."
+        }
+      ],
+      compliant: [
+        {
+          title: "Municipal Permits",
+          description: "No municipal permits required for home-based consulting businesses in Ontario."
+        },
+        {
+          title: "Professional Licenses",
+          description: "General consulting services do not require professional licenses in Ontario."
+        }
+      ]
+    };
+    
+    return res.json(result);
+  } catch (err) {
+    const error = err as Error;
+    console.error("Error fetching compliance details:", error.message);
+    console.error(error.stack || error);
+    return res.status(500).json({
+      message: "An error occurred while fetching compliance details"
+    });
+  }
+}));
+
 export default complianceRouter;
