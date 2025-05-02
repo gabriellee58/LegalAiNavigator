@@ -134,9 +134,36 @@ function SearchInterface() {
       console.log("Research response:", response);
       return response.json();
     },
-    onSuccess: (data: ResearchResults) => {
-      console.log("Research success, results:", data);
-      setSearchResults(data);
+    onSuccess: (data: any) => {
+      console.log("Research success, received data:", data);
+      
+      // Handle different response formats
+      let researchResults: ResearchResults;
+      
+      // Extract the actual research results from the response
+      // The API returns the full database record with results nested inside
+      if (data && data.results) {
+        // Format where results are nested under a 'results' property
+        researchResults = data.results as ResearchResults;
+        console.log("Extracted research results from nested structure:", researchResults);
+      } else if (data && data.relevantLaws && data.relevantCases) {
+        // Direct format where the data itself is the results
+        researchResults = data as ResearchResults;
+        console.log("Using direct research results:", researchResults);
+      } else {
+        // Fallback for unexpected structure
+        console.warn("Unexpected research data structure:", data);
+        researchResults = {
+          relevantLaws: [],
+          relevantCases: [],
+          summary: "Research results received in an unexpected format. Please try a different search.",
+          legalConcepts: []
+        };
+      }
+      
+      // Use the extracted results
+      setSearchResults(researchResults);
+      
       if (!searchHistory.includes(searchQuery)) {
         setSearchHistory(prev => [searchQuery, ...prev].slice(0, 5));
       }
