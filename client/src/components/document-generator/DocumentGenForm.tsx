@@ -136,12 +136,19 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
       // Ensure we have document content
       if (documentContent) {
         console.log("Document content extracted successfully, length:", documentContent.length);
-        setGeneratedDocument(documentContent);
-
-        // Use setTimeout to ensure state is updated before tab switch
-        setTimeout(() => {
-          setActiveTab("preview");
-        }, 100);
+        
+        // Clear any existing document before setting the new one
+        setGeneratedDocument(null);
+        
+        // Use requestAnimationFrame to ensure DOM update before setting content
+        requestAnimationFrame(() => {
+          setGeneratedDocument(documentContent);
+          
+          // Use a slightly longer timeout to ensure the DOM has fully updated
+          setTimeout(() => {
+            setActiveTab("preview");
+          }, 300);
+        });
 
         toast({
           title: "Document Generated",
