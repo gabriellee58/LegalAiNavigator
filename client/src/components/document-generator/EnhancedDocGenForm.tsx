@@ -38,19 +38,24 @@ async function generateEnhancedDocument(
   title?: string,
 ) {
   try {
+    console.log(`Requesting enhanced document with saveDocument=${saveDocument}, title=${title}`);
+    
     // apiRequest already returns parsed JSON data, no need to call .json()
     const data = await apiRequest("POST", "/api/documents/enhanced", {
       template,
       formData,
       documentType,
       jurisdiction,
-      saveDocument,
-      title
+      saveDocument: saveDocument, // Make sure this is explicitly passed
+      title: title // Make sure title is explicitly passed for document saving
     });
     
     // Log which AI provider was used for the document
     if (data && data.provider) {
       console.log(`Document enhanced using provider: ${data.provider}`);
+      if (saveDocument) {
+        console.log(`Document save requested: ${saveDocument ? "Yes" : "No"}`);
+      }
     }
     
     // Extract content from the response, ensuring we have valid document content
@@ -89,34 +94,32 @@ export default function EnhancedDocGenForm({ template }: EnhancedDocGenFormProps
   useEffect(() => {
     if (generatedDocument) {
       console.log("useEffect detected generatedDocument change - switching to preview tab");
-      setActiveTab("preview");
       
-      // Scroll to top of page to make sure the preview is visible
-      window.scrollTo(0, 0);
-      console.log("Scrolled to top of page to show generated document");
-      
-      // Add a brief timeout to allow the tab switch to complete
-      setTimeout(() => {
-        // Apply highlight effect to preview panel
-        if (previewPanelRef.current) {
-          // Add flash animation class
-          previewPanelRef.current.classList.add("bg-purple-50/30");
-          
-          // Remove it after animation completes
-          setTimeout(() => {
-            if (previewPanelRef.current) {
-              previewPanelRef.current.classList.remove("bg-purple-50/30");
-            }
-          }, 1000);
-          
-          // Make sure the preview tab is visible and focused
-          const previewTab = document.getElementById('preview-tab');
-          if (previewTab) {
-            previewTab.click();
-            previewTab.focus();
+      // Use requestAnimationFrame for more reliable state updates
+      requestAnimationFrame(() => {
+        // First update the tab state - must happen before DOM manipulations
+        setActiveTab("preview");
+        
+        // Scroll to top of page to make sure the preview is visible
+        window.scrollTo(0, 0);
+        console.log("Scrolled to top of page to show generated document");
+        
+        // Then apply visual effects after a short delay to ensure tab content is rendered
+        setTimeout(() => {
+          // Apply highlight effect to preview panel
+          if (previewPanelRef.current) {
+            // Add flash animation class
+            previewPanelRef.current.classList.add("bg-purple-50/30");
+            
+            // Remove it after animation completes
+            setTimeout(() => {
+              if (previewPanelRef.current) {
+                previewPanelRef.current.classList.remove("bg-purple-50/30");
+              }
+            }, 1000);
           }
-        }
-      }, 200);
+        }, 200);
+      });
     }
   }, [generatedDocument]);
   

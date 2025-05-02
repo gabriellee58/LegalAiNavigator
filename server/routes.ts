@@ -1949,6 +1949,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid enhanced document request" });
       }
       
+      // Log the request details including save document flag
+      console.log(`Enhanced document request: type=${parsed.data.documentType}, save=${parsed.data.saveDocument}`);
+      
       // Generate enhanced document with AI service (Anthropic with fallback)
       const enhancedContent = await generateEnhancedDocument(
         parsed.data.template,
@@ -1961,11 +1964,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Document enhanced using provider: ${enhancedContent.provider || 'unknown'}`);
       
       // Save document if requested and user is logged in
-      if (parsed.data.saveDocument && parsed.data.title && req.user) {
+      const shouldSaveDocument = parsed.data.saveDocument === true;
+      if (shouldSaveDocument && req.user) {
         try {
-          await storage.createGeneratedDocument({
+          // Use the title from request or generate a default one
+          const documentTitle = parsed.data.title || 
+                              `${parsed.data.documentType} Document - ${new Date().toLocaleDateString()}`;
+          
+          const savedDoc = await storage.createGeneratedDocument({
             userId: req.user.id,
-            documentTitle: parsed.data.title,
+            documentTitle: documentTitle,
             documentContent: enhancedContent.content,
             templateId: null, // External template, no direct DB reference
             documentData: {
@@ -1976,7 +1984,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           });
           
-          console.log(`Document saved successfully for user ${req.user.id}`);
+          console.log(`Document saved successfully for user ${req.user.id} with ID: ${savedDoc.id}`);
         } catch (saveError) {
           // Just log the error but don't fail the request
           console.error("Error saving document:", saveError);
@@ -1987,7 +1995,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         content: enhancedContent.content,
         provider: enhancedContent.provider || 'ai',
-        explanation: enhancedContent.explanation
+        explanation: enhancedContent.explanation,
+        saved: shouldSaveDocument
       });
     } catch (error) {
       console.error("Enhanced document generation error:", error);
