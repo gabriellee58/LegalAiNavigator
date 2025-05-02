@@ -75,26 +75,123 @@ const DocumentExportOptions: React.FC<DocumentExportOptionsProps> = ({
           description: t("Your document has been exported as a text file."),
         });
       } else if (format === 'pdf') {
-        // PDF export - use the PDF generator with print dialog
-        console.log(`Generating PDF file: ${sanitizedTitle}.pdf`);
-        const result = await generatePDF(documentContent, `${sanitizedTitle}.pdf`, true);
-        
-        // Check the result type to determine success
-        if (result === true || (typeof result === 'string' && result)) {
-          toast({
-            title: t("PDF Generated"),
-            description: t("Your document has been generated as a PDF."),
-          });
-        } else {
-          console.warn("PDF generation returned an invalid result:", result);
-          // Fallback to text export
-          await exportAsText(documentContent, `${sanitizedTitle}.txt`);
+        try {
+          // First attempt - use the built-in PDF generation
+          console.log(`Generating PDF file: ${sanitizedTitle}.pdf`);
           
-          toast({
-            title: t("PDF Generation Limited"),
-            description: t("Your browser doesn't fully support PDF generation. Document was exported as text instead."),
-            variant: "default",
-          });
+          // Use HTML/CSS method for reliable PDF generation
+          const htmlContent = `
+            <!DOCTYPE html>
+            <html lang="en">
+              <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>${sanitizedTitle}</title>
+                <style>
+                  @page {
+                    margin: 2cm;
+                  }
+                  body {
+                    font-family: "Times New Roman", Times, serif;
+                    line-height: 1.6;
+                    font-size: 12pt;
+                    margin: 0;
+                    padding: 0;
+                  }
+                  .container {
+                    max-width: 100%;
+                    padding: 1cm;
+                  }
+                  h1 {
+                    font-size: 16pt;
+                    margin-bottom: 1cm;
+                    text-align: center;
+                  }
+                  pre {
+                    white-space: pre-wrap;
+                    word-wrap: break-word;
+                    font-family: "Courier New", Courier, monospace;
+                    font-size: 11pt;
+                    line-height: 1.4;
+                  }
+                </style>
+              </head>
+              <body>
+                <div class="container">
+                  <h1>${sanitizedTitle}</h1>
+                  <pre>${documentContent.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+                </div>
+              </body>
+            </html>
+          `;
+          
+          // Create a blob and trigger print dialog which allows saving as PDF
+          const blob = new Blob([htmlContent], { type: 'text/html' });
+          const url = URL.createObjectURL(blob);
+          
+          // Create a hidden iframe to trigger printing
+          const iframe = document.createElement('iframe');
+          iframe.style.position = 'fixed';
+          iframe.style.right = '0';
+          iframe.style.bottom = '0';
+          iframe.style.width = '0';
+          iframe.style.height = '0';
+          iframe.style.border = 'none';
+          iframe.style.visibility = 'hidden';
+          
+          document.body.appendChild(iframe);
+          iframe.onload = () => {
+            // Open print dialog after iframe loads
+            setTimeout(() => {
+              if (iframe.contentWindow) {
+                iframe.contentWindow.print();
+                
+                // Success message
+                toast({
+                  title: t("PDF Export Ready"),
+                  description: t("The print dialog has opened. Choose Save as PDF to complete the export."),
+                });
+                
+                // Clean up after a delay
+                setTimeout(() => {
+                  document.body.removeChild(iframe);
+                  URL.revokeObjectURL(url);
+                }, 1000);
+              }
+            }, 500);
+          };
+          
+          // Set iframe source
+          iframe.src = url;
+          
+        } catch (pdfError) {
+          console.error("Error using primary PDF export method:", pdfError);
+          
+          // Fall back to the legacy PDF method
+          try {
+            console.log("Falling back to legacy PDF generation...");
+            const result = await generatePDF(documentContent, `${sanitizedTitle}.pdf`, true);
+            
+            if (result === true || (typeof result === 'string' && result)) {
+              toast({
+                title: t("PDF Generated"),
+                description: t("Your document has been generated as a PDF."),
+              });
+            } else {
+              throw new Error("Legacy PDF generation failed");
+            }
+          } catch (legacyError) {
+            console.error("Legacy PDF generation failed:", legacyError);
+            
+            // Final fallback to text format
+            await exportAsText(documentContent, `${sanitizedTitle}.txt`);
+            
+            toast({
+              title: t("PDF Generation Limited"),
+              description: t("Your browser doesn't fully support PDF generation. Document was exported as text instead."),
+              variant: "default",
+            });
+          }
         }
       } else if (format === 'docx' || format === 'rtf') {
         // For now, we'll fallback to text export for unsupported formats
@@ -137,7 +234,7 @@ const DocumentExportOptions: React.FC<DocumentExportOptionsProps> = ({
       }
     } finally {
       // Dismiss the loading toast
-      toast.dismiss(loadingId);
+      if (loadingId) toast.dismiss(loadingId);
       
       setIsExporting(false);
     }
@@ -186,7 +283,7 @@ const DocumentExportOptions: React.FC<DocumentExportOptionsProps> = ({
           });
         } finally {
           // Dismiss the loading toast
-          toast.dismiss(loadingId);
+          if (loadingId) toast.dismiss(loadingId);
         }
       }, 500);
     } catch (error) {

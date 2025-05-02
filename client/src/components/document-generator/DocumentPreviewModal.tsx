@@ -161,7 +161,7 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
           const loadingTask = pdfjsLib.getDocument(pdfGenResult);
           
           // Add a loading task progress handler
-          loadingTask.onProgress = (progress) => {
+          loadingTask.onProgress = (progress: { loaded: number; total: number }) => {
             console.log(`Loading PDF: ${Math.round(progress.loaded / progress.total * 100)}%`);
           };
           
