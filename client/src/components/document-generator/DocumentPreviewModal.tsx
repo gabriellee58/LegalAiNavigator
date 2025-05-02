@@ -88,21 +88,73 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
       setIsLoading(true);
       console.log("Starting PDF generation with content length:", documentContent.length);
       
-      // Use the existing PDF generation function with preview mode
-      const pdfGenResult = await generatePDF(documentContent, `${documentTitle}.pdf`, false);
+      // Create HTML blob directly for better compatibility
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>${documentTitle}</title>
+            <style>
+              body {
+                font-family: Arial, sans-serif;
+                line-height: 1.6;
+                margin: 20px;
+                padding: 20px;
+                max-width: 800px;
+                margin: 0 auto;
+              }
+              pre {
+                white-space: pre-wrap;
+                font-family: 'Courier New', Courier, monospace;
+                font-size: 14px;
+                line-height: 1.4;
+                background: #f9f9f9;
+                padding: 15px;
+                border-radius: 4px;
+                border: 1px solid #eee;
+                overflow-x: auto;
+              }
+              h1 {
+                font-size: 24px;
+                margin-bottom: 20px;
+                color: #444;
+              }
+            </style>
+          </head>
+          <body>
+            <h1>${documentTitle}</h1>
+            <pre>${documentContent.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+          </body>
+        </html>
+      `;
       
-      // Check if we got a valid URL back
-      if (pdfGenResult && typeof pdfGenResult === 'string') {
-        console.log("PDF generation successful, got URL:", pdfGenResult.substring(0, 50) + "...");
-        setPdfUrl(pdfGenResult);
+      // Create a blob URL for direct rendering
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const htmlUrl = URL.createObjectURL(blob);
+      
+      // Set this as our PDF URL
+      console.log("Created HTML blob URL for preview");
+      setPdfUrl(htmlUrl);
+      setIsLoading(false);
+      
+      // Attempt to use PDF.js for more advanced rendering if available
+      try {
+        // First, check if we can use the built-in PDF generation
+        const pdfGenResult = await generatePDF(documentContent, `${documentTitle}.pdf`, false);
         
-        // Wrap PDF document loading in try/catch to handle rendering failures
-        try {
-          // Verify the URL is accessible before attempting to render
-          const response = await fetch(pdfGenResult, { method: 'HEAD' });
-          if (!response.ok) {
-            throw new Error(`PDF blob URL not accessible: ${response.status}`);
+        // Only process if we got a valid URL back
+        if (pdfGenResult && typeof pdfGenResult === 'string') {
+          console.log("PDF generation successful, got URL:", pdfGenResult.substring(0, 50) + "...");
+          
+          // Revoke the previous blob URL
+          if (pdfUrl) {
+            URL.revokeObjectURL(pdfUrl);
           }
+          
+          // Set the new PDF URL
+          setPdfUrl(pdfGenResult);
           
           // Load the PDF document using PDF.js
           console.log("Loading PDF document with PDF.js");
@@ -120,34 +172,14 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
           console.log(`PDF loaded successfully with ${pdfDoc.numPages} pages`);
           setTotalPages(pdfDoc.numPages);
           await renderPage(1);
-          setIsLoading(false);
-        } catch (pdfError) {
-          console.error("PDF.js loading/rendering error:", pdfError);
-          
-          // Clean up the URL state since we couldn't render it
-          if (pdfUrl) {
-            URL.revokeObjectURL(pdfUrl);
-          }
-          setPdfUrl(null);
-          setIsLoading(false);
-          
-          toast({
-            title: t("PDF Preview Error"),
-            description: t("Could not render PDF preview. Showing text format instead."),
-            variant: "destructive"
-          });
+        } else {
+          // Handle case where PDF generation didn't return a valid URL
+          console.warn("PDF generation did not return a valid URL, using HTML fallback");
         }
-      } else {
-        // Handle case where PDF generation didn't return a valid URL
-        console.warn("PDF generation did not return a valid URL:", pdfGenResult);
-        setPdfUrl(null);
-        setIsLoading(false);
-        
-        toast({
-          title: t("Using Text Preview"),
-          description: t("PDF preview unavailable. Showing text format instead."),
-          variant: "default"
-        });
+      } catch (pdfError) {
+        console.error("PDF.js loading/rendering error:", pdfError);
+        // We already have an HTML preview, so this is just a warning
+        console.warn("Using HTML fallback for document preview");
       }
     } catch (error) {
       // Handle errors in the PDF generation process
