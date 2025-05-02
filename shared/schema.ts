@@ -193,16 +193,15 @@ export const complianceChecks = pgTable("compliance_checks", {
   complianceArea: text("compliance_area").notNull(), // 'tax', 'employment', 'licensing', etc.
   checkResults: jsonb("check_results").notNull(),
   completed: boolean("completed").notNull().default(false),
+  description: text("description"),
+  score: integer("score"),
+  status: text("status"), // 'compliant', 'needs_attention', 'non_compliant'
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertComplianceCheckSchema = createInsertSchema(complianceChecks).pick({
-  userId: true,
-  businessType: true,
-  jurisdiction: true,
-  complianceArea: true,
-  checkResults: true,
-  completed: true,
+export const insertComplianceCheckSchema = createInsertSchema(complianceChecks).omit({
+  id: true,
+  createdAt: true,
 });
 
 export type InsertComplianceCheck = z.infer<typeof insertComplianceCheckSchema>;
@@ -1348,6 +1347,8 @@ export const insertUserSubscriptionSchema = createInsertSchema(userSubscriptions
 
 export type InsertUserSubscription = z.infer<typeof insertUserSubscriptionSchema>;
 export type UserSubscription = typeof userSubscriptions.$inferSelect;
+
+
 
 // User usage tracking schema
 export const userUsage = pgTable("user_usage", {
