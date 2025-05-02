@@ -173,7 +173,7 @@ complianceRouter.get('/history', isAuthenticated, asyncHandler(async (req: Reque
         complianceArea: complianceChecks.complianceArea,
       })
       .from(complianceChecks)
-      .orderBy(desc(complianceChecks.createdAt));
+      .orderBy(sql`${complianceChecks.createdAt} DESC`);
     }
     
     return res.json(history);

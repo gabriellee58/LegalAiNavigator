@@ -23,6 +23,17 @@ interface UploadedFile {
   content?: string; // Base64 content of the file
 }
 
+interface ComplianceHistoryItem {
+  id: number;
+  businessType: string;
+  jurisdiction: string;
+  score: number;
+  status: string;
+  createdAt: string;
+  description?: string;
+  complianceArea?: string;
+}
+
 export default function ComplianceCheckerPage() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -34,6 +45,17 @@ export default function ComplianceCheckerPage() {
   const [complianceResult, setComplianceResult] = useState<any>(null);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Fetch compliance history using React Query
+  const { 
+    data: complianceHistory = [], 
+    isLoading: isLoadingHistory,
+    error: historyError,
+    refetch: refetchHistory
+  } = useQuery<ComplianceHistoryItem[]>({
+    queryKey: ['/api/compliance/history'],
+    enabled: currentTab === 'compliance-history'
+  });
 
   // Handle file upload
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -121,6 +143,13 @@ export default function ComplianceCheckerPage() {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
+  // Update compliance history when a new tab is selected
+  useEffect(() => {
+    if (currentTab === 'compliance-history') {
+      refetchHistory();
+    }
+  }, [currentTab, refetchHistory]);
+
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -147,6 +176,14 @@ export default function ComplianceCheckerPage() {
           // Fallback to use the entire response if data property is not found
           setComplianceResult(result);
         }
+        
+        // Refresh the compliance history after a successful check
+        refetchHistory();
+        
+        toast({
+          title: t("compliance_check_complete"),
+          description: t("compliance_check_success"),
+        });
       } catch (error) {
         console.error('Compliance check error:', error);
         
@@ -449,12 +486,67 @@ export default function ComplianceCheckerPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  <p className="text-neutral-500 text-center py-8">
+                {isLoadingHistory ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : historyError ? (
+                  <div className="text-center py-8">
+                    <AlertCircle className="h-12 w-12 mx-auto mb-3 text-red-500 opacity-50" />
+                    <p className="text-red-600 dark:text-red-400">{t("error_loading_history")}</p>
+                    <Button onClick={() => refetchHistory()} variant="outline" className="mt-4">
+                      {t("retry")}
+                    </Button>
+                  </div>
+                ) : complianceHistory.length === 0 ? (
+                  <div className="text-center py-8">
                     <Clock className="h-12 w-12 mx-auto mb-3 text-blue-500 opacity-50" />
-                    {t("no_compliance_checks")}
-                  </p>
-                </div>
+                    <p className="text-neutral-500">{t("no_compliance_checks")}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {complianceHistory.map((item) => (
+                      <div key={item.id} className="border rounded-lg overflow-hidden">
+                        <div className="bg-neutral-50 dark:bg-neutral-900 p-4 flex flex-col md:flex-row justify-between items-start md:items-center">
+                          <div>
+                            <h3 className="font-medium text-lg mb-1">
+                              {t(item.businessType)} {t("in")} {t(item.jurisdiction)}
+                            </h3>
+                            <div className="flex items-center text-neutral-500 text-sm gap-2">
+                              <Calendar className="h-4 w-4" />
+                              <span>
+                                {format(new Date(item.createdAt), 'PPP')}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="mt-3 md:mt-0 flex items-center gap-3">
+                            <div className="font-bold text-2xl text-primary">{item.score}%</div>
+                            <Progress value={item.score} className="w-24" />
+                            <Badge 
+                              className={
+                                item.status === 'compliant' 
+                                  ? 'bg-green-100 hover:bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' 
+                                : item.status === 'needs_attention'
+                                  ? 'bg-orange-100 hover:bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300'
+                                  : 'bg-red-100 hover:bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                              }
+                            >
+                              {t(item.status)}
+                            </Badge>
+                          </div>
+                        </div>
+                        {item.description && (
+                          <div className="p-4 border-t">
+                            <p className="text-sm text-neutral-600 dark:text-neutral-300">
+                              <span className="font-medium">{t("business_description")}: </span>
+                              {item.description}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
