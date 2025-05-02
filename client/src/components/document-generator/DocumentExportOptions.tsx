@@ -33,6 +33,7 @@ const DocumentExportOptions: React.FC<DocumentExportOptionsProps> = ({
   documentTitle,
   showPreviewButton = true
 }) => {
+
   const [isExporting, setIsExporting] = useState(false);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [previewFormat, setPreviewFormat] = useState<'pdf' | 'txt'>('pdf');
@@ -49,11 +50,11 @@ const DocumentExportOptions: React.FC<DocumentExportOptionsProps> = ({
     
     setIsExporting(true);
     
-    // Add loading toast that will be dismissed when export is complete
-    const loadingId = toast({
+    // Show loading toast
+    toast({
       title: t("Preparing document"),
       description: t("Please wait while we prepare your document..."),
-    }).id;
+    });
     
     try {
       console.log(`Starting document export in ${format} format`);
@@ -233,8 +234,12 @@ const DocumentExportOptions: React.FC<DocumentExportOptionsProps> = ({
         console.error("Even fallback text export failed:", fallbackError);
       }
     } finally {
-      // Dismiss the loading toast
-      if (loadingId) toast.dismiss(loadingId);
+      // Clear the loading toast by showing a new one that immediately disappears
+      toast({
+        title: "",
+        description: "",
+        duration: 1
+      });
       
       setIsExporting(false);
     }
@@ -252,10 +257,10 @@ const DocumentExportOptions: React.FC<DocumentExportOptionsProps> = ({
     
     try {
       // Show "preparing to print" message
-      const loadingId = toast({
+      toast({
         title: t("Preparing document for printing"),
         description: t("The print dialog will open momentarily...")
-      }).id;
+      });
       
       console.log(`Preparing to print document: "${documentTitle}" (${documentContent.length} chars)`);
       
@@ -282,8 +287,12 @@ const DocumentExportOptions: React.FC<DocumentExportOptionsProps> = ({
             variant: "destructive",
           });
         } finally {
-          // Dismiss the loading toast
-          if (loadingId) toast.dismiss(loadingId);
+          // Clear the loading toast by showing a new one that immediately disappears
+          toast({
+            title: "",
+            description: "",
+            duration: 1
+          });
         }
       }, 500);
     } catch (error) {
