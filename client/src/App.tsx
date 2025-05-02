@@ -40,6 +40,7 @@ import NotarizationGuidePage from "./pages/notarization-guide";
 import SubscriptionPlansPage from "./pages/subscription-plans";
 import SubscriptionSuccessPage from "./pages/subscription/success";
 import SubscriptionDashboardPage from "./pages/subscription/dashboard";
+import RegulatoryCompliancePage from "./pages/regulatory-compliance";
 
 // Import legal domains browser
 import LegalDomainsPage from "./pages/legal-domains";
@@ -180,6 +181,7 @@ function Router() {
       
       {/* Help and Settings */}
       <ProtectedRoute path="/help-resources" component={HelpResourcesPage} />
+      <ProtectedRoute path="/regulatory-compliance" component={RegulatoryCompliancePage} />
       <ProtectedRoute path="/settings" component={SettingsPage} />
       <ProtectedRoute path="/more" component={MorePage} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
