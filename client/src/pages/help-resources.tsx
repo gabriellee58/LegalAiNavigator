@@ -149,6 +149,12 @@ export default function HelpResourcesPage() {
   
   const legalResources = [
     {
+      title: "Regulatory Compliance Information",
+      description: "Learn about our compliance with Canadian AI and legal regulations",
+      link: "/regulatory-compliance",
+      internal: true
+    },
+    {
       title: "Canadian Legal Information Institute (CanLII)",
       description: "Access to Canadian court judgments, tribunal decisions, statutes and regulations",
       link: "https://www.canlii.org/"
@@ -405,12 +411,20 @@ export default function HelpResourcesPage() {
                         <div>
                           <h3 className="text-lg font-medium mb-1">{resource.title}</h3>
                           <p className="text-neutral-600 dark:text-neutral-300 text-sm mb-3">{resource.description}</p>
-                          <Button variant="outline" size="sm" className="gap-1" asChild>
-                            <a href={resource.link} target="_blank" rel="noopener noreferrer">
-                              {t("visit_website")}
-                              <ExternalLink className="h-4 w-4" />
-                            </a>
-                          </Button>
+                          {resource.internal ? (
+                            <Button variant="outline" size="sm" className="gap-1" asChild>
+                              <Link href={resource.link}>
+                                {t("view_information")}
+                              </Link>
+                            </Button>
+                          ) : (
+                            <Button variant="outline" size="sm" className="gap-1" asChild>
+                              <a href={resource.link} target="_blank" rel="noopener noreferrer">
+                                {t("visit_website")}
+                                <ExternalLink className="h-4 w-4" />
+                              </a>
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>
