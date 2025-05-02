@@ -50,32 +50,13 @@ export function PermissionsProvider({ children }: PermissionsProviderProps) {
   const permissions = useMemo(() => {
     const perms: PermissionKey[] = [];
     
-    // Default permissions for any authenticated user
+    // Grant all permissions to any authenticated user - TEMPORARY PUBLIC ACCESS MODE
     if (user) {
+      // Basic permissions
       perms.push('documents:create');
       perms.push('research:basic');
-    }
-    
-    // Basic subscription permissions
-    if (subscription && currentPlan?.id === 'basic') {
-      // Basic plan has limited access
-      perms.push('contracts:analyze');
-      perms.push('compliance:check');
-    }
-    
-    // Professional subscription permissions
-    if (subscription && currentPlan?.id === 'professional') {
-      perms.push('documents:advanced');
-      perms.push('research:advanced');
-      perms.push('contracts:analyze');
-      perms.push('contracts:compare');
-      perms.push('dispute:create');
-      perms.push('compliance:check');
-      perms.push('billing:access');
-    }
-    
-    // Enterprise subscription permissions
-    if (subscription && currentPlan?.id === 'enterprise') {
+      
+      // Grant all feature access regardless of subscription status for feedback gathering
       perms.push('documents:advanced');
       perms.push('research:advanced');
       perms.push('contracts:analyze');
@@ -90,26 +71,10 @@ export function PermissionsProvider({ children }: PermissionsProviderProps) {
     // Admin permissions
     if (isAdmin) {
       perms.push('admin:access');
-      // Admins get all permissions
-      perms.push('documents:advanced');
-      perms.push('research:advanced');
-      perms.push('contracts:analyze');
-      perms.push('contracts:compare');
-      perms.push('dispute:create');
-      perms.push('dispute:mediation');
-      perms.push('compliance:check');
-      perms.push('notarization:access');
-      perms.push('billing:access');
-    }
-    
-    // Moderator permissions
-    if (isModerator) {
-      perms.push('documents:advanced');
-      perms.push('research:advanced');
     }
     
     return perms;
-  }, [user, subscription, currentPlan, isAdmin, isModerator]);
+  }, [user, isAdmin]);
 
   // Check if user has a specific permission
   const hasPermission = (permission: PermissionKey): boolean => {

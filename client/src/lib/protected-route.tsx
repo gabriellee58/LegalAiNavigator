@@ -38,7 +38,9 @@ export function ProtectedRoute({
       return <Redirect to="/auth" />;
     }
     
-    // If route requires subscription, check subscription status
+    // TEMPORARY PUBLIC ACCESS MODE: Allow all authenticated users to access subscription features
+    // Comment out subscription check to unlock all features for feedback gathering
+    /*
     if (requiresSubscription && !isSubscriptionActive) {
       // Save the current location to redirect back after subscription
       try {
@@ -50,6 +52,7 @@ export function ProtectedRoute({
       // Redirect to subscription page
       return <Redirect to="/subscription-plans" />;
     }
+    */
 
     // User is authenticated and has subscription if required
     return <Component />;

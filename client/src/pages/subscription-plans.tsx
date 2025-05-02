@@ -238,6 +238,24 @@ export default function SubscriptionPlansPage() {
   return (
     <div className="container mx-auto py-8">
       
+      {/* Feedback Program Alert */}
+      <Alert className="max-w-4xl mx-auto mb-8 bg-purple-50 border-primary">
+        <AlertCircle className="h-4 w-4 text-primary" />
+        <AlertTitle>{t("Special Announcement: Feedback Program")}</AlertTitle>
+        <AlertDescription className="space-y-2">
+          <p>{t("We're currently gathering feedback on all features of our platform. During this period, all premium features are accessible without subscription requirements.")}</p>
+          <p className="font-medium">{t("You can explore all features freely while we collect feedback to improve our service.")}</p>
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="mt-2"
+            onClick={() => window.location.href = '/feedback'}
+          >
+            {t("Share Your Feedback")}
+          </Button>
+        </AlertDescription>
+      </Alert>
+      
       {/* Alert banner for users with active subscriptions */}
       {subscription && subscription.status === 'active' && (
         <Alert className="max-w-4xl mx-auto mb-8 bg-primary/10 border-primary/20">

@@ -3,11 +3,23 @@ import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { t } from "@/lib/i18n";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { StarIcon } from "lucide-react";
 
 function HomePage() {
   return (
     <MainLayout>
       <div className="p-4 md:p-6">
+        {/* Feedback Program Banner */}
+        <Alert className="mb-6 border-primary/50 bg-primary/5">
+          <StarIcon className="h-5 w-5 text-primary" />
+          <AlertTitle className="text-primary font-semibold">All Features Unlocked!</AlertTitle>
+          <AlertDescription>
+            We're gathering feedback on all premium features. Currently, all features are accessible without subscription requirements.
+            Please try everything and provide your valuable feedback to help us improve.
+          </AlertDescription>
+        </Alert>
+        
         {/* Welcome section */}
         <div className="welcome-section mb-8 md:mb-12">
           <div className="max-w-4xl">
