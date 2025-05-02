@@ -135,7 +135,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         
         // Only check if there is an error response for non-2xx status codes
         if (!res.ok) {
-          console.error("Error response from subscription API status:", {
+          console.error("Error response from subscription API HTTP status:", {
             status: res.status,
             statusText: res.statusText
           });
