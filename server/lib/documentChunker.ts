@@ -15,7 +15,9 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const MODEL = "gpt-4o";
 
 // Maximum tokens to target for AI requests
-const MAX_TOKENS = 40000;  // Keep well below DeepSeek's 65536 limit to account for system messages and other content
+const MAX_TOKENS = 30000;  // Keep well below DeepSeek's 65536 limit to account for system messages and other content
+// DeepSeek has reported that some documents are exceeding token limits even with our estimates
+// We need to be more conservative with large documents
 
 /**
  * Splits text into relatively equal-sized chunks based on paragraphs
@@ -280,20 +282,38 @@ function emergencyTruncateContract(contractText: string, maxTokens: number): str
 export async function processContractForAnalysis(contractText: string, maxTokens: number = MAX_TOKENS): Promise<string> {
   try {
     const estimatedTokens = estimateTokenCount(contractText);
+    console.log(`Estimated tokens in contract: ${estimatedTokens}`);
     
-    // Simple case: already fits within token limit
-    if (estimatedTokens <= maxTokens) {
+    // Simple case: already fits within token limit with buffer space
+    if (estimatedTokens <= maxTokens * 0.85) {
+      // Still has plenty of room
+      console.log(`Contract is within token limits (${estimatedTokens} <= ${maxTokens * 0.85})`);
       return contractText;
     }
     
-    // Extract key sections for large documents
-    if (estimatedTokens > maxTokens) {
-      return await extractKeyContractSections(contractText, maxTokens);
+    // For large files that are close to the limit, use regular extraction
+    if (estimatedTokens <= maxTokens * 1.3) {
+      console.log(`Contract is large but manageable (${estimatedTokens} tokens). Extracting key sections.`);
+      return await extractKeyContractSections(contractText, maxTokens * 0.8);
+    }
+    
+    // For extremely large files, use more aggressive extraction and add a warning
+    if (estimatedTokens > maxTokens * 1.3) {
+      console.log(`Contract is extremely large (${estimatedTokens} tokens). Using aggressive extraction.`);
+      const extracted = await extractKeyContractSections(contractText, maxTokens * 0.6);
+      return `
+WARNING: This contract is exceptionally large (approximately ${estimatedTokens} tokens).
+The analysis will focus on key sections that have been automatically extracted.
+Some details may be missing from the analysis.
+
+${extracted}
+      `;
     }
     
     return contractText;
   } catch (error) {
     console.error("Error processing contract for analysis:", error);
-    return emergencyTruncateContract(contractText, maxTokens);
+    // Use emergency truncation as the last resort
+    return emergencyTruncateContract(contractText, maxTokens * 0.5);
   }
 }

@@ -379,6 +379,18 @@ export default function ContractAnalysisPage() {
       return;
     }
     
+    // Warn about large files that may exceed token limits
+    // 3MB is roughly the size that may approach token limits for plain text
+    // PDF files would be even larger due to the conversion process
+    const fileSizeMB = file.size / (1024 * 1024);
+    if (fileSizeMB > 3) {
+      toast({
+        title: "Large file detected",
+        description: "This file may exceed our token limits. The system will attempt to process it by extracting key sections.",
+        variant: "destructive",
+      });
+    }
+    
     // Get file extension
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
     
@@ -389,7 +401,7 @@ export default function ContractAnalysisPage() {
     
     // MIME type handling is now done on the server side
     // Just set the file as-is and let the server handle detection
-    console.log(`File extension: ${fileExtension}, MIME type: ${file.type}, Size: ${file.size}`);
+    console.log(`File extension: ${fileExtension}, MIME type: ${file.type}, Size: ${file.size} (${fileSizeMB.toFixed(2)} MB)`);
     
     if (!isSecondContract) {
       setSelectedFile(file);
