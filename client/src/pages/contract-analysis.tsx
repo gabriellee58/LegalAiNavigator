@@ -232,11 +232,29 @@ export default function ContractAnalysisPage() {
       setActiveTab("results");
     },
     onError: (error: Error) => {
+      // Check if this is a token limit error
+      const isTokenLimitError = error.message && (
+        error.message.includes("Token limit exceeded") ||
+        error.message.includes("too large for analysis") ||
+        error.message.includes("maximum context length") ||
+        error.message.includes("document size limit")
+      );
+      
       toast({
-        title: "Analysis failed",
+        title: isTokenLimitError ? "Text Too Large" : "Analysis failed",
         description: error.message || "Failed to analyze contract. Please try again.",
         variant: "destructive",
+        duration: isTokenLimitError ? 10000 : 5000, // Show token limit errors longer
       });
+      
+      if (isTokenLimitError) {
+        // Show guidance for token limit errors
+        toast({
+          title: "What you can do",
+          description: "Try analyzing a smaller portion of your contract text. Focus on the specific sections you need analyzed.",
+          duration: 10000,
+        });
+      }
     },
   });
 
@@ -330,11 +348,29 @@ export default function ContractAnalysisPage() {
       setActiveTab("results");
     },
     onError: (error: Error) => {
+      // Check if this is a token limit error
+      const isTokenLimitError = error.message && (
+        error.message.includes("Token limit exceeded") ||
+        error.message.includes("too large for analysis") ||
+        error.message.includes("maximum context length") ||
+        error.message.includes("document size limit")
+      );
+      
       toast({
-        title: "File analysis failed",
+        title: isTokenLimitError ? "Document Size Limit Exceeded" : "File analysis failed",
         description: error.message || "Failed to analyze contract file. Please try again.",
         variant: "destructive",
+        duration: isTokenLimitError ? 10000 : 5000, // Show token limit errors longer
       });
+      
+      if (isTokenLimitError) {
+        // Show guidance for token limit errors
+        toast({
+          title: "What you can do",
+          description: "Try uploading a smaller document or use the text input method to paste only the most important sections of your contract.",
+          duration: 10000,
+        });
+      }
     },
   });
 
@@ -355,11 +391,29 @@ export default function ContractAnalysisPage() {
       setActiveTab("comparison-results");
     },
     onError: (error: Error) => {
+      // Check if this is a token limit error
+      const isTokenLimitError = error.message && (
+        error.message.includes("Token limit exceeded") ||
+        error.message.includes("too large") ||
+        error.message.includes("maximum context length") ||
+        error.message.includes("document size limit")
+      );
+      
       toast({
-        title: "Comparison failed",
+        title: isTokenLimitError ? "Documents Too Large to Compare" : "Comparison failed",
         description: error.message || "Failed to compare contracts. Please try again.",
         variant: "destructive",
+        duration: isTokenLimitError ? 10000 : 5000, // Show token limit errors longer
       });
+      
+      if (isTokenLimitError) {
+        // Show guidance for token limit errors
+        toast({
+          title: "What you can do",
+          description: "Try comparing smaller sections of your contracts instead of the entire documents. Focus on the specific clauses you want to compare.",
+          duration: 10000,
+        });
+      }
     },
   });
 
