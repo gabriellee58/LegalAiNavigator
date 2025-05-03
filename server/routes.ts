@@ -585,9 +585,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Analysis parameters: Title: ${title}, Save: ${save}, Jurisdiction: ${jurisdiction}, Type: ${contractType}`);
       
+      // Check file size
+      if (req.file.size === 0) {
+        console.error("Empty file uploaded (size is 0 bytes)");
+        return res.status(400).json({ 
+          message: "The uploaded file is empty and contains no content to analyze",
+          details: "Please upload a file that contains text content"
+        });
+      }
+      
       // Process the file based on its type
       let contractText = '';
       const fileExtension = req.file.originalname.split('.').pop()?.toLowerCase();
+      
+      console.log(`File details: Size: ${req.file.size} bytes, MIME type: ${req.file.mimetype}, Extension: ${fileExtension}`);
       
       // Use file extension as fallback for mimetype detection
       if (req.file.mimetype === 'application/pdf' || fileExtension === 'pdf') {
@@ -597,10 +608,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           contractText = await extractTextFromPdf(req.file.buffer);
           console.log(`Extracted ${contractText.length} characters from PDF file`);
         } catch (pdfError) {
-          console.error("PDF extraction error:", pdfError);
+          const errorMessage = pdfError instanceof Error ? pdfError.message : String(pdfError);
+          console.error("PDF extraction error:", errorMessage);
           return res.status(400).json({ 
             message: "Failed to extract text from PDF file",
-            error: pdfError.message
+            error: errorMessage,
+            details: "The PDF file may be corrupted, password-protected, or contain only images without text"
           });
         }
       } else if (
@@ -617,10 +630,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           contractText = req.file.buffer.toString('utf-8');
           console.log(`Extracted ${contractText.length} characters from ${fileExtension || req.file.mimetype} file`);
         } catch (textError) {
-          console.error("Text extraction error:", textError);
+          const errorMessage = textError instanceof Error ? textError.message : String(textError);
+          console.error("Text extraction error:", errorMessage);
           return res.status(400).json({ 
             message: "Failed to extract text from file",
-            error: textError.message
+            error: errorMessage
           });
         }
       } else {
@@ -632,9 +646,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      if (!contractText.trim()) {
-        console.error("No text could be extracted from the file");
-        return res.status(400).json({ message: "Could not extract text from the uploaded file" });
+      if (!contractText || !contractText.trim()) {
+        console.error("No meaningful text could be extracted from the file");
+        return res.status(400).json({ 
+          message: "Could not extract meaningful text from the uploaded file",
+          details: "The file may be empty, corrupted, or contain non-textual content"
+        });
+      }
+      
+      // Validate text content is sufficient for analysis
+      if (contractText.trim().length < 10) {
+        console.error(`Extracted text is too short (${contractText.trim().length} characters)`);
+        return res.status(400).json({
+          message: "The uploaded file contains too little text to analyze",
+          details: "Please upload a file with more substantial contract text",
+          textLength: contractText.trim().length
+        });
       }
       
       // Import the document chunker to process large text
