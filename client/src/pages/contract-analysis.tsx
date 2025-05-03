@@ -243,18 +243,46 @@ export default function ContractAnalysisPage() {
   // Analyze contract using file upload
   const analyzeFileContractMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const res = await fetch('/api/analyze-contract/upload', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include',
+      console.log("Uploading file:", formData.get('contractFile'));
+      console.log("File analysis parameters:", {
+        jurisdiction: formData.get('jurisdiction'),
+        contractType: formData.get('contractType'),
+        save: formData.get('save'),
+        title: formData.get('title')
       });
       
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.message || "Failed to analyze contract file");
+      try {
+        const res = await fetch('/api/analyze-contract/upload', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include',
+        });
+        
+        if (!res.ok) {
+          // Try to parse error response, but handle case where it might not be JSON
+          const text = await res.text();
+          let errData: any = { message: "Failed to analyze contract file" };
+          
+          try {
+            errData = JSON.parse(text);
+          } catch (e) {
+            console.error("Error response was not JSON:", text);
+          }
+          
+          throw new Error(errData.message || `Failed with status ${res.status}`);
+        }
+        
+        // Parse response as JSON
+        try {
+          return JSON.parse(await res.text());
+        } catch (e) {
+          console.error("Error parsing response:", e);
+          throw new Error("Invalid response format from server");
+        }
+      } catch (error) {
+        console.error("File upload error:", error);
+        throw error;
       }
-      
-      return res.json();
     },
     onSuccess: (data: AnalysisResult) => {
       // Create mock analysis result for testing if needed
@@ -338,14 +366,27 @@ export default function ContractAnalysisPage() {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, isSecondContract = false) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
+    
+    console.log("Selected file:", file.name, "Type:", file.type, "Size:", file.size);
+    
+    // Determine correct MIME type based on file extension if needed
+    let fileToUse = file;
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+    
+    // Fix for text files that might have incorrect MIME types
+    if (fileExtension === 'txt' && file.type !== 'text/plain') {
+      console.log("Text file detected with incorrect MIME type. Fixing...");
+      // Create a new Blob with the correct MIME type
+      fileToUse = new File([file], file.name, { type: 'text/plain' });
+    }
+    
     if (!isSecondContract) {
-      setSelectedFile(file);
+      setSelectedFile(fileToUse);
       setTitle(file.name.replace(/\.[^/.]+$/, ""));
     }
 
     // For .txt files, read the content directly
-    if (file.type === 'text/plain') {
+    if (fileExtension === 'txt') {
       const reader = new FileReader();
       reader.onload = (event) => {
         const text = event.target?.result as string;
