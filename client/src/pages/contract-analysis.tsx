@@ -611,9 +611,68 @@ export default function ContractAnalysisPage() {
                         onChange={handleFileUpload}
                         className="py-2"
                       />
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground mb-2">
                         {t("Supports .txt, .pdf, .doc, and .docx files")}
                       </p>
+                      
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-xs mb-2" 
+                        onClick={() => {
+                          // Create a simple sample contract as a Blob
+                          const sampleText = `EMPLOYMENT CONTRACT
+
+BETWEEN: ABC Company Inc. ("Employer")
+AND: John Smith ("Employee")
+
+1. POSITION AND DUTIES
+   The Employee is hired as a Software Developer and will perform duties including:
+   - Developing software applications
+   - Maintaining existing codebase
+   - Testing and debugging code
+   - Other reasonable duties as assigned
+
+2. COMPENSATION
+   The Employer shall pay the Employee a salary of $75,000 per annum, payable in equal
+   installments according to the company's regular payroll schedule.
+
+3. TERM
+   This agreement shall commence on June 1, 2025 and continue indefinitely until
+   terminated in accordance with the termination provisions.
+
+4. TERMINATION
+   Either party may terminate this agreement with 2 weeks written notice.
+   The Employer may terminate without notice for cause.
+
+5. CONFIDENTIALITY
+   The Employee agrees to maintain the confidentiality of all proprietary information
+   and trade secrets both during and after employment.
+
+Signed this 1st day of May, 2025.
+
+________________________      ________________________
+Employer                       Employee`;
+                          
+                          // Create a file object
+                          const blob = new Blob([sampleText], { type: 'text/plain' });
+                          const file = new File([blob], 'sample-employment-contract.txt', { type: 'text/plain' });
+                          
+                          // Set selected file state
+                          setSelectedFile(file);
+                          setContractText(sampleText);
+                          setTitle('Sample Employment Contract');
+                          
+                          // Show success message
+                          toast({
+                            title: "Sample contract loaded",
+                            description: "A sample employment contract has been loaded for analysis.",
+                          });
+                        }}
+                      >
+                        <FileText className="mr-2 h-3 w-3" />
+                        Generate sample contract for testing
+                      </Button>
                     </div>
                     
                     {selectedFile && (
