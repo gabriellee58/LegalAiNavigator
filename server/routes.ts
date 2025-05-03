@@ -29,7 +29,6 @@ import multer from "multer";
 import path from "path";
 import { templateSources, importAndSaveTemplate } from "./lib/templateSources";
 import { 
-  generateEnhancedDocument, 
   analyzeLegalDocument
 } from "./lib/anthropic";
 
@@ -2046,77 +2045,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Enhanced document generation with Anthropic
-  app.post("/api/documents/enhanced", isAuthenticated, async (req: Request, res: Response) => {
-    try {
-      const enhancedSchema = z.object({
-        template: z.string().min(1),
-        formData: z.record(z.any()),
-        documentType: z.string().min(1),
-        jurisdiction: z.string().optional(),
-        saveDocument: z.boolean().optional(),
-        title: z.string().optional()
-      });
-      
-      const parsed = enhancedSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ message: "Invalid enhanced document request" });
-      }
-      
-      // Log the request details including save document flag
-      console.log(`Enhanced document request: type=${parsed.data.documentType}, save=${parsed.data.saveDocument}`);
-      
-      // Generate enhanced document with AI service (Anthropic with fallback)
-      const enhancedContent = await generateEnhancedDocument(
-        parsed.data.template,
-        parsed.data.formData,
-        parsed.data.documentType,
-        parsed.data.jurisdiction || 'Canada'
-      );
-      
-      // Log which provider was used
-      console.log(`Document enhanced using provider: ${enhancedContent.provider || 'unknown'}`);
-      
-      // Save document if requested and user is logged in
-      const shouldSaveDocument = parsed.data.saveDocument === true;
-      if (shouldSaveDocument && req.user) {
-        try {
-          // Use the title from request or generate a default one
-          const documentTitle = parsed.data.title || 
-                              `${parsed.data.documentType} Document - ${new Date().toLocaleDateString()}`;
-          
-          const savedDoc = await storage.createGeneratedDocument({
-            userId: req.user.id,
-            documentTitle: documentTitle,
-            documentContent: enhancedContent.content,
-            templateId: null, // External template, no direct DB reference
-            documentData: {
-              type: parsed.data.documentType,
-              jurisdiction: parsed.data.jurisdiction || 'Canada',
-              generatedWith: enhancedContent.provider || 'ai',
-              formData: parsed.data.formData
-            }
-          });
-          
-          console.log(`Document saved successfully for user ${req.user.id} with ID: ${savedDoc.id}`);
-        } catch (saveError) {
-          // Just log the error but don't fail the request
-          console.error("Error saving document:", saveError);
-        }
-      }
-      
-      // Include provider info in response
-      res.json({ 
-        content: enhancedContent.content,
-        provider: enhancedContent.provider || 'ai',
-        explanation: enhancedContent.explanation,
-        saved: shouldSaveDocument
-      });
-    } catch (error) {
-      console.error("Enhanced document generation error:", error);
-      res.status(500).json({ message: "Error generating enhanced document" });
-    }
-  });
+  // Enhanced document generation with Anthropic endpoint has been removed
+  // Simplified document generation workflow now only uses the standard document generation
 
   // Legal document analysis
   // Check if secret API keys are available
