@@ -87,6 +87,7 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     try {
       setIsLoading(true);
       console.log("Starting PDF generation with content length:", documentContent.length);
+      console.log("Document title:", documentTitle);
       
       // Create HTML blob directly for better compatibility
       const htmlContent = `
@@ -135,14 +136,30 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
       const htmlUrl = URL.createObjectURL(blob);
       
       // Set this as our PDF URL
-      console.log("Created HTML blob URL for preview");
+      console.log("Created HTML blob URL for preview:", htmlUrl);
       setPdfUrl(htmlUrl);
       setIsLoading(false);
+      
+      // For debugging - log preview URL and display format
+      console.log("Current preview state:", { 
+        format, 
+        pdfUrl: htmlUrl,
+        contentLength: documentContent.length,
+        isPreviewShowing: format === 'pdf' && htmlUrl !== null
+      });
       
       // Attempt to use PDF.js for more advanced rendering if available
       try {
         // First, check if we can use the built-in PDF generation
+        console.log("Attempting generatePDF from documentExport library...");
         const pdfGenResult = await generatePDF(documentContent, `${documentTitle}.pdf`, false);
+        
+        console.log("PDF generation result type:", typeof pdfGenResult);
+        console.log("PDF generation result value:", 
+          typeof pdfGenResult === 'string' 
+            ? pdfGenResult.substring(0, 50) + "..." 
+            : pdfGenResult
+        );
         
         // Only process if we got a valid URL back
         if (pdfGenResult && typeof pdfGenResult === 'string') {
@@ -150,10 +167,12 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
           
           // Revoke the previous blob URL
           if (pdfUrl) {
+            console.log("Revoking previous blob URL");
             URL.revokeObjectURL(pdfUrl);
           }
           
           // Set the new PDF URL
+          console.log("Setting new PDF URL");
           setPdfUrl(pdfGenResult);
           
           // Load the PDF document using PDF.js
@@ -178,12 +197,22 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
         }
       } catch (pdfError) {
         console.error("PDF.js loading/rendering error:", pdfError);
+        console.error("PDF error details:", {
+          name: pdfError.name,
+          message: pdfError.message,
+          stack: pdfError.stack
+        });
         // We already have an HTML preview, so this is just a warning
         console.warn("Using HTML fallback for document preview");
       }
     } catch (error) {
       // Handle errors in the PDF generation process
       console.error("Error in PDF preview generation process:", error);
+      console.error("Error details:", {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
       
       // Clean up any existing URL state
       if (pdfUrl) {
@@ -446,7 +475,27 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
             </div>
           ) : format === 'pdf' && pdfUrl ? (
             <div className="flex flex-col items-center">
-              <canvas ref={canvasRef} className="max-w-full" />
+              {/* Primary PDF preview using canvas */}
+              <canvas 
+                ref={canvasRef} 
+                className="max-w-full border border-dashed border-gray-300 min-h-[400px]" 
+                data-testid="pdf-preview-canvas"
+              />
+              
+              {/* Fallback iframe preview in case canvas render fails */}
+              <iframe 
+                src={pdfUrl} 
+                className="w-full mt-2 min-h-[500px] border border-gray-200 rounded" 
+                title="Document Preview"
+                style={{ display: totalPages > 0 ? 'none' : 'block' }}
+              />
+              
+              {/* Debug info */}
+              <div className="w-full mt-2 text-xs text-gray-500 p-2 bg-gray-50 rounded">
+                Preview type: {totalPages > 0 ? 'Canvas (PDF.js)' : 'Fallback (iframe)'}
+                <br />
+                URL type: {pdfUrl?.startsWith('blob:') ? 'Blob URL' : 'Other URL'}
+              </div>
             </div>
           ) : (
             <pre className="whitespace-pre-wrap font-mono text-sm w-full h-full p-4">
