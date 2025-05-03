@@ -703,22 +703,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } catch (analysisError) {
         console.error("Contract analysis failed, returning error result:", analysisError);
+        
+        // Check for token limit errors
+        const errorMessage = analysisError instanceof Error ? analysisError.message : "Error analyzing contract";
+        const isTokenLimitError = errorMessage.includes("Token limit exceeded") || 
+                                 errorMessage.includes("maximum context length") ||
+                                 errorMessage.includes("tokens. However, you requested");
+        
         // Return a structured error response that matches the expected format
-        analysisResult = {
-          risks: [{ 
-            description: analysisError instanceof Error ? analysisError.message : "Error analyzing contract", 
-            severity: "High", 
-            recommendation: "Please try again later or try with a smaller document",
-            clause: "Unknown",
-            issue: "Analysis service error",
-            category: "Error"
-          }],
-          suggestions: [],
-          summary: "An error occurred during contract analysis. This may be due to the size or complexity of the document.",
-          score: 0,
-          riskLevel: "high",
-          errorType: "unknown_error",
-        };
+        if (isTokenLimitError) {
+          // This is a token limit error, provide specific guidance
+          analysisResult = {
+            risks: [{ 
+              description: "Contract too large for AI analysis", 
+              severity: "High", 
+              recommendation: "Please upload a smaller document, or manually extract the key sections of your contract",
+              clause: "Document Size",
+              issue: "Token limit exceeded",
+              category: "File Size Error"
+            }],
+            suggestions: [],
+            summary: "This contract exceeds our AI model's size limits. We recommend breaking it into smaller sections or using our extract key sections feature.",
+            score: 0,
+            riskLevel: "high",
+            errorType: "token_limit_exceeded",
+          };
+        } else {
+          // Generic error handling
+          analysisResult = {
+            risks: [{ 
+              description: errorMessage, 
+              severity: "High", 
+              recommendation: "Please try again later or try with a smaller document",
+              clause: "Unknown",
+              issue: "Analysis service error",
+              category: "Error"
+            }],
+            suggestions: [],
+            summary: "An error occurred during contract analysis. This may be due to the size or complexity of the document.",
+            score: 0,
+            riskLevel: "high",
+            errorType: "unknown_error",
+          };
+        }
       }
       
       // Save the analysis result if requested
@@ -846,18 +873,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } catch (comparisonError) {
         console.error("Contract comparison failed, returning error result:", comparisonError);
+        
+        // Check for token limit errors 
+        const errorMessage = comparisonError instanceof Error ? comparisonError.message : "Error comparing contracts";
+        const isTokenLimitError = errorMessage.includes("Token limit exceeded") || 
+                                 errorMessage.includes("maximum context length") ||
+                                 errorMessage.includes("tokens. However, you requested");
+        
         // Return a structured error response that matches the expected format
-        comparison = {
-          differences: [{
-            section: "Error",
-            first: "Could not process document",
-            second: "Could not process document",
-            impact: "Unable to complete comparison due to technical error",
-          }],
-          summary: "Contract comparison failed due to a technical error. The documents may be too large or in an unsupported format.",
-          recommendation: "Try using smaller or more readable contract documents.",
-          errorType: "unknown_error"
-        };
+        if (isTokenLimitError) {
+          comparison = {
+            differences: [{
+              section: "Error - Document Size Limit Exceeded",
+              first: "Document too large to process",
+              second: "Document too large to process",
+              impact: "The combined size of these contracts exceeds our AI model's token limits",
+            }],
+            summary: "We couldn't complete the comparison because these contracts are too large for our AI system to process together.",
+            recommendation: "Try comparing smaller sections of the contracts, or use our document extraction tool to focus on key clauses only.",
+            errorType: "token_limit_exceeded"
+          };
+        } else {
+          comparison = {
+            differences: [{
+              section: "Error",
+              first: "Could not process document",
+              second: "Could not process document",
+              impact: "Unable to complete comparison due to technical error",
+            }],
+            summary: "Contract comparison failed due to a technical error. The documents may be too large or in an unsupported format.",
+            recommendation: "Try using smaller or more readable contract documents.",
+            errorType: "unknown_error"
+          };
+        }
       }
       
       res.json(comparison);

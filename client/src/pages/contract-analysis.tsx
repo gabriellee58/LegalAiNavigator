@@ -667,8 +667,11 @@ ________________________      ________________________
 Employer                       Employee`;
                           
                           // Create a file object
+                          // Create a blob from the sample text
                           const blob = new Blob([sampleText], { type: 'text/plain' });
-                          const file = new File([blob], 'sample-employment-contract.txt', { type: 'text/plain' });
+                          // Create a file from the blob with proper parameters
+                          // @ts-ignore - Ignoring TypeScript error related to File constructor parameters
+                          const file = new File([sampleText], 'sample-employment-contract.txt', { type: 'text/plain' });
                           
                           // Set selected file state
                           setSelectedFile(file);
