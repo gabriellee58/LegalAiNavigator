@@ -146,8 +146,26 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
           
           // Use a slightly longer timeout to ensure the DOM has fully updated
           setTimeout(() => {
+            console.log("Attempting to switch to preview tab...");
             setActiveTab("preview");
-          }, 300);
+            
+            // Force a manual DOM click on the preview tab to ensure it's activated
+            const previewTabElement = document.querySelector('[value="preview"]');
+            if (previewTabElement && previewTabElement instanceof HTMLElement) {
+              console.log("Found preview tab element, forcing click");
+              previewTabElement.click();
+            } else {
+              console.log("Preview tab element not found in DOM");
+            }
+            
+            // Also try to directly modify the DOM element's disabled state
+            const disabledTab = document.querySelector('[value="preview"][disabled]');
+            if (disabledTab) {
+              console.log("Found disabled preview tab, removing disabled attribute");
+              disabledTab.removeAttribute('disabled');
+              (disabledTab as HTMLElement).click();
+            }
+          }, 500); // Increased timeout for better reliability
         });
 
         toast({
@@ -178,6 +196,7 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
     reset();
     const formData = form.getValues();
     try {
+      console.log("Retrying document generation with data:", Object.keys(formData));
       generateDocumentMutation(formData);
     } catch (err) {
       console.error("Error retrying document generation:", err);
@@ -189,11 +208,20 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
       // Reset any previous errors
       reset();
       
+      console.log("Submitting document generation form with data:", Object.keys(data));
+      console.log("Current tab is:", activeTab);
+      
       // Call the mutation
       generateDocumentMutation(data);
     } catch (err) {
       console.error("Error in form submission:", err);
     }
+  };
+  
+  // Debug function to manually switch tabs
+  const forceTabChange = (tabName: string) => {
+    console.log(`Manually switching to tab: ${tabName}`);
+    setActiveTab(tabName);
   };
 
   // Placeholder for e-signature initiation (needs implementation)
@@ -278,6 +306,15 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
           value="preview" 
           disabled={!generatedDocument}
           className={`flex items-center flex-1 whitespace-nowrap ${!generatedDocument ? "opacity-50 cursor-not-allowed" : ""}`}
+          onClick={() => {
+            if (generatedDocument) {
+              console.log("Preview tab clicked directly");
+              // Explicitly set the active tab
+              setActiveTab("preview");
+            } else {
+              console.log("Preview tab clicked but disabled due to no document");
+            }
+          }}
         >
           <span className="material-icons mr-2 text-sm">visibility</span>
           {t("preview_document")}
@@ -344,7 +381,19 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
                   </div>
                 )}
 
-                <div className="flex justify-end">
+                <div className="flex justify-between">
+                  {generatedDocument && (
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={() => forceTabChange("preview")}
+                      className="flex items-center"
+                    >
+                      <span className="material-icons mr-2">visibility</span>
+                      {t("view_generated_document")}
+                    </Button>
+                  )}
+                  
                   <Button 
                     type="submit" 
                     disabled={isPending}
