@@ -567,9 +567,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Contract analysis with file upload
   app.post("/api/analyze-contract/upload", isAuthenticated, upload.single('contractFile'), async (req: Request, res: Response) => {
     try {
+      console.log("Contract analysis upload request received");
+      
       if (!req.file) {
+        console.error("No file received in upload request");
         return res.status(400).json({ message: "No file uploaded" });
       }
+      
+      // Log file information for debugging
+      console.log(`File received: ${req.file.originalname}, Size: ${req.file.size} bytes, Type: ${req.file.mimetype}`);
       
       // Extract parameters from the form data
       const title = req.body.title;
@@ -577,24 +583,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const jurisdiction = req.body.jurisdiction || 'Canada';
       const contractType = req.body.contractType || 'general';
       
+      console.log(`Analysis parameters: Title: ${title}, Save: ${save}, Jurisdiction: ${jurisdiction}, Type: ${contractType}`);
+      
       // Process the file based on its type
       let contractText = '';
+      const fileExtension = req.file.originalname.split('.').pop()?.toLowerCase();
       
-      if (req.file.mimetype === 'application/pdf') {
-        // Extract text from PDF
-        contractText = await extractTextFromPdf(req.file.buffer);
-        console.log(`Extracted ${contractText.length} characters from PDF file`);
+      // Use file extension as fallback for mimetype detection
+      if (req.file.mimetype === 'application/pdf' || fileExtension === 'pdf') {
+        try {
+          // Extract text from PDF
+          console.log("Processing PDF file...");
+          contractText = await extractTextFromPdf(req.file.buffer);
+          console.log(`Extracted ${contractText.length} characters from PDF file`);
+        } catch (pdfError) {
+          console.error("PDF extraction error:", pdfError);
+          return res.status(400).json({ 
+            message: "Failed to extract text from PDF file",
+            error: pdfError.message
+          });
+        }
       } else if (
-        req.file.mimetype === 'text/plain' ||
-        req.file.mimetype === 'application/msword' ||
-        req.file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        req.file.mimetype === 'text/plain' || 
+        fileExtension === 'txt' ||
+        req.file.mimetype === 'application/msword' || 
+        fileExtension === 'doc' ||
+        req.file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+        fileExtension === 'docx'
       ) {
-        // For text and Word files, convert buffer to string
-        contractText = req.file.buffer.toString('utf-8');
-        console.log(`Extracted ${contractText.length} characters from text/Word file`);
+        try {
+          // For text and Word files, convert buffer to string
+          console.log(`Processing ${fileExtension || req.file.mimetype} file...`);
+          contractText = req.file.buffer.toString('utf-8');
+          console.log(`Extracted ${contractText.length} characters from ${fileExtension || req.file.mimetype} file`);
+        } catch (textError) {
+          console.error("Text extraction error:", textError);
+          return res.status(400).json({ 
+            message: "Failed to extract text from file",
+            error: textError.message
+          });
+        }
+      } else {
+        console.error(`Unsupported file type: ${req.file.mimetype}, Extension: ${fileExtension}`);
+        return res.status(400).json({ 
+          message: "Unsupported file type. Please upload a PDF, TXT, DOC, or DOCX file.",
+          fileType: req.file.mimetype,
+          extension: fileExtension
+        });
       }
       
       if (!contractText.trim()) {
+        console.error("No text could be extracted from the file");
         return res.status(400).json({ message: "Could not extract text from the uploaded file" });
       }
       

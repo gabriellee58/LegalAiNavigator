@@ -369,20 +369,58 @@ export default function ContractAnalysisPage() {
     
     console.log("Selected file:", file.name, "Type:", file.type, "Size:", file.size);
     
-    // Determine correct MIME type based on file extension if needed
-    let fileToUse = file;
+    // Get file extension
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
+    
+    // Set title from filename (remove extension)
+    if (!isSecondContract) {
+      setTitle(file.name.replace(/\.[^/.]+$/, ""));
+    }
     
     // Fix for text files that might have incorrect MIME types
     if (fileExtension === 'txt' && file.type !== 'text/plain') {
       console.log("Text file detected with incorrect MIME type. Fixing...");
-      // Create a new Blob with the correct MIME type
-      fileToUse = new File([file], file.name, { type: 'text/plain' });
-    }
-    
-    if (!isSecondContract) {
-      setSelectedFile(fileToUse);
-      setTitle(file.name.replace(/\.[^/.]+$/, ""));
+      
+      try {
+        // First set original file (as fallback)
+        if (!isSecondContract) {
+          setSelectedFile(file);
+        }
+        
+        // Create a blob with the correct MIME type
+        const fileReader = new FileReader();
+        fileReader.onload = () => {
+          try {
+            if (fileReader.result) {
+              // Create a proper blob with text/plain MIME type
+              const blob = new Blob([fileReader.result], { type: 'text/plain' });
+              
+              // Create a File from the Blob
+              const correctedFile = new File([blob], file.name, { type: 'text/plain' });
+              console.log("Created corrected file with type:", correctedFile.type);
+              
+              // Update the selected file
+              if (!isSecondContract) {
+                setSelectedFile(correctedFile);
+              }
+            }
+          } catch (err) {
+            console.error("Error creating corrected file:", err);
+          }
+        };
+        fileReader.readAsArrayBuffer(file);
+      } catch (error) {
+        console.error("Error handling file with incorrect MIME type:", error);
+        // Fallback to original file
+        if (!isSecondContract) {
+          setSelectedFile(file);
+        }
+      }
+    } else {
+      // For all other files, use as-is
+      if (!isSecondContract) {
+        setSelectedFile(file);
+      }
     }
 
     // For .txt files, read the content directly
