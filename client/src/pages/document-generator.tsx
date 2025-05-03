@@ -10,10 +10,8 @@ import { Button } from "@/components/ui/button";
 import { AlertCircle, Info, Loader2, RefreshCw } from "lucide-react";
 import DocumentTemplateCard from "@/components/document-generator/DocumentTemplateCard";
 import DocumentGenForm from "@/components/document-generator/DocumentGenForm";
-import EnhancedDocGenForm from "@/components/document-generator/EnhancedDocGenForm";
 import ExternalTemplateLoader from "@/components/document-generator/ExternalTemplateLoader";
 import { DocumentTemplate } from "@shared/schema";
-import { check_anthropic_api_key } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
 // No need for additional interfaces as we've updated the component to accept the fields property with any type
@@ -89,22 +87,6 @@ function DocumentGeneratorPage() {
   
   // State for tabs
   const [generatorTab, setGeneratorTab] = useState<string>("templates");
-  const [hasAnthropicKey, setHasAnthropicKey] = useState<boolean>(false);
-  
-  // Check if Anthropic API key is available
-  useEffect(() => {
-    const checkApiKey = async () => {
-      try {
-        const keyAvailable = await check_anthropic_api_key();
-        setHasAnthropicKey(keyAvailable);
-      } catch (error) {
-        console.error("Error checking Anthropic API key:", error);
-        setHasAnthropicKey(false);
-      }
-    };
-    
-    checkApiKey();
-  }, []);
   
   return (
     <MainLayout>
@@ -165,28 +147,10 @@ function DocumentGeneratorPage() {
               </button>
             </div>
             
-            {/* Tabbed form selection for standard vs enhanced generation */}
-            <Tabs defaultValue="standard" className="w-full">
-              <TabsList>
-                <TabsTrigger value="standard">Standard Document</TabsTrigger>
-                {hasAnthropicKey && (
-                  <TabsTrigger value="enhanced">
-                    <span className="material-icons mr-1 text-sm">auto_awesome</span>
-                    Enhanced Document (AI)
-                  </TabsTrigger>
-                )}
-              </TabsList>
-              
-              <TabsContent value="standard">
-                <DocumentGenForm template={selectedTemplate} />
-              </TabsContent>
-              
-              {hasAnthropicKey && (
-                <TabsContent value="enhanced">
-                  <EnhancedDocGenForm template={selectedTemplate} />
-                </TabsContent>
-              )}
-            </Tabs>
+            {/* Document generation form */}
+            <div className="w-full">
+              <DocumentGenForm template={selectedTemplate} />
+            </div>
           </div>
         ) : (
           <div className="flex justify-center p-12">
