@@ -137,36 +137,23 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
       if (documentContent) {
         console.log("Document content extracted successfully, length:", documentContent.length);
         
-        // Clear any existing document before setting the new one
-        setGeneratedDocument(null);
+        // More reliable approach: First set the state, then update the UI
+        console.log("Document generation successful, preparing to update state");
         
-        // Use requestAnimationFrame to ensure DOM update before setting content
-        requestAnimationFrame(() => {
+        // First, clear any existing document to ensure clean state
+        setGeneratedDocument(null); // Clear existing document first
+        
+        // Use setTimeout to ensure the clearing is processed
+        setTimeout(() => {
+          console.log("Setting document content in state");
           setGeneratedDocument(documentContent);
           
-          // Use a slightly longer timeout to ensure the DOM has fully updated
+          // Use a second timeout to ensure the document content state is updated before tab change
           setTimeout(() => {
-            console.log("Attempting to switch to preview tab...");
+            console.log("Switching to preview tab after document generation");
             setActiveTab("preview");
-            
-            // Force a manual DOM click on the preview tab to ensure it's activated
-            const previewTabElement = document.querySelector('[value="preview"]');
-            if (previewTabElement && previewTabElement instanceof HTMLElement) {
-              console.log("Found preview tab element, forcing click");
-              previewTabElement.click();
-            } else {
-              console.log("Preview tab element not found in DOM");
-            }
-            
-            // Also try to directly modify the DOM element's disabled state
-            const disabledTab = document.querySelector('[value="preview"][disabled]');
-            if (disabledTab) {
-              console.log("Found disabled preview tab, removing disabled attribute");
-              disabledTab.removeAttribute('disabled');
-              (disabledTab as HTMLElement).click();
-            }
-          }, 500); // Increased timeout for better reliability
-        });
+          }, 50);
+        }, 50);
 
         toast({
           title: "Document Generated",
