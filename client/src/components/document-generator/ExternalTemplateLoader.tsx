@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { t } from "@/lib/i18n";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
+import { useLocation } from "wouter";
 
 // Template source interface
 interface TemplateSource {
@@ -78,6 +79,12 @@ export default function ExternalTemplateLoader() {
     enabled: !!selectedSource,
   });
   
+  // For redirection
+  const [, navigate] = useLocation();
+  
+  // Track imported template
+  const [lastImportedTemplate, setLastImportedTemplate] = useState<{ id: number, title: string } | null>(null);
+  
   // Import template mutation
   const {
     mutate: importTemplate,
@@ -97,11 +104,20 @@ export default function ExternalTemplateLoader() {
         language
       });
     },
-    onSuccess: () => {
-      toast({
-        title: t("template_imported"),
-        description: t("template_import_success"),
+    onSuccess: (data) => {
+      // Store the imported template ID and title for reference
+      setLastImportedTemplate({
+        id: data.id,
+        title: data.title
       });
+      
+      // Show success toast with more details
+      toast({
+        title: "Template Imported Successfully",
+        description: `"${data.title}" is now available in your templates.`,
+        variant: "default",
+      });
+      
       // Invalidate document templates cache to refresh the list
       queryClient.invalidateQueries({ queryKey: ["/api/document-templates"] });
     },
@@ -156,11 +172,32 @@ export default function ExternalTemplateLoader() {
               </p>
             </div>
 
+            {/* Show success message when template is imported */}
+            {lastImportedTemplate && (
+              <div className="mb-4 p-3 bg-green-50 rounded-md text-sm border border-green-200">
+                <h4 className="font-medium text-green-800 mb-1 flex items-center">
+                  <CheckCircle2 className="h-4 w-4 text-green-700 mr-1" />
+                  Template Imported Successfully
+                </h4>
+                <p className="text-green-900 mb-2">
+                  <strong>{lastImportedTemplate.title}</strong> has been added to your templates and is ready to use.
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="bg-white border-green-200 text-green-700 hover:bg-green-50 mt-1"
+                  onClick={() => navigate('/document-generator')}
+                >
+                  View My Templates
+                </Button>
+              </div>
+            )}
+            
             {/* Show error message if import fails */}
             {importError && (
               <div className="mb-4 p-3 bg-red-50 rounded-md text-sm border border-red-200">
                 <h4 className="font-medium text-red-800 mb-1 flex items-center">
-                  <span className="material-icons text-red-700 mr-1 text-sm">error</span>
+                  <AlertCircle className="h-4 w-4 text-red-700 mr-1" />
                   Import Failed
                 </h4>
                 <p className="text-red-700">{importError.message}</p>
@@ -360,9 +397,9 @@ function TemplateCard({ template, onImport, isImporting }: TemplateCardProps) {
   
   // Get template icon based on category
   const getTemplateIcon = (category: string) => {
-    switch (category) {
+    switch (category.toLowerCase()) {
       case 'contract':
-        return 'assignment';
+        return 'description';
       case 'lease':
         return 'home';
       case 'will':
@@ -370,41 +407,66 @@ function TemplateCard({ template, onImport, isImporting }: TemplateCardProps) {
       case 'business':
         return 'business';
       case 'ip':
+      case 'intellectual-property':
         return 'copyright';
       case 'confidentiality':
+      case 'nda':
         return 'shield';
+      case 'family':
+      case 'family-law':
+        return 'family_restroom';
+      case 'immigration':
+      case 'immigration-law':
+        return 'flight';
+      case 'employment':
+      case 'employment-law':
+        return 'work';
+      case 'real-estate':
+      case 'real-estate-law':
+        return 'apartment';
+      case 'criminal':
+      case 'criminal-law':
+        return 'gavel';
       default:
         return 'description';
     }
   };
   
   return (
-    <Card className="h-full flex flex-col">
+    <Card className="h-full flex flex-col hover:shadow-md transition-shadow duration-300 border-border">
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
-          <div className="p-2 rounded-md bg-blue-50 text-primary">
+          <div className="p-2 rounded-md bg-primary/10 text-primary">
             <span className="material-icons">{getTemplateIcon(template.category)}</span>
           </div>
           <Badge variant="outline">{template.jurisdiction}</Badge>
         </div>
         <CardTitle className="mt-2 text-base">{template.title}</CardTitle>
-        <CardDescription className="text-xs">{template.description}</CardDescription>
+        <CardDescription className="text-xs line-clamp-2">{template.description}</CardDescription>
       </CardHeader>
       <CardContent className="flex-grow">
-        <div className="text-xs text-neutral-500">
+        <div className="text-xs text-muted-foreground">
           <div className="flex items-center mb-1">
             <span className="material-icons text-xs mr-1">label</span>
-            <span>{template.category}</span>
+            <span className="capitalize">{template.category}</span>
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center mb-1">
             <span className="material-icons text-xs mr-1">source</span>
             <span>{template.source}</span>
+          </div>
+          <div className="flex items-center">
+            <span className="material-icons text-xs mr-1">language</span>
+            <span>{template.language === 'en' ? 'English' : 'French'}</span>
+          </div>
+          <div className="mt-2 text-xs p-1 bg-muted rounded">
+            <code className="text-xs">{getFormattedTemplateId()}</code>
           </div>
         </div>
       </CardContent>
       <CardFooter>
         <Button 
-          className="w-full bg-primary hover:bg-primary-dark"
+          className="w-full"
+          variant="default"
           onClick={onImport}
           disabled={isImporting}
         >
