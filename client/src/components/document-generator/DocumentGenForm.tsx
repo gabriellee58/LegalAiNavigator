@@ -137,23 +137,15 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
       if (documentContent) {
         console.log("Document content extracted successfully, length:", documentContent.length);
         
-        // More reliable approach: First set the state, then update the UI
+        // More reliable approach: Set state directly without timeouts
         console.log("Document generation successful, preparing to update state");
         
-        // First, clear any existing document to ensure clean state
-        setGeneratedDocument(null); // Clear existing document first
+        // Set the generated document content immediately
+        setGeneratedDocument(documentContent);
         
-        // Use setTimeout to ensure the clearing is processed
-        setTimeout(() => {
-          console.log("Setting document content in state");
-          setGeneratedDocument(documentContent);
-          
-          // Use a second timeout to ensure the document content state is updated before tab change
-          setTimeout(() => {
-            console.log("Switching to preview tab after document generation");
-            setActiveTab("preview");
-          }, 50);
-        }, 50);
+        // Update active tab using React state instead of direct DOM manipulation
+        console.log("Setting document content and switching to preview tab");
+        setActiveTab("preview");
 
         toast({
           title: "Document Generated",
@@ -293,15 +285,6 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
           value="preview" 
           disabled={!generatedDocument}
           className={`flex items-center flex-1 whitespace-nowrap ${!generatedDocument ? "opacity-50 cursor-not-allowed" : ""}`}
-          onClick={() => {
-            if (generatedDocument) {
-              console.log("Preview tab clicked directly");
-              // Explicitly set the active tab
-              setActiveTab("preview");
-            } else {
-              console.log("Preview tab clicked but disabled due to no document");
-            }
-          }}
         >
           <span className="material-icons mr-2 text-sm">visibility</span>
           {t("preview_document")}
