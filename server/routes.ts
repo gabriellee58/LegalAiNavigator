@@ -1958,8 +1958,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Import an external template
-  app.post("/api/template-sources/import", isAuthenticated, async (req: Request, res: Response) => {
+  // Import an external template - no authentication required for feedback gathering phase
+  app.post("/api/template-sources/import", async (req: Request, res: Response) => {
     try {
       // Validate request body with more detailed schema
       const importSchema = z.object({
@@ -1982,10 +1982,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check API key availability first with clearer error messages
-      if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY) {
-        return res.status(400).json({ 
-          message: "Missing AI API keys", 
-          detail: "Both Anthropic and OpenAI API keys are missing. At least one is required for template generation."
+      if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY && !process.env.DEEPSEEK_API_KEY) {
+        return res.status(500).json({ 
+          message: "AI Service Unavailable", 
+          detail: "The AI service is temporarily unavailable. Please try again later."
         });
       }
       
