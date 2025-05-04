@@ -1,0 +1,120 @@
+queryClient.ts:104 
+            
+            
+           POST https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/api/template-sources/import 401 (Unauthorized)
+apiRequest @ queryClient.ts:104
+mutationFn @ ExternalTemplateLoader.tsx:95
+fn @ @tanstack_react-query.js?v=9337cc1e:1189
+run @ @tanstack_react-query.js?v=9337cc1e:494
+start @ @tanstack_react-query.js?v=9337cc1e:536
+execute @ @tanstack_react-query.js?v=9337cc1e:1225
+await in execute
+mutate @ @tanstack_react-query.js?v=9337cc1e:2630
+(anonymous) @ @tanstack_react-query.js?v=9337cc1e:3295
+onImport @ ExternalTemplateLoader.tsx:327
+callCallback2 @ chunk-XQLYTHWV.js?v=9337cc1e:3674
+invokeGuardedCallbackDev @ chunk-XQLYTHWV.js?v=9337cc1e:3699
+invokeGuardedCallback @ chunk-XQLYTHWV.js?v=9337cc1e:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-XQLYTHWV.js?v=9337cc1e:3736
+executeDispatch @ chunk-XQLYTHWV.js?v=9337cc1e:7014
+processDispatchQueueItemsInOrder @ chunk-XQLYTHWV.js?v=9337cc1e:7034
+processDispatchQueue @ chunk-XQLYTHWV.js?v=9337cc1e:7043
+dispatchEventsForPlugins @ chunk-XQLYTHWV.js?v=9337cc1e:7051
+(anonymous) @ chunk-XQLYTHWV.js?v=9337cc1e:7174
+batchedUpdates$1 @ chunk-XQLYTHWV.js?v=9337cc1e:18913
+batchedUpdates @ chunk-XQLYTHWV.js?v=9337cc1e:3579
+dispatchEventForPluginEventSystem @ chunk-XQLYTHWV.js?v=9337cc1e:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-XQLYTHWV.js?v=9337cc1e:5478
+dispatchEvent @ chunk-XQLYTHWV.js?v=9337cc1e:5472
+dispatchDiscreteEvent @ chunk-XQLYTHWV.js?v=9337cc1e:5449Understand this error
+main.tsx:15 API Error (401) for POST /api/template-sources/import: {message: 'AI service authorization failed', detail: 'Please check your API keys in the environment settings.'}
+console.error @ main.tsx:15
+apiRequest @ queryClient.ts:118
+await in apiRequest
+mutationFn @ ExternalTemplateLoader.tsx:95
+fn @ @tanstack_react-query.js?v=9337cc1e:1189
+run @ @tanstack_react-query.js?v=9337cc1e:494
+start @ @tanstack_react-query.js?v=9337cc1e:536
+execute @ @tanstack_react-query.js?v=9337cc1e:1225
+await in execute
+mutate @ @tanstack_react-query.js?v=9337cc1e:2630
+(anonymous) @ @tanstack_react-query.js?v=9337cc1e:3295
+onImport @ ExternalTemplateLoader.tsx:327
+callCallback2 @ chunk-XQLYTHWV.js?v=9337cc1e:3674
+invokeGuardedCallbackDev @ chunk-XQLYTHWV.js?v=9337cc1e:3699
+invokeGuardedCallback @ chunk-XQLYTHWV.js?v=9337cc1e:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-XQLYTHWV.js?v=9337cc1e:3736
+executeDispatch @ chunk-XQLYTHWV.js?v=9337cc1e:7014
+processDispatchQueueItemsInOrder @ chunk-XQLYTHWV.js?v=9337cc1e:7034
+processDispatchQueue @ chunk-XQLYTHWV.js?v=9337cc1e:7043
+dispatchEventsForPlugins @ chunk-XQLYTHWV.js?v=9337cc1e:7051
+(anonymous) @ chunk-XQLYTHWV.js?v=9337cc1e:7174
+batchedUpdates$1 @ chunk-XQLYTHWV.js?v=9337cc1e:18913
+batchedUpdates @ chunk-XQLYTHWV.js?v=9337cc1e:3579
+dispatchEventForPluginEventSystem @ chunk-XQLYTHWV.js?v=9337cc1e:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-XQLYTHWV.js?v=9337cc1e:5478
+dispatchEvent @ chunk-XQLYTHWV.js?v=9337cc1e:5472
+dispatchDiscreteEvent @ chunk-XQLYTHWV.js?v=9337cc1e:5449Understand this error
+main.tsx:15 API Request failed (attempt 1/2): ApiError: AI service authorization failed
+    at apiRequest (queryClient.ts:129:15)
+    at async Object.mutationFn (ExternalTemplateLoader.tsx:95:14)
+console.error @ main.tsx:15
+apiRequest @ queryClient.ts:167
+await in apiRequest
+mutationFn @ ExternalTemplateLoader.tsx:95
+fn @ @tanstack_react-query.js?v=9337cc1e:1189
+run @ @tanstack_react-query.js?v=9337cc1e:494
+start @ @tanstack_react-query.js?v=9337cc1e:536
+execute @ @tanstack_react-query.js?v=9337cc1e:1225
+await in execute
+mutate @ @tanstack_react-query.js?v=9337cc1e:2630
+(anonymous) @ @tanstack_react-query.js?v=9337cc1e:3295
+onImport @ ExternalTemplateLoader.tsx:327
+callCallback2 @ chunk-XQLYTHWV.js?v=9337cc1e:3674
+invokeGuardedCallbackDev @ chunk-XQLYTHWV.js?v=9337cc1e:3699
+invokeGuardedCallback @ chunk-XQLYTHWV.js?v=9337cc1e:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-XQLYTHWV.js?v=9337cc1e:3736
+executeDispatch @ chunk-XQLYTHWV.js?v=9337cc1e:7014
+processDispatchQueueItemsInOrder @ chunk-XQLYTHWV.js?v=9337cc1e:7034
+processDispatchQueue @ chunk-XQLYTHWV.js?v=9337cc1e:7043
+dispatchEventsForPlugins @ chunk-XQLYTHWV.js?v=9337cc1e:7051
+(anonymous) @ chunk-XQLYTHWV.js?v=9337cc1e:7174
+batchedUpdates$1 @ chunk-XQLYTHWV.js?v=9337cc1e:18913
+batchedUpdates @ chunk-XQLYTHWV.js?v=9337cc1e:3579
+dispatchEventForPluginEventSystem @ chunk-XQLYTHWV.js?v=9337cc1e:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-XQLYTHWV.js?v=9337cc1e:5478
+dispatchEvent @ chunk-XQLYTHWV.js?v=9337cc1e:5472
+dispatchDiscreteEvent @ chunk-XQLYTHWV.js?v=9337cc1e:5449Understand this error
+main.tsx:15 All 2 attempts failed for POST /api/template-sources/import ApiError: AI service authorization failed
+    at apiRequest (queryClient.ts:129:15)
+    at async Object.mutationFn (ExternalTemplateLoader.tsx:95:14)
+console.error @ main.tsx:15
+apiRequest @ queryClient.ts:189
+await in apiRequest
+mutationFn @ ExternalTemplateLoader.tsx:95
+fn @ @tanstack_react-query.js?v=9337cc1e:1189
+run @ @tanstack_react-query.js?v=9337cc1e:494
+start @ @tanstack_react-query.js?v=9337cc1e:536
+execute @ @tanstack_react-query.js?v=9337cc1e:1225
+await in execute
+mutate @ @tanstack_react-query.js?v=9337cc1e:2630
+(anonymous) @ @tanstack_react-query.js?v=9337cc1e:3295
+onImport @ ExternalTemplateLoader.tsx:327
+callCallback2 @ chunk-XQLYTHWV.js?v=9337cc1e:3674
+invokeGuardedCallbackDev @ chunk-XQLYTHWV.js?v=9337cc1e:3699
+invokeGuardedCallback @ chunk-XQLYTHWV.js?v=9337cc1e:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-XQLYTHWV.js?v=9337cc1e:3736
+executeDispatch @ chunk-XQLYTHWV.js?v=9337cc1e:7014
+processDispatchQueueItemsInOrder @ chunk-XQLYTHWV.js?v=9337cc1e:7034
+processDispatchQueue @ chunk-XQLYTHWV.js?v=9337cc1e:7043
+dispatchEventsForPlugins @ chunk-XQLYTHWV.js?v=9337cc1e:7051
+(anonymous) @ chunk-XQLYTHWV.js?v=9337cc1e:7174
+batchedUpdates$1 @ chunk-XQLYTHWV.js?v=9337cc1e:18913
+batchedUpdates @ chunk-XQLYTHWV.js?v=9337cc1e:3579
+dispatchEventForPluginEventSystem @ chunk-XQLYTHWV.js?v=9337cc1e:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-XQLYTHWV.js?v=9337cc1e:5478
+dispatchEvent @ chunk-XQLYTHWV.js?v=9337cc1e:5472
+dispatchDiscreteEvent @ chunk-XQLYTHWV.js?v=9337cc1e:5449Understand this error
+main.tsx:15 Template import error: ApiError: AI service authorization failed
+    at apiRequest (queryClient.ts:129:15)
+    at async Object.mutationFn (ExternalTemplateLoader.tsx:95:14)
