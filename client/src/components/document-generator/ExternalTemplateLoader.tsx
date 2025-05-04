@@ -90,17 +90,12 @@ export default function ExternalTemplateLoader() {
         throw new Error("Invalid template ID format. Expected format: 'source-category-name'");
       }
       
-      const response = await apiRequest("POST", "/api/template-sources/import", {
+      // The apiRequest function already handles JSON parsing
+      // It returns the parsed JSON data directly
+      return await apiRequest("POST", "/api/template-sources/import", {
         templateId,
         language
       });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || errorData.message || "Failed to import template");
-      }
-      
-      return await response.json();
     },
     onSuccess: () => {
       toast({
