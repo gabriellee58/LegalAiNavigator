@@ -46,17 +46,15 @@ export function PermissionsProvider({ children }: PermissionsProviderProps) {
   const isAdmin = useMemo(() => userRole === 'admin', [userRole]);
   const isModerator = useMemo(() => userRole === 'moderator', [userRole]);
 
-  // Determine permissions based on user role and subscription level
+  // Determine permissions based on user role only (subscription checks removed)
   const permissions = useMemo(() => {
     const perms: PermissionKey[] = [];
     
-    // Grant all permissions to any authenticated user - TEMPORARY PUBLIC ACCESS MODE
+    // Grant all permissions to any authenticated user
     if (user) {
-      // Basic permissions
+      // Grant ALL permissions to any authenticated user
       perms.push('documents:create');
       perms.push('research:basic');
-      
-      // Grant all feature access regardless of subscription status for feedback gathering
       perms.push('documents:advanced');
       perms.push('research:advanced');
       perms.push('contracts:analyze');
@@ -109,7 +107,7 @@ export function usePermissions() {
 export function withPermissionCheck<P extends object>(
   WrappedComponent: React.ComponentType<P>,
   requiredPermission: PermissionKey,
-  redirectPath = '/subscription-plans'
+  redirectPath = '/'  // Changed default redirect path from subscription page to home page
 ) {
   // Create a named component for better debugging
   function WithPermissionCheck(props: P) {
@@ -117,15 +115,16 @@ export function withPermissionCheck<P extends object>(
     const { toast } = useToast();
     const [, navigate] = useLocation();
     
-    // Check if the user has the required permission using the useEffect hook
+    // All permissions are now granted to authenticated users, 
+    // so this check is just a safeguard
     React.useEffect(() => {
       if (!hasPermission(requiredPermission)) {
         toast({
-          title: "Permission Required",
-          description: "You need to upgrade your subscription to access this feature.",
+          title: "Authentication Required",
+          description: "You must be logged in to access this feature.",
           variant: "destructive",
         });
-        navigate(redirectPath);
+        navigate('/auth');
       }
     }, [hasPermission, navigate, toast]);
     
