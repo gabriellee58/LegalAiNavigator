@@ -1337,24 +1337,23 @@ Employer                       Employee`;
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                      <div className="text-lg">
-                        {t("risk_score")}:
-                        <span 
-                          className={`ml-2 font-bold ${
-                            analysis.riskLevel === "high" 
-                              ? "text-red-500" 
-                              : analysis.riskLevel === "medium" 
-                                ? "text-amber-500" 
-                                : "text-emerald-500"
-                          }`}
-                        >
-                          {analysis.score}/100
-                        </span>
+                      <div className="flex items-center">
+                        <div className={`h-16 w-16 rounded-full flex items-center justify-center border-4 ${
+                          analysis.score >= 80 ? "border-green-500 bg-green-50 text-green-700" :
+                          analysis.score >= 60 ? "border-amber-500 bg-amber-50 text-amber-700" :
+                          "border-red-500 bg-red-50 text-red-700"
+                        }`}>
+                          <span className="text-xl font-bold">{analysis.score}</span>
+                        </div>
+                        <div className="ml-3">
+                          <div className="text-lg font-medium">{t("Contract Score")}</div>
+                          <div className="text-sm text-muted-foreground">of 100 possible points</div>
+                        </div>
                       </div>
                       <div className="flex items-center">
-                        {analysis.riskLevel === "high" && <AlertTriangle className="text-red-500 mr-2" />}
-                        {analysis.riskLevel === "medium" && <AlertTriangle className="text-amber-500 mr-2" />}
-                        {analysis.riskLevel === "low" && <CheckCircle className="text-emerald-500 mr-2" />}
+                        {analysis.riskLevel === "high" && <AlertTriangle className="text-red-500 mr-2 h-5 w-5" />}
+                        {analysis.riskLevel === "medium" && <AlertTriangle className="text-amber-500 mr-2 h-5 w-5" />}
+                        {analysis.riskLevel === "low" && <CheckCircle className="text-emerald-500 mr-2 h-5 w-5" />}
                         <span className={`font-medium ${
                           analysis.riskLevel === "high" 
                             ? "text-red-500" 
@@ -1450,28 +1449,81 @@ Employer                       Employee`;
                     ) : (
                       <div className="space-y-4">
                         {analysis.risks.map((risk, index) => (
-                          <div key={index} className="border rounded-md p-4">
-                            <div className="flex items-center gap-2 mb-2">
+                          <div key={index} className={`border-l-4 ${
+                            risk.severity === 'high' ? 'border-l-red-500' : 
+                            risk.severity === 'medium' ? 'border-l-amber-500' : 
+                            'border-l-emerald-500'
+                          } rounded-md p-4 shadow-sm bg-card`}>
+                            <div className="flex flex-wrap items-center gap-2 mb-3">
                               <AlertTriangle className={`h-5 w-5 ${getSeverityColor(risk.severity)}`} />
                               <span className={`font-medium ${getSeverityColor(risk.severity)}`}>
-                                {t(`risk_severity_${risk.severity}`)}
+                                {risk.severity === 'high' ? 'Critical Issue' : 
+                                 risk.severity === 'medium' ? 'Moderate Risk' : 
+                                 'Minor Concern'}
                               </span>
-                              {risk.category && (
-                                <Badge variant="outline" className="ml-auto">
-                                  {risk.category}
-                                </Badge>
-                              )}
+                              
+                              {/* Confidence Indicator */}
+                              <div className="ml-auto flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">AI Confidence:</span>
+                                <div className="flex gap-0.5">
+                                  <div className={`h-2 w-2 rounded-full ${risk.severity === 'high' ? 'bg-red-500' : 'bg-muted'}`}></div>
+                                  <div className={`h-2 w-2 rounded-full ${
+                                    risk.severity === 'high' || risk.severity === 'medium' ? 
+                                    (risk.severity === 'high' ? 'bg-red-500' : 'bg-amber-500') : 'bg-muted'
+                                  }`}></div>
+                                  <div className={`h-2 w-2 rounded-full ${
+                                    risk.severity === 'high' ? 'bg-red-500' : 
+                                    risk.severity === 'medium' ? 'bg-amber-500' : 
+                                    'bg-emerald-500'
+                                  }`}></div>
+                                </div>
+                                
+                                {risk.category && (
+                                  <Badge variant="outline" className="ml-2">
+                                    {risk.category}
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
-                            <h4 className="font-medium mb-1">{t("clause")}:</h4>
-                            <p className="text-sm bg-muted p-2 rounded mb-2 whitespace-pre-wrap">
-                              {risk.clause}
-                            </p>
-                            <h4 className="font-medium mb-1">{t("issue")}:</h4>
-                            <p className="text-sm mb-2">{risk.issue}</p>
-                            <h4 className="font-medium mb-1">{t("suggestion")}:</h4>
-                            <p className="text-sm bg-emerald-50 dark:bg-emerald-950/30 p-2 rounded text-emerald-700 dark:text-emerald-300">
-                              {risk.suggestion}
-                            </p>
+                            
+                            <div className="grid md:grid-cols-4 gap-4">
+                              {/* Clause */}
+                              <div className="md:col-span-2">
+                                <h4 className="font-medium mb-1 flex items-center text-sm">
+                                  <FileText className="h-4 w-4 mr-1" />
+                                  Problematic Clause
+                                </h4>
+                                <div className="bg-muted p-3 rounded text-sm whitespace-pre-wrap border border-muted">
+                                  {risk.clause}
+                                </div>
+                              </div>
+                              
+                              {/* Issue */}
+                              <div>
+                                <h4 className="font-medium mb-1 flex items-center text-sm">
+                                  <AlertTriangle className="h-4 w-4 mr-1" />
+                                  Legal Issue
+                                </h4>
+                                <div className="p-3 text-sm border rounded">
+                                  {risk.issue}
+                                </div>
+                              </div>
+                              
+                              {/* Suggestion */}
+                              <div>
+                                <h4 className="font-medium mb-1 flex items-center text-sm">
+                                  <FileCheck className="h-4 w-4 mr-1" />
+                                  Recommended Fix
+                                </h4>
+                                <div className={`p-3 text-sm border rounded ${
+                                  risk.severity === 'high' ? 'bg-red-50 border-red-100 text-red-700' : 
+                                  risk.severity === 'medium' ? 'bg-amber-50 border-amber-100 text-amber-700' : 
+                                  'bg-emerald-50 border-emerald-100 text-emerald-700'
+                                }`}>
+                                  {risk.suggestion}
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         ))}
                       </div>
