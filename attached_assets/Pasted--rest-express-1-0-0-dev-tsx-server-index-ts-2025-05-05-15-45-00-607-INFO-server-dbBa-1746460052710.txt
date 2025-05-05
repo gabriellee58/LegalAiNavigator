@@ -1,0 +1,52 @@
+
+> rest-express@1.0.0 dev
+> tsx server/index.ts
+
+[2025-05-05 15:45:00.607] [INFO] [server] [dbBackup] Initialized with backup directory: /home/runner/workspace/backups
+[2025-05-05 15:45:00.608] [INFO] [server] [dbBackup] Backup retention: 7 days, frequency: daily
+[2025-05-05 15:45:00.662] [INFO] [server] [config] Environment: development
+[2025-05-05 15:45:00.662] [DEBUG] [server] [config] Configuration loaded: {
+  "NODE_ENV": "development",
+  "PORT": 5000,
+  "DATABASE_URL": "[REDACTED]",
+  "SESSION_SECRET": "[REDACTED]",
+  "LOG_LEVEL": "info",
+  "ANTHROPIC_API_KEY": "[REDACTED]",
+  "OPENAI_API_KEY": "[REDACTED]",
+  "DEEPSEEK_API_KEY": "[REDACTED]",
+  "BACKUP_FREQUENCY": "daily",
+  "BACKUP_RETENTION_DAYS": 7,
+  "MAX_UPLOAD_SIZE_MB": 10
+}
+[2025-05-05 15:45:00.662] [INFO] [server] [config] Available AI services: Anthropic Claude, OpenAI GPT, DeepSeek AI
+[2025-05-05 15:45:00.671] [INFO] [server] Running database migrations...
+[2025-05-05 15:45:00.671] [INFO] [server] Starting database migrations check
+[2025-05-05 15:45:01.567] [DEBUG] [db] Query (896ms): [object Object] | Params: []
+[2025-05-05 15:45:01.614] [DEBUG] [db] Query (46ms): [object Object] | Params: []
+[2025-05-05 15:45:01.658] [DEBUG] [db] Query (44ms): [object Object] | Params: []
+[2025-05-05 15:45:01.705] [DEBUG] [db] Query (47ms): [object Object] | Params: []
+[2025-05-05 15:45:01.751] [DEBUG] [db] Query (46ms): [object Object] | Params: []
+[2025-05-05 15:45:01.796] [DEBUG] [db] Query (44ms): [object Object] | Params: []
+[2025-05-05 15:45:01.894] [DEBUG] [db] Query (97ms): [object Object] | Params: []
+[2025-05-05 15:45:01.953] [DEBUG] [db] Query (60ms): [object Object] | Params: []
+[2025-05-05 15:45:02.007] [DEBUG] [db] Query (54ms): [object Object] | Params: []
+[2025-05-05 15:45:02.053] [DEBUG] [db] Query (46ms): [object Object] | Params: []
+[2025-05-05 15:45:02.098] [DEBUG] [db] Query (44ms): [object Object] | Params: []
+[2025-05-05 15:45:02.143] [DEBUG] [db] Query (44ms): [object Object] | Params: []
+[2025-05-05 15:45:02.144] [INFO] [server] Database migrations completed successfully
+[2025-05-05 15:45:02.145] [INFO] [server] Initializing database and creating default templates...
+[2025-05-05 15:45:02.366] [INFO] [server] Initializing legal domains and knowledge base...
+[2025-05-05 15:45:02.397] [INFO] [server] Database initialization completed
+[2025-05-05 15:45:02.537] [INFO] [server] Server started in development mode and listening on port 5000
+Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+[2025-05-05 15:45:10.943] [WARN] [http] GET /api/user 401 in 2ms
+[2025-05-05 15:45:27.061] [INFO] [http] GET /api/user 304 in 467ms :: {"id":2,"username":"proedgeconsultanting@gmail.com","email":"","password":"e3da0fed7f9f2a402a328600c3ab3e07b249673af40d260fe03c74fbf5d453021d62ffbbd6202a9ae29f7c1570c5714eaf86e0660caec0c55398036fd59a30b9.91af38c7f28de0d4de7af540b207cc92","role":"user","fullName":"proedgeconsultanting@gmail.com","preferredLanguage":"en"}
+[2025-05-05 15:45:32.337] [INFO] [http] GET /api/user 304 in 173ms :: {"id":2,"username":"proedgeconsultanting@gmail.com","email":"","password":"e3da0fed7f9f2a402a328600c3ab3e07b249673af40d260fe03c74fbf5d453021d62ffbbd6202a9ae29f7c1570c5714eaf86e0660caec0c55398036fd59a30b9.91af38c7f28de0d4de7af540b207cc92","role":"user","fullName":"proedgeconsultanting@gmail.com","preferredLanguage":"en"}
+Retrieving template with ID: 101
+[2025-05-05 15:45:33.933] [INFO] [http] GET /api/document-templates/101 304 in 306ms :: {"id":101,"templateType":"indigenous","subcategory":"governance","title":"Indigenous Self-Government Framework Agreement","description":"Framework for indigenous self-government negotiations","language":"en","templateContent":"# INDIGENOUS SELF-GOVERNMENT FRAMEWORK AGREEMENT\\n\\n## PREAMBLE\\n\\nTHIS FRAMEWORK AGREEMENT is dated for reference the {{agreementDate}},\\n\\nBETWEEN:\\n\\n**{{indigenousName}}**\\n(hereinafter referred to as the \"{{indigenousShortName}}\")\\n\\nAND:\\n\\n**HER MAJES...
+[2025-05-05 15:45:33.983] [INFO] [http] GET /api/subscriptions/current 304 in 370ms :: {"id":2,"userId":2,"planId":"basic","stripeCustomerId":"cus_mock_1745462007388","stripeSubscriptionId":"sub_mock_1745462014950","status":"active","currentPeriodStart":"2025-04-24T02:33:27.430Z","currentPeriodEnd":"2025-05-01T02:33:27.430Z","trialStart":"2025-04-24T02:33:27.430Z","trialEnd":"2025-05-01T02:33:27.430Z","canceledAt":null,"createdAt":"2025-04-24T02:33:27.430Z","updatedAt":"2025-04-24T02:33:34.950Z","plan":{"id":1,"name":"Basic Plan","description":"Essential legal tools for individual...
+[2025-05-05 15:45:34.119] [INFO] [http] GET /api/document-templates 304 in 496ms :: [{"id":76,"templateType":"indigenous","subcategory":"land-rights","title":"Aboriginal Title Claim Statement","description":"Template for making a statement of claim for Aboriginal title","language":"en","templateContent":"# ABORIGINAL TITLE CLAIM STATEMENT\\n\\n**NOTICE OF CIVIL CLAIM**\\n\\nIN THE SUPREME COURT OF {{province}}\\n\\n**BETWEEN:**\\n\\n{{indigenousNation}}\\n\\nPlaintiff\\n\\n**AND:**\\n\\n{{defendantName}}\\n\\nDefendant\\n\\n## STATEMENT OF FACTS\\n\\n### IDENTITY OF THE PARTIES...
+[2025-05-05 15:45:34.711] [INFO] [http] GET /api/user 200 in 108ms :: {"id":2,"username":"proedgeconsultanting@gmail.com","email":"","password":"e3da0fed7f9f2a402a328600c3ab3e07b249673af40d260fe03c74fbf5d453021d62ffbbd6202a9ae29f7c1570c5714eaf86e0660caec0c55398036fd59a30b9.91af38c7f28de0d4de7af540b207cc92","role":"user","fullName":"proedgeconsultanting@gmail.com","preferredLanguage":"en"}
+[2025-05-05 15:45:35.208] [INFO] [http] GET /api/subscriptions/current 304 in 386ms :: {"id":2,"userId":2,"planId":"basic","stripeCustomerId":"cus_mock_1745462007388","stripeSubscriptionId":"sub_mock_1745462014950","status":"active","currentPeriodStart":"2025-04-24T02:33:27.430Z","currentPeriodEnd":"2025-05-01T02:33:27.430Z","trialStart":"2025-04-24T02:33:27.430Z","trialEnd":"2025-05-01T02:33:27.430Z","canceledAt":null,"createdAt":"2025-04-24T02:33:27.430Z","updatedAt":"2025-04-24T02:33:34.950Z","plan":{"id":1,"name":"Basic Plan","description":"Essential legal tools for individual...
