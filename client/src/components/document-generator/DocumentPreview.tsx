@@ -34,9 +34,10 @@ export default function DocumentPreview({ content, showSignatureFields }: Docume
       <CardContent className="p-6">
         <div 
           ref={containerRef}
-          className="prose max-w-none dark:prose-invert whitespace-pre-wrap"
+          className="prose max-w-none dark:prose-invert whitespace-pre-wrap break-words font-mono text-sm"
+          style={{ minHeight: '200px' }}
         >
-          {content}
+          {content || 'No preview content available'}
         </div>
       </CardContent>
     </Card>

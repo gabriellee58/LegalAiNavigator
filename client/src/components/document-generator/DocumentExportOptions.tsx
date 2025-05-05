@@ -37,8 +37,13 @@ const DocumentExportOptions: React.FC<DocumentExportOptionsProps> = ({
   const [isExporting, setIsExporting] = useState(false);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [previewFormat, setPreviewFormat] = useState<'pdf' | 'txt'>('pdf');
-  
+const [exportInProgress, setExportInProgress] = useState(false);
+
   const handleExport = async (format: 'txt' | 'pdf' | 'docx' | 'rtf') => {
+    if (exportInProgress) {
+      return;
+    }
+    setExportInProgress(true);
     if (!documentContent) {
       toast({
         title: t("No document to export"),
@@ -242,6 +247,7 @@ const DocumentExportOptions: React.FC<DocumentExportOptionsProps> = ({
       });
       
       setIsExporting(false);
+      setExportInProgress(false);
     }
   };
   
