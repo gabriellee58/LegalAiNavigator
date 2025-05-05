@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { AlertCircle, Info, Loader2, RefreshCw } from "lucide-react";
 import DocumentTemplateCard from "@/components/document-generator/DocumentTemplateCard";
 import DocumentGenForm from "@/components/document-generator/DocumentGenForm";
-import ExternalTemplateLoader from "@/components/document-generator/ExternalTemplateLoader";
 import { DocumentTemplate } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
@@ -85,8 +84,8 @@ function DocumentGeneratorPage() {
     return result;
   }, {});
   
-  // State for tabs
-  const [generatorTab, setGeneratorTab] = useState<string>("templates");
+  // State no longer needed for single tab view
+  // const [generatorTab, setGeneratorTab] = useState<string>("templates");
   
   return (
     <MainLayout>
@@ -192,128 +191,110 @@ function DocumentGeneratorPage() {
               </div>
             </div>
             
-            {/* Main tabs for the document generator: Templates, External Templates */}
-            <Tabs 
-              value={generatorTab} 
-              onValueChange={setGeneratorTab} 
-              className="w-full"
-            >
+            {/* Document templates section */}
+            <div className="w-full">
               <div className="flex justify-between items-center mb-4">
-                <TabsList>
-                  <TabsTrigger value="templates">{t("my_templates")}</TabsTrigger>
-                  <TabsTrigger value="external">
-                    <span className="material-icons mr-1 text-sm">cloud_download</span>
-                    {t("external_templates")}
-                  </TabsTrigger>
-                </TabsList>
+                <h2 className="text-2xl font-bold">{t("my_templates")}</h2>
                 
-                {generatorTab === "templates" && (
-                  <div className="inline-flex rounded-md text-xs">
-                    <button 
-                      className={`px-3 py-1.5 ${language === 'en' ? 'bg-primary text-white' : 'bg-white text-neutral-600 border border-neutral-300'} rounded-l-md`}
-                      onClick={() => setLanguage('en')}
-                    >
-                      English
-                    </button>
-                    <button 
-                      className={`px-3 py-1.5 ${language === 'fr' ? 'bg-primary text-white' : 'bg-white text-neutral-600 border border-neutral-300'} rounded-r-md`}
-                      onClick={() => setLanguage('fr')}
-                    >
-                      Français
-                    </button>
-                  </div>
-                )}
+                {/* Language selector */}
+                <div className="inline-flex rounded-md text-xs">
+                  <button 
+                    className={`px-3 py-1.5 ${language === 'en' ? 'bg-primary text-white' : 'bg-white text-neutral-600 border border-neutral-300'} rounded-l-md`}
+                    onClick={() => setLanguage('en')}
+                  >
+                    English
+                  </button>
+                  <button 
+                    className={`px-3 py-1.5 ${language === 'fr' ? 'bg-primary text-white' : 'bg-white text-neutral-600 border border-neutral-300'} rounded-r-md`}
+                    onClick={() => setLanguage('fr')}
+                  >
+                    Français
+                  </button>
+                </div>
               </div>
               
-              {/* Templates tab content */}
-              <TabsContent value="templates">
-                {isLoadingTemplates ? (
-                  <div className="flex justify-center p-12">
-                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              {/* Templates content */}
+              {isLoadingTemplates ? (
+                <div className="flex justify-center p-12">
+                  <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                </div>
+              ) : templateError ? (
+                <div className="space-y-4">
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>{t("error_loading_templates")}</AlertTitle>
+                    <AlertDescription>
+                      {t("error_loading_templates_description")}
+                    </AlertDescription>
+                  </Alert>
+                  <div className="flex justify-center">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => refetchTemplates()}
+                      className="flex items-center gap-2"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      {t("retry_loading_templates")}
+                    </Button>
                   </div>
-                ) : templateError ? (
-                  <div className="space-y-4">
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertTitle>{t("error_loading_templates")}</AlertTitle>
-                      <AlertDescription>
-                        {t("error_loading_templates_description")}
-                      </AlertDescription>
-                    </Alert>
-                    <div className="flex justify-center">
-                      <Button 
-                        variant="outline" 
-                        onClick={() => refetchTemplates()}
-                        className="flex items-center gap-2"
-                      >
-                        <RefreshCw className="h-4 w-4" />
-                        {t("retry_loading_templates")}
-                      </Button>
-                    </div>
-                  </div>
-                ) : templates.length === 0 ? (
-                  <div className="space-y-4">
-                    <Alert>
-                      <Info className="h-4 w-4" />
-                      <AlertTitle>{t("no_templates_available")}</AlertTitle>
-                      <AlertDescription>
-                        {t("no_templates_available_description")}
-                      </AlertDescription>
-                    </Alert>
-                  </div>
-                ) : (
-                  <Tabs defaultValue="all" className="w-full">
-                    <TabsList className="mb-4 flex overflow-x-auto pb-2 scrollbar-hide">
-                      <TabsTrigger value="all">{t("all_templates")}</TabsTrigger>
-                      {Object.keys(templatesByType).map((type) => (
-                        <TabsTrigger key={type} value={type}>
-                          {type.charAt(0).toUpperCase() + type.slice(1)}s
-                        </TabsTrigger>
-                      ))}
-                    </TabsList>
-                    
-                    <TabsContent value="all">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {templates?.map((template: DocumentTemplate) => (
-                          <DocumentTemplateCard 
-                            key={template.id} 
-                            template={template} 
-                          />
-                        ))}
-                      </div>
-                    </TabsContent>
-                    
-                    {Object.entries(templatesByType).map(([type, typeTemplates]) => (
-                      <TabsContent key={type} value={type}>
-                        {/* Display subcategories */}
-                        {templatesByTypeAndSubcategory[type] && 
-                          Object.entries(templatesByTypeAndSubcategory[type]).map(([subcategory, templates]) => (
-                            <div key={`${type}-${subcategory}`} className="mb-8">
-                              <h3 className="text-lg font-semibold mb-4 capitalize border-b pb-2">
-                                {subcategory === 'general' ? `General ${type}` : subcategory.replace(/-/g, ' ')}
-                              </h3>
-                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {templates.map((template: DocumentTemplate) => (
-                                  <DocumentTemplateCard 
-                                    key={template.id} 
-                                    template={template} 
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                          ))
-                        }
-                      </TabsContent>
+                </div>
+              ) : templates.length === 0 ? (
+                <div className="space-y-4">
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertTitle>{t("no_templates_available")}</AlertTitle>
+                    <AlertDescription>
+                      {t("no_templates_available_description")}
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              ) : (
+                <Tabs defaultValue="all" className="w-full">
+                  <TabsList className="mb-4 flex overflow-x-auto pb-2 scrollbar-hide">
+                    <TabsTrigger value="all">{t("all_templates")}</TabsTrigger>
+                    {Object.keys(templatesByType).map((type) => (
+                      <TabsTrigger key={type} value={type}>
+                        {type.charAt(0).toUpperCase() + type.slice(1)}s
+                      </TabsTrigger>
                     ))}
-                  </Tabs>
-                )}
-              </TabsContent>
-              
-              {/* External Templates tab content */}
-              <TabsContent value="external">
-                <ExternalTemplateLoader />
-              </TabsContent>
-            </Tabs>
+                  </TabsList>
+                  
+                  <TabsContent value="all">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {templates?.map((template: DocumentTemplate) => (
+                        <DocumentTemplateCard 
+                          key={template.id} 
+                          template={template} 
+                        />
+                      ))}
+                    </div>
+                  </TabsContent>
+                  
+                  {Object.entries(templatesByType).map(([type, typeTemplates]) => (
+                    <TabsContent key={type} value={type}>
+                      {/* Display subcategories */}
+                      {templatesByTypeAndSubcategory[type] && 
+                        Object.entries(templatesByTypeAndSubcategory[type]).map(([subcategory, templates]) => (
+                          <div key={`${type}-${subcategory}`} className="mb-8">
+                            <h3 className="text-lg font-semibold mb-4 capitalize border-b pb-2">
+                              {subcategory === 'general' ? `General ${type}` : subcategory.replace(/-/g, ' ')}
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                              {templates.map((template: DocumentTemplate) => (
+                                <DocumentTemplateCard 
+                                  key={template.id} 
+                                  template={template} 
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        ))
+                      }
+                    </TabsContent>
+                  ))}
+                </Tabs>
+              )}
+            </div>
           </div>
         )}
       </div>
