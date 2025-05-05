@@ -22,7 +22,8 @@ import {
   Loader2, Upload, AlertTriangle, CheckCircle, FileText, Scale, FileDiff,
   File, Type, FileSearch, Search, FileQuestion, ChevronRight, Calendar as CalendarIcon,
   Circle, Tag, Download, Printer, Share2, Edit, Save, ListTodo, ArrowRight,
-  ArrowLeft, FileOutput, FileCheck, ExternalLink, Copy, Edit2
+  ArrowLeft, FileOutput, FileCheck, ExternalLink, Copy, Edit2, History,
+  Lightbulb as LightbulbIcon
 } from "lucide-react";
 import { t } from "@/lib/i18n";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -99,6 +100,7 @@ export default function ContractAnalysisPage() {
   const queryClient = useQueryClient();
   const [contractText, setContractText] = useState("");
   const [activeTab, setActiveTab] = useState<string>("upload");
+  const [uploadType, setUploadType] = useState<string>("single");
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [secondContractText, setSecondContractText] = useState("");
   const [comparisonResult, setComparisonResult] = useState<any | null>(null);
@@ -106,10 +108,12 @@ export default function ContractAnalysisPage() {
   const [jurisdiction, setJurisdiction] = useState<string>("Canada");
   const [contractType, setContractType] = useState<string>("general");
   const [title, setTitle] = useState<string>("");
-  const [saveAnalysis, setSaveAnalysis] = useState<boolean>(false);
+  const [saveAnalysis, setSaveAnalysis] = useState<boolean>(true); // Default to save analysis
   const [selectedAnalysisId, setSelectedAnalysisId] = useState<number | null>(null);
   const [currentSection, setCurrentSection] = useState<string>("summary");
   const [progressValue, setProgressValue] = useState<number>(25);
+  const [analysisStage, setAnalysisStage] = useState<string>("initial");
+  const [completionPercentage, setCompletionPercentage] = useState<number>(0);
   
   // State for search/filter functionality
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -621,26 +625,18 @@ export default function ContractAnalysisPage() {
           onValueChange={setActiveTab} 
           className="w-full"
         >
-          <TabsList className="grid grid-cols-5">
+          <TabsList className="grid grid-cols-3">
             <TabsTrigger value="upload">
               <Upload className="h-4 w-4 mr-2" />
-              {t("upload")}
-            </TabsTrigger>
-            <TabsTrigger value="compare">
-              <FileDiff className="h-4 w-4 mr-2" />
-              {t("compare")}
-            </TabsTrigger>
-            <TabsTrigger value="history">
-              <Search className="h-4 w-4 mr-2" />
-              {t("history")}
+              {t("Upload & Analyze")}
             </TabsTrigger>
             <TabsTrigger value="results" disabled={!analysis}>
               <FileText className="h-4 w-4 mr-2" />
-              {t("results")}
+              {t("Results")}
             </TabsTrigger>
-            <TabsTrigger value="comparison-results" disabled={!comparisonResult}>
-              <Scale className="h-4 w-4 mr-2" />
-              {t("comparison")}
+            <TabsTrigger value="history">
+              <FileCheck className="h-4 w-4 mr-2" />
+              {t("History")}
             </TabsTrigger>
           </TabsList>
 
@@ -648,19 +644,31 @@ export default function ContractAnalysisPage() {
           <TabsContent value="upload" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>{t("upload_contract")}</CardTitle>
+                <CardTitle>{t("Contract Analysis Tool")}</CardTitle>
                 <CardDescription>
-                  {t("upload_subtitle")}
+                  Our AI will analyze your contract for legal risks, provide recommendations for improvements, and ensure compliance with Canadian laws.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="bg-accent p-4 rounded-lg mb-6">
+                  <h3 className="font-medium flex items-center text-accent-foreground mb-2">
+                    <AlertTriangle className="h-5 w-5 mr-2" />
+                    How the Analysis Works
+                  </h3>
+                  <ol className="list-decimal ml-5 space-y-1 text-sm text-muted-foreground">
+                    <li>Upload your contract (or paste its text)</li>
+                    <li>Our AI performs a thorough analysis considering jurisdiction and contract type</li>
+                    <li>You'll receive a comprehensive report with risk scores, improvement suggestions, and compliance assessment</li>
+                  </ol>
+                </div>
+                
                 <Tabs defaultValue="file" className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="file">
+                    <TabsTrigger value="file" onClick={() => setUploadType("single")}>
                       <File className="h-4 w-4 mr-2" />
                       {t("File Upload")}
                     </TabsTrigger>
-                    <TabsTrigger value="text">
+                    <TabsTrigger value="text" onClick={() => setUploadType("single")}>
                       <Type className="h-4 w-4 mr-2" />
                       {t("Text Input")}
                     </TabsTrigger>
