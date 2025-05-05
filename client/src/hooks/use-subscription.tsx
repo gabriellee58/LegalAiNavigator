@@ -138,7 +138,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           console.warn("Non-success response from subscription API HTTP status:", {
             status: res.status,
             statusText: res.statusText,
-            details: await res.text()
+            details: typeof res.text === 'function' ? await res.text() : 'No response text available'
           });
           return null; // Any other error status
         }
@@ -483,94 +483,53 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // Check subscription status before creating
+  // Simplified subscription status check - always returns active status
   const checkSubscriptionStatus = async (): Promise<SubscriptionStatusCheckResponse> => {
-    try {
-      // Check if user is authenticated
-      if (!user) {
-        throw new Error("You must be logged in to check subscription status");
-      }
-
-      console.log("Checking subscription status before creation");
-      const res = await apiRequest("GET", "/api/subscriptions/status-check");
-
-      if (res.status === 401) {
-        throw new Error("Authentication required to check subscription status");
-      }
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to check subscription status");
-      }
-
-      const responseData: SubscriptionStatusCheckResponse = await res.json();
-      console.log("Subscription status check:", responseData);
-      return responseData;
-    } catch (error) {
-      console.error("Error checking subscription status:", error);
-      // Return a default response indicating error
-      return {
-        hasSubscription: false,
-        canCreateNew: false,
-        message: error instanceof Error ? error.message : "Unknown error checking subscription status"
-      };
-    }
+    console.log("Checking subscription status (always returns active)");
+    
+    // Always return active subscription status
+    return {
+      hasSubscription: true,
+      canCreateNew: false,
+      subscriptionStatus: "active",
+      message: "All features are unlocked"
+    };
   };
 
-  // Helper functions for mutations
-  const createSubscription = async (planId: string) => {
-    // First check subscription status
-    const statusCheck = await checkSubscriptionStatus();
-
-    // If user already has a subscription and can't create new, explain why
-    if (statusCheck.hasSubscription && !statusCheck.canCreateNew) {
-      // Show an error message explaining why they can't create a new subscription
-      toast({
-        title: "Subscription Exists",
-        description: statusCheck.message,
-        variant: "destructive",
-      });
-
-      // Show toast with information about existing subscription
-      if (statusCheck.details) {
-        toast({
-          title: "Manage Your Subscription",
-          description: `Visit your subscription dashboard to manage your existing subscription.`,
-          variant: "default",
-          action: (
-            <div className="flex gap-2">
-              <button
-                onClick={() => window.location.href = '/subscription/dashboard'}
-                className="bg-primary text-white px-3 py-1 rounded-md text-xs"
-              >
-                Go to Dashboard
-              </button>
-            </div>
-          ),
-        });
-      }
-
-      return;
-    }
-
-    // Otherwise proceed with creation
-    await createSubscriptionMutation.mutateAsync(planId);
+  // Simplified helper functions - all just show notifications that subscriptions are removed
+  const createSubscription = async (_planId: string): Promise<void> => {
+    toast({
+      title: "All Features Available",
+      description: "All features are already unlocked for you. Subscription functionality has been removed.",
+    });
   };
 
-  const updateSubscription = async (planId: string) => {
-    await updateSubscriptionMutation.mutateAsync(planId);
+  const updateSubscription = async (_planId: string): Promise<void> => {
+    toast({
+      title: "All Features Available",
+      description: "All features are already unlocked for you. Subscription functionality has been removed.",
+    });
   };
 
-  const cancelSubscription = async () => {
-    await cancelSubscriptionMutation.mutateAsync();
+  const cancelSubscription = async (): Promise<void> => {
+    toast({
+      title: "Subscription Not Required",
+      description: "All features are available to all users. Subscription functionality has been removed.",
+    });
   };
 
-  const reactivateSubscription = async () => {
-    await reactivateSubscriptionMutation.mutateAsync();
+  const reactivateSubscription = async (): Promise<void> => {
+    toast({
+      title: "All Features Available",
+      description: "All features are already unlocked for you. Subscription functionality has been removed.",
+    });
   };
 
-  const goToBillingPortal = async () => {
-    await billingPortalMutation.mutateAsync();
+  const goToBillingPortal = async (): Promise<void> => {
+    toast({
+      title: "Subscription Not Required",
+      description: "All features are available to all users. Subscription functionality has been removed.",
+    });
   };
 
   return (
