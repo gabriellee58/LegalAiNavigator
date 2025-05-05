@@ -227,19 +227,12 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     retry: 1, // Only retry once to avoid flooding logs
   });
 
-  // Calculate if trial is active and days remaining
-  const isTrialActive = subscription?.status === "trial" && subscription?.trialEnd !== null;
-
-  // Calculate trial days remaining
-  const trialDaysRemaining = subscription?.trialEnd 
-    ? differenceInDays(new Date(subscription.trialEnd), new Date()) 
-    : null;
-
-  // Check if subscription is active
-  const isSubscriptionActive = 
-    !!subscription && 
-    (subscription.status === "active" || 
-     (subscription.status === "trial" && trialDaysRemaining !== null && trialDaysRemaining > 0));
+  // Override subscription status - always active
+  const isTrialActive = false;
+  const trialDaysRemaining = null;
+  
+  // Always return active subscription status regardless of actual status
+  const isSubscriptionActive = true; // Force subscription to always be active
 
   // Get current plan details
   const currentPlan: SubscriptionPlanDefinition | null = 
