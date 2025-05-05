@@ -26,7 +26,7 @@ interface TemplatePreview {
   id: string;
   title: string;
   description: string;
-  category: string;
+  category?: string; // Make category optional to handle templates without categories
   jurisdiction: string;
   language: string;
   source: string;
@@ -360,7 +360,9 @@ export default function ExternalTemplateLoader() {
                     onImport={() => {
                       // Use formatted template ID helper to ensure proper format
                       const title = template.title ? template.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') : 'template';
-                      const formattedId = `${template.source}-${template.category}-${title}`;
+                      // Use a default category if none is provided
+                      const category = template.category || "general";
+                      const formattedId = `${template.source}-${category}-${title}`;
                       importTemplate(formattedId);
                     }}
                     isImporting={isImporting}
@@ -392,11 +394,21 @@ function TemplateCard({ template, onImport, isImporting }: TemplateCardProps) {
     
     // Otherwise, construct a valid ID from template properties
     const name = template.title ? template.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') : 'template';
-    return `${template.source}-${template.category}-${name}`;
+    
+    // Handle missing category - use "general" as a default category
+    const category = template.category || "general";
+    
+    return `${template.source}-${category}-${name}`;
   };
   
   // Get template icon based on category
-  const getTemplateIcon = (category: string) => {
+  const getTemplateIcon = (category: string | undefined | null) => {
+    // Handle the case where category is undefined or null
+    if (!category) {
+      console.warn("Template missing category property:", template.id);
+      return 'description'; // Default icon
+    }
+    
     switch (category.toLowerCase()) {
       case 'contract':
         return 'description';
@@ -448,7 +460,7 @@ function TemplateCard({ template, onImport, isImporting }: TemplateCardProps) {
         <div className="text-xs text-muted-foreground">
           <div className="flex items-center mb-1">
             <span className="material-icons text-xs mr-1">label</span>
-            <span className="capitalize">{template.category}</span>
+            <span className="capitalize">{template.category || "general"}</span>
           </div>
           <div className="flex items-center mb-1">
             <span className="material-icons text-xs mr-1">source</span>
