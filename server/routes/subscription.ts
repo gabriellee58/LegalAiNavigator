@@ -32,22 +32,22 @@ const mockStripeImplementation = {
     console.log('Mock createCheckoutSession called:', options);
     return { url: options.successUrl.replace('{CHECKOUT_SESSION_ID}', 'mock_session_' + Date.now()) };
   },
-  
+
   createCustomer: async (email: string, name?: string) => {
     console.log('Mock createCustomer called:', { email, name });
     return { id: 'cus_mock_' + Date.now() };
   },
-  
+
   createSubscription: async (customerId: string, priceId: string, trialDays: number = 0) => {
     console.log('Mock createSubscription called:', { customerId, priceId, trialDays });
     return { id: 'sub_mock_' + Date.now() };
   },
-  
+
   cancelSubscription: async (subscriptionId: string) => {
     console.log('Mock cancelSubscription called:', { subscriptionId });
     return { id: subscriptionId, status: 'canceled' };
   },
-  
+
   createBillingPortalSession: async (customerId: string, returnUrl: string) => {
     console.log('Mock createBillingPortalSession called:', { customerId, returnUrl });
     return { url: returnUrl };
@@ -74,7 +74,7 @@ function getBaseUrl(req: any): string {
                     (req.secure ? 'https' : 'http');
     return `${protocol}://${req.headers.host}`;
   }
-  
+
   // Otherwise use origin or default
   return req.headers.origin || 'http://localhost:3000';
 }
@@ -93,11 +93,11 @@ function ensureAuthenticated(req: any, res: any, next: any) {
 router.get('/status-check', ensureAuthenticated, async (req, res) => {
   try {
     const userId = req.user!.id;
-    
+
     try {
       // Get subscription status from the database
       const subscription = await getUserSubscription(userId);
-      
+
       if (!subscription) {
         return res.json({
           hasSubscription: false,
@@ -105,11 +105,11 @@ router.get('/status-check', ensureAuthenticated, async (req, res) => {
           message: 'No subscription found. User can create a new subscription.'
         });
       }
-      
+
       // Default to true, will be set to false for active/trialing subscriptions
       let canCreateNew = true;
       let reason = '';
-      
+
       // Check different subscription statuses
       if (subscription.status === 'active') {
         canCreateNew = false;
@@ -131,7 +131,7 @@ router.get('/status-check', ensureAuthenticated, async (req, res) => {
           reason = 'User has a canceled subscription that has expired';
         }
       }
-      
+
       // Return the detailed status
       return res.json({
         hasSubscription: true,
@@ -154,14 +154,14 @@ router.get('/status-check', ensureAuthenticated, async (req, res) => {
         (error.code && error.code === '42P01') // PostgreSQL code for undefined_table
       )) {
         logger.warn('[subscription] The subscription tables have not been created yet.');
-        
+
         return res.json({
           hasSubscription: false,
           canCreateNew: true,
           message: 'No subscription tables exist. User can create a new subscription.'
         });
       }
-      
+
       throw error;
     }
   } catch (error) {
@@ -177,19 +177,26 @@ router.get('/status-check', ensureAuthenticated, async (req, res) => {
 router.get('/current', ensureAuthenticated, async (req, res) => {
   try {
     const userId = req.user!.id;
-    
+
     try {
       // Attempt to get subscription from database
       const subscription = await getUserSubscription(userId);
-      
+
       if (!subscription) {
-        return res.status(404).json({ error: 'No active subscription found' });
+        return res.status(404).json({ 
+          error: 'No active subscription found',
+          status: 'inactive',
+          details: 'Subscription not found or expired'
+        });
       }
-      
+
+      // Add cache control headers
+      res.set('Cache-Control', 'private, max-age=300');
+
       // Get plan details based on planId
       // It could be a string (tier name like "basic") or a numeric ID
       let plan = null;
-      
+
       try {
         // First, try to get plan by tier if planId is a string representing a tier
         if (typeof subscription.planId === 'string' && isNaN(Number(subscription.planId))) {
@@ -197,7 +204,7 @@ router.get('/current', ensureAuthenticated, async (req, res) => {
             .select()
             .from(subscriptionPlans)
             .where(eq(subscriptionPlans.tier, subscription.planId));
-          
+
           if (tierPlans.length > 0) {
             plan = tierPlans[0];
           }
@@ -207,14 +214,14 @@ router.get('/current', ensureAuthenticated, async (req, res) => {
           const idToUse = typeof subscription.planId === 'string' 
             ? parseInt(subscription.planId, 10) 
             : subscription.planId;
-            
+
           // Only query if we have a valid numeric ID
           if (!isNaN(Number(idToUse))) {
             const idPlans = await db
               .select()
               .from(subscriptionPlans)
               .where(eq(subscriptionPlans.id, idToUse));
-              
+
             if (idPlans.length > 0) {
               plan = idPlans[0];
             }
@@ -224,7 +231,7 @@ router.get('/current', ensureAuthenticated, async (req, res) => {
         // Log plan lookup error but don't fail the whole request
         logger.error('[subscription] Error looking up plan details:', planError);
       }
-      
+
       res.json({
         ...subscription,
         plan: plan
@@ -236,7 +243,7 @@ router.get('/current', ensureAuthenticated, async (req, res) => {
         (error.code && error.code === '42P01') // PostgreSQL code for undefined_table
       )) {
         logger.warn('[subscription] The subscription tables have not been created yet. Returning default trial subscription.');
-        
+
         // Return a default "trial" subscription since the table doesn't exist
         // This ensures the app can function before subscriptions are set up
         const defaultSubscription = {
@@ -254,10 +261,10 @@ router.get('/current', ensureAuthenticated, async (req, res) => {
           createdAt: new Date(),
           updatedAt: new Date()
         };
-        
+
         return res.json(defaultSubscription);
       }
-      
+
       // For other errors, return 500
       throw error;
     }
@@ -273,19 +280,19 @@ router.post('/create', ensureAuthenticated, async (req, res) => {
     const schema = z.object({
       planId: z.string().min(1),
     });
-    
+
     const result = schema.safeParse(req.body);
-    
+
     if (!result.success) {
       return res.status(400).json({ error: 'Invalid request data', details: result.error });
     }
-    
+
     const { planId } = result.data;
     const userId = req.user!.id;
     // Use username as email since our user schema doesn't have a separate email field
     const userEmail = req.user!.username; // Assuming username is the email
     const userName = req.user!.fullName || req.user!.username;
-    
+
     try {
       // Check if planId is a string tier (basic, professional, enterprise) or a numeric ID
       let plans;
@@ -302,20 +309,20 @@ router.post('/create', ensureAuthenticated, async (req, res) => {
           .from(subscriptionPlans)
           .where(eq(subscriptionPlans.id, parseInt(planId, 10)));
       }
-      
+
       const plan = plans.length > 0 ? plans[0] : null;
-      
+
       if (!plan) {
         return res.status(404).json({ error: 'Subscription plan not found' });
       }
-      
+
       // Check for existing subscription in any state
       const existingSubscription = await getUserSubscription(userId);
-      
+
       // Enhanced subscription status checking
       if (existingSubscription) {
         logger.info(`[subscription] User ${userId} attempted to create subscription while having status: ${existingSubscription.status}`);
-        
+
         if (existingSubscription.status === 'active') {
           return res.status(400).json({
             error: 'Subscription Exists',
@@ -329,7 +336,7 @@ router.post('/create', ensureAuthenticated, async (req, res) => {
             }
           });
         }
-        
+
         if (existingSubscription.status === 'trialing') {
           return res.status(400).json({
             error: 'Subscription Exists',
@@ -343,27 +350,27 @@ router.post('/create', ensureAuthenticated, async (req, res) => {
             }
           });
         }
-        
+
         // For other statuses (like canceled, past_due, etc.), we allow creating a new subscription
         // but we log it for tracking purposes
         logger.info(`[subscription] Allowing new subscription for user with ${existingSubscription.status} subscription`);
       }
-      
+
       try {
         // Get the environment
         const env = getEnvironment();
         logger.info(`[subscription] Creating subscription in ${env} environment`);
-        
+
         // Create a Stripe customer
         const { id: customerId } = await createCustomer(
           userEmail || `user-${userId}@example.com`,
           userName
         );
-        
+
         // Create a checkout session with a trial period
         const trialDays = 7; // 7-day trial
         const baseUrl = req.headers.origin || getBaseUrl(req);
-        
+
         const checkoutSession = await createCheckoutSession({
           priceId: plan.stripePriceId,
           customerId: customerId,
@@ -375,7 +382,7 @@ router.post('/create', ensureAuthenticated, async (req, res) => {
             planId: planId,
           },
         });
-        
+
         // Create subscription with trial in our database
         const subscription = await createOrUpdateUserSubscription(
           userId,
@@ -384,7 +391,7 @@ router.post('/create', ensureAuthenticated, async (req, res) => {
           'pending_payment', // Will be updated when subscription is paid
           trialDays
         );
-        
+
         res.status(201).json({
           subscription,
           url: checkoutSession.url,
@@ -392,16 +399,16 @@ router.post('/create', ensureAuthenticated, async (req, res) => {
         });
       } catch (stripeError) {
         logger.error('[subscription] Stripe integration error:', stripeError);
-        
+
         // Fallback to trial without payment if Stripe integration fails
         logger.info('[subscription] Falling back to trial without payment method');
-        
+
         // Create a temporary customer ID
         const temporaryCustomerId = `cus_temp_${Date.now()}`;
-        
+
         // Create a temporary subscription ID
         const temporarySubscriptionId = `sub_temp_${Date.now()}`;
-        
+
         // Create subscription with trial
         const trialDays = 7; // 7-day trial
         const subscription = await createOrUpdateUserSubscription(
@@ -411,7 +418,7 @@ router.post('/create', ensureAuthenticated, async (req, res) => {
           temporarySubscriptionId,
           trialDays
         );
-        
+
         res.status(201).json({
           subscription,
           message: 'Free trial started successfully. Payment will be set up later.',
@@ -421,11 +428,11 @@ router.post('/create', ensureAuthenticated, async (req, res) => {
       // Specific handling for database-related errors
       if (dbError && typeof dbError === 'object' && 'code' in dbError) {
         logger.error('[subscription] Database error creating subscription:', dbError);
-        
+
         // Check for specific postgres error codes
         if (dbError.code === '42P01') { // undefined_table
           logger.warn('[subscription] Tables not found, falling back to free trial');
-          
+
           // Return a default "trial" subscription since the table doesn't exist
           const defaultSubscription = {
             id: 0,
@@ -442,13 +449,13 @@ router.post('/create', ensureAuthenticated, async (req, res) => {
             createdAt: new Date(),
             updatedAt: new Date()
           };
-          
+
           return res.status(201).json({
             subscription: defaultSubscription,
             message: 'Free trial started. Database tables will be created soon.',
           });
         }
-        
+
         // For other Postgres errors
         return res.status(500).json({ 
           error: 'Database error occurred',
@@ -456,7 +463,7 @@ router.post('/create', ensureAuthenticated, async (req, res) => {
           code: String(dbError.code)
         });
       }
-      
+
       // Re-throw for general error handling
       throw dbError;
     }
@@ -477,36 +484,36 @@ router.patch('/change-plan', ensureAuthenticated, async (req, res) => {
     const schema = z.object({
       planId: z.string().min(1),
     });
-    
+
     const result = schema.safeParse(req.body);
-    
+
     if (!result.success) {
       return res.status(400).json({ error: 'Invalid request data', details: result.error });
     }
-    
+
     const { planId } = result.data;
     const userId = req.user!.id;
-    
+
     // Get plan details
     const [plan] = await db
       .select()
       .from(subscriptionPlans)
       .where(eq(subscriptionPlans.id, planId));
-    
+
     if (!plan) {
       return res.status(404).json({ error: 'Subscription plan not found' });
     }
-    
+
     // Check for existing subscription
     const existingSubscription = await getUserSubscription(userId);
-    
+
     if (!existingSubscription) {
       return res.status(404).json({ error: 'No active subscription found' });
     }
-    
+
     // In production, we would update the Stripe subscription
     // For now, just update the subscription in the database
-    
+
     const [updatedSubscription] = await db
       .update(userSubscriptions)
       .set({
@@ -515,7 +522,7 @@ router.patch('/change-plan', ensureAuthenticated, async (req, res) => {
       })
       .where(eq(userSubscriptions.id, existingSubscription.id))
       .returning();
-    
+
     res.json({
       subscription: updatedSubscription,
       message: 'Subscription updated successfully',
@@ -530,16 +537,16 @@ router.patch('/change-plan', ensureAuthenticated, async (req, res) => {
 router.post('/cancel', ensureAuthenticated, async (req, res) => {
   try {
     const userId = req.user!.id;
-    
+
     // Check for existing subscription
     const existingSubscription = await getUserSubscription(userId);
-    
+
     if (!existingSubscription) {
       return res.status(404).json({ error: 'No active subscription found' });
     }
-    
+
     const stripeSubscriptionId = existingSubscription.stripeSubscriptionId;
-    
+
     // Update the database first
     const [updatedSubscription] = await db
       .update(userSubscriptions)
@@ -550,20 +557,20 @@ router.post('/cancel', ensureAuthenticated, async (req, res) => {
       })
       .where(eq(userSubscriptions.id, existingSubscription.id))
       .returning();
-    
+
     // If there's a valid Stripe subscription ID, try to cancel it with Stripe
     if (stripeSubscriptionId && !stripeSubscriptionId.startsWith('sub_temp_') && !stripeSubscriptionId.startsWith('pending_payment')) {
       try {
         // Cancel the subscription with Stripe
         await cancelStripeSubscription(stripeSubscriptionId);
-        
+
         logger.info(`[subscription] Stripe subscription ${stripeSubscriptionId} canceled successfully`);
       } catch (stripeError) {
         // Log the error but don't fail the request since we've already updated our database
         logger.error('[subscription] Error canceling Stripe subscription:', stripeError);
       }
     }
-    
+
     res.json({
       subscription: updatedSubscription,
       message: 'Subscription canceled successfully',
@@ -578,7 +585,7 @@ router.post('/cancel', ensureAuthenticated, async (req, res) => {
 router.post('/reactivate', ensureAuthenticated, async (req, res) => {
   try {
     const userId = req.user!.id;
-    
+
     // Get the most recent subscription, even if canceled
     const [subscription] = await db
       .select()
@@ -586,18 +593,18 @@ router.post('/reactivate', ensureAuthenticated, async (req, res) => {
       .where(eq(userSubscriptions.userId, userId))
       .orderBy(desc(userSubscriptions.createdAt))
       .limit(1);
-    
+
     if (!subscription) {
       return res.status(404).json({ error: 'No subscription found' });
     }
-    
+
     if (subscription.status !== 'canceled') {
       return res.status(400).json({ error: 'Subscription is not canceled' });
     }
-    
+
     // In production, we would reactivate the Stripe subscription
     // For now, just update the subscription in the database
-    
+
     const [updatedSubscription] = await db
       .update(userSubscriptions)
       .set({
@@ -607,7 +614,7 @@ router.post('/reactivate', ensureAuthenticated, async (req, res) => {
       })
       .where(eq(userSubscriptions.id, subscription.id))
       .returning();
-    
+
     res.json({
       subscription: updatedSubscription,
       message: 'Subscription reactivated successfully',
@@ -622,18 +629,18 @@ router.post('/reactivate', ensureAuthenticated, async (req, res) => {
 router.post('/billing-portal', ensureAuthenticated, async (req, res) => {
   try {
     const userId = req.user!.id;
-    
+
     try {
       // Check for existing subscription
       const existingSubscription = await getUserSubscription(userId);
-      
+
       if (!existingSubscription) {
         return res.status(404).json({ error: 'No active subscription found' });
       }
-      
+
       // Get the Stripe customer ID
       const stripeCustomerId = existingSubscription.stripeCustomerId;
-      
+
       if (!stripeCustomerId || stripeCustomerId.startsWith('cus_temp_')) {
         // If there's no Stripe customer ID or it's a temporary one, redirect to subscription page
         return res.json({
@@ -641,28 +648,28 @@ router.post('/billing-portal', ensureAuthenticated, async (req, res) => {
           message: 'Please set up your payment method first',
         });
       }
-      
+
       try {
         // Get the appropriate base URL for the environment
         const env = getEnvironment();
         logger.info(`[subscription] Creating billing portal in ${env} environment`);
-        
+
         // Create a Stripe billing portal session
         const baseUrl = req.headers.origin || getBaseUrl(req);
         const session = await createBillingPortalSession(
           stripeCustomerId,
           `${baseUrl}/account/settings`
         );
-        
+
         res.json({
           url: session.url,
         });
       } catch (stripeError) {
         logger.error('[subscription] Stripe billing portal error:', stripeError);
-        
+
         // Fallback to basic billing page if Stripe integration fails
         const fallbackUrl = `/account/settings?subscription=${existingSubscription.id}`;
-        
+
         res.json({
           url: fallbackUrl,
           message: 'Using basic billing page due to payment provider issues',
@@ -672,17 +679,17 @@ router.post('/billing-portal', ensureAuthenticated, async (req, res) => {
       // Specific handling for database-related errors
       if (dbError && typeof dbError === 'object' && 'code' in dbError) {
         logger.error('[subscription] Database error in billing portal:', dbError);
-        
+
         // Check for specific postgres error codes
         if (dbError.code === '42P01') { // undefined_table
           logger.warn('[subscription] Tables not found, redirecting to subscription page');
-          
+
           return res.json({
             url: '/subscription-plans',
             message: 'Please set up your subscription first',
           });
         }
-        
+
         // For other Postgres errors
         return res.status(500).json({ 
           error: 'Database error occurred',
@@ -690,7 +697,7 @@ router.post('/billing-portal', ensureAuthenticated, async (req, res) => {
           code: String(dbError.code)
         });
       }
-      
+
       // Re-throw for general error handling
       throw dbError;
     }
@@ -712,7 +719,7 @@ router.get('/plans', async (req, res) => {
       .select()
       .from(subscriptionPlans)
       .where(eq(subscriptionPlans.isActive, true));
-    
+
     res.json(plans);
   } catch (error) {
     logger.error('[subscription] Error fetching plans:', error);
@@ -724,27 +731,27 @@ router.get('/plans', async (req, res) => {
 router.post('/confirm', ensureAuthenticated, async (req, res) => {
   try {
     const userId = req.user!.id;
-    
+
     // Validate session ID from request
     const schema = z.object({
       sessionId: z.string(),
     });
-    
+
     const result = schema.safeParse(req.body);
-    
+
     if (!result.success) {
       return res.status(400).json({ error: 'Invalid request data', details: result.error });
     }
-    
+
     const { sessionId } = result.data;
-    
+
     // Get existing subscription
     const existingSubscription = await getUserSubscription(userId);
-    
+
     if (!existingSubscription) {
       return res.status(404).json({ error: 'No subscription found' });
     }
-    
+
     // In a real implementation, you'd retrieve the Stripe session to confirm payment
     // Here we just update the status from pending_payment to active
     if (existingSubscription.stripeSubscriptionId === 'pending_payment') {
@@ -758,13 +765,13 @@ router.post('/confirm', ensureAuthenticated, async (req, res) => {
         })
         .where(eq(userSubscriptions.id, existingSubscription.id))
         .returning();
-      
+
       return res.json({
         subscription: updatedSubscription,
         message: 'Subscription confirmed successfully',
       });
     }
-    
+
     // If already active, return success with status code
     res.json({
       subscription: existingSubscription,
@@ -781,23 +788,23 @@ router.post('/confirm', ensureAuthenticated, async (req, res) => {
 router.post('/get-or-create-subscription', ensureAuthenticated, async (req, res) => {
   try {
     const userId = req.user!.id;
-    
+
     // Check if user has a Stripe customer ID
     let user = req.user;
-    
+
     // If user doesn't have a Stripe customer ID, create one
     if (!user.stripeCustomerId) {
       // Create a Stripe customer
       const userEmail = user.email || `user-${userId}@example.com`;
       const userName = user.fullName || user.username;
-      
+
       try {
         // Create a Stripe customer
         const { id: customerId } = await createCustomer(
           userEmail,
           userName
         );
-        
+
         // Update user with Stripe customer ID
         user = await db.update(userSubscriptions)
           .set({ stripeCustomerId: customerId })
@@ -811,41 +818,41 @@ router.post('/get-or-create-subscription', ensureAuthenticated, async (req, res)
         });
       }
     }
-    
+
     // Get the subscription from the database
     const subscription = await getUserSubscription(userId);
-    
+
     // If subscription exists and is active, return clientSecret from latest_invoice.payment_intent
     if (subscription && 
         (subscription.status === 'active' || subscription.status === 'trialing') && 
         subscription.stripeSubscriptionId) {
       // Since we're using the mock implementation, we'll just return a mock client secret
       const mockClientSecret = `pi_mock_${Date.now()}_secret_${Math.random().toString(36).slice(2)}`;
-      
+
       return res.json({
         subscriptionId: subscription.stripeSubscriptionId,
         clientSecret: mockClientSecret
       });
     }
-    
+
     // Otherwise, create a new subscription
     // In a real implementation, this would use the provided Stripe API keys
-    
+
     // Get the professional plan by default
     const plans = await db
       .select()
       .from(subscriptionPlans)
       .where(eq(subscriptionPlans.tier, 'professional'));
-      
+
     const plan = plans.length > 0 ? plans[0] : null;
-    
+
     if (!plan) {
       return res.status(404).json({ error: 'Default subscription plan not found' });
     }
-    
+
     // Create a subscription with a trial period
     const trialDays = 7; // 7-day trial
-    
+
     try {
       // Create a Stripe subscription
       const { id: subscriptionId } = await createStripeSubscription(
@@ -853,7 +860,7 @@ router.post('/get-or-create-subscription', ensureAuthenticated, async (req, res)
         plan.stripePriceId,
         trialDays
       );
-      
+
       // Create or update subscription in our database
       const newSubscription = await createOrUpdateUserSubscription(
         userId,
@@ -862,10 +869,10 @@ router.post('/get-or-create-subscription', ensureAuthenticated, async (req, res)
         subscriptionId,
         trialDays
       );
-      
+
       // In a real implementation, this would include the client secret from the payment intent
       const mockClientSecret = `pi_mock_${Date.now()}_secret_${Math.random().toString(36).slice(2)}`;
-      
+
       return res.json({
         subscriptionId: subscriptionId,
         clientSecret: mockClientSecret

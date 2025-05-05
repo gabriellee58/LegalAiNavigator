@@ -38,6 +38,15 @@ const DocumentExportOptions: React.FC<DocumentExportOptionsProps> = ({
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [previewFormat, setPreviewFormat] = useState<'pdf' | 'txt'>('pdf');
 const [exportInProgress, setExportInProgress] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    // Reset error state when component mounts
+    setError(null);
+    return () => {
+      setExportInProgress(false);
+    };
+  }, []);
 
   const handleExport = async (format: 'txt' | 'pdf' | 'docx' | 'rtf') => {
     if (exportInProgress) {

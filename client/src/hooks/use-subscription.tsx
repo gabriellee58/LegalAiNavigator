@@ -20,16 +20,16 @@ function redirectToStripeCheckout(url: string, delay = 500) {
     console.error("Cannot redirect: No URL provided");
     return;
   }
-  
+
   console.log("Redirecting to Stripe checkout:", url);
-  
+
   // Store the current URL in sessionStorage to support return after checkout
   try {
     sessionStorage.setItem('redirectOrigin', window.location.href);
   } catch (e) {
     console.warn("Could not save current URL to session storage:", e);
   }
-  
+
   // Use a delay to ensure any state updates complete before redirect
   setTimeout(() => {
     // Validate URL before redirecting
@@ -99,11 +99,11 @@ const SubscriptionContext = createContext<SubscriptionContextType | null>(null);
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const { t } = useTranslation();
-  
+
   // Get user from AuthContext directly to avoid circular dependency
   const authContext = useContext(AuthContext);
   const user = authContext?.user || null;
-  
+
   // Fetch user's current subscription
   const {
     data: subscription,
@@ -119,39 +119,43 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           console.log("No user authenticated, skipping subscription fetch");
           return null;
         }
-        
+
         console.log("Fetching subscription for user:", user.id);
         const res = await apiRequest("GET", "/api/subscriptions/current");
-        
+
         if (res.status === 401) {
           console.warn("Authentication required for subscription check");
           return null; // User not authenticated
         }
-        
+
         if (res.status === 404) {
           console.log("No subscription found for user");
           return null; // No subscription
         }
-        
+
         // Only check if there is an error response for non-2xx status codes
-        if (!res.ok) {
+        if (!res.ok && res.status !== 304) {
           console.warn("Non-success response from subscription API HTTP status:", {
             status: res.status,
-            statusText: res.statusText
+            statusText: res.statusText,
+            details: await res.text()
           });
           return null; // Any other error status
         }
-        
+        if (res.status === 304) {
+          console.log("Using cached subscription data");
+        }
+
         console.log("Subscription API successful response:", res.status);
-        
+
         try {
           const data = await res.json();
           console.log("Subscription data retrieved:", data);
-          
+
           // Validate subscription data with more detailed logging
           if (data && typeof data === 'object') {
             // We now have more robust handling for different subscription response formats
-            
+
             // 1. Complete subscription object from database
             if (data.id && data.status) {
               return data;
@@ -225,18 +229,18 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   // Calculate if trial is active and days remaining
   const isTrialActive = subscription?.status === "trial" && subscription?.trialEnd !== null;
-  
+
   // Calculate trial days remaining
   const trialDaysRemaining = subscription?.trialEnd 
     ? differenceInDays(new Date(subscription.trialEnd), new Date()) 
     : null;
-  
+
   // Check if subscription is active
   const isSubscriptionActive = 
     !!subscription && 
     (subscription.status === "active" || 
      (subscription.status === "trial" && trialDaysRemaining !== null && trialDaysRemaining > 0));
-  
+
   // Get current plan details
   const currentPlan: SubscriptionPlanDefinition | null = 
     subscription?.planId ? (getPlanById(subscription.planId.toString()) || null) : null;
@@ -252,33 +256,33 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
         console.log("Creating subscription for plan:", planId);
         const res = await apiRequest("POST", "/api/subscriptions/create", { planId });
-        
+
         // Check if res is already a parsed JSON object or a Response object
         if (res && typeof res === 'object' && !('ok' in res)) {
           // If it's already a JSON object, return it directly
           console.log("Subscription response is already a JSON object:", res);
           return res;
         }
-        
+
         // Handle authentication errors
         if (res.status === 401) {
           throw new Error("Authentication required to create a subscription");
         }
-        
+
         // Otherwise, handle as a Response object
         if (!res.ok) {
           const errorData = await res.json();
           const errorMessage = errorData.error || "Failed to create subscription";
           console.error("Subscription error response:", errorData);
-          
+
           // If the user already has an active subscription, throw a specific error
           if (errorMessage.includes("already has an active subscription")) {
             throw new Error(errorMessage);
           }
-          
+
           throw new Error(errorMessage);
         }
-        
+
         const responseData = await res.json();
         console.log("Subscription created successfully:", responseData);
         return responseData;
@@ -293,7 +297,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         redirectToStripeCheckout(data.url);
         return;
       }
-      
+
       // Otherwise, just show a success message
       toast({
         title: "Subscription created",
@@ -305,7 +309,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     onError: (error: Error) => {
       // Log the error for debugging
       console.error("Subscription creation error:", error);
-      
+
       // Use our enhanced error handler but apply the result directly
       const { title, description } = handleSubscriptionError(error, t);
       toast({
@@ -321,17 +325,17 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     mutationFn: async (planId: string) => {
       try {
         const res = await apiRequest("PATCH", "/api/subscriptions/change-plan", { planId });
-        
+
         // Check if res is already a parsed JSON object
         if (res && typeof res === 'object' && !('ok' in res)) {
           return res;
         }
-        
+
         if (!res.ok) {
           const errorData = await res.json();
           throw new Error(errorData.error || "Failed to update subscription");
         }
-        
+
         return await res.json();
       } catch (error) {
         console.error("Error updating subscription:", error);
@@ -344,7 +348,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         redirectToStripeCheckout(data.url);
         return;
       }
-      
+
       toast({
         title: "Subscription updated",
         description: "Your subscription plan has been updated.",
@@ -369,17 +373,17 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     mutationFn: async () => {
       try {
         const res = await apiRequest("POST", "/api/subscriptions/cancel");
-        
+
         // Check if res is already a parsed JSON object
         if (res && typeof res === 'object' && !('ok' in res)) {
           return res;
         }
-        
+
         if (!res.ok) {
           const errorData = await res.json();
           throw new Error(errorData.error || "Failed to cancel subscription");
         }
-        
+
         return await res.json();
       } catch (error) {
         console.error("Error canceling subscription:", error);
@@ -411,17 +415,17 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     mutationFn: async () => {
       try {
         const res = await apiRequest("POST", "/api/subscriptions/reactivate");
-        
+
         // Check if res is already a parsed JSON object
         if (res && typeof res === 'object' && !('ok' in res)) {
           return res;
         }
-        
+
         if (!res.ok) {
           const errorData = await res.json();
           throw new Error(errorData.error || "Failed to reactivate subscription");
         }
-        
+
         return await res.json();
       } catch (error) {
         console.error("Error reactivating subscription:", error);
@@ -453,17 +457,17 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     mutationFn: async () => {
       try {
         const res = await apiRequest("POST", "/api/subscriptions/billing-portal");
-        
+
         // Check if res is already a parsed JSON object
         if (res && typeof res === 'object' && !('ok' in res)) {
           return res;
         }
-        
+
         if (!res.ok) {
           const errorData = await res.json();
           throw new Error(errorData.error || "Failed to access billing portal");
         }
-        
+
         return await res.json();
       } catch (error) {
         console.error("Error accessing billing portal:", error);
@@ -496,16 +500,16 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
       console.log("Checking subscription status before creation");
       const res = await apiRequest("GET", "/api/subscriptions/status-check");
-      
+
       if (res.status === 401) {
         throw new Error("Authentication required to check subscription status");
       }
-      
+
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || "Failed to check subscription status");
       }
-      
+
       const responseData: SubscriptionStatusCheckResponse = await res.json();
       console.log("Subscription status check:", responseData);
       return responseData;
@@ -524,7 +528,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const createSubscription = async (planId: string) => {
     // First check subscription status
     const statusCheck = await checkSubscriptionStatus();
-    
+
     // If user already has a subscription and can't create new, explain why
     if (statusCheck.hasSubscription && !statusCheck.canCreateNew) {
       // Show an error message explaining why they can't create a new subscription
@@ -533,7 +537,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         description: statusCheck.message,
         variant: "destructive",
       });
-      
+
       // Show toast with information about existing subscription
       if (statusCheck.details) {
         toast({
@@ -552,10 +556,10 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           ),
         });
       }
-      
+
       return;
     }
-    
+
     // Otherwise proceed with creation
     await createSubscriptionMutation.mutateAsync(planId);
   };
