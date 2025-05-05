@@ -187,8 +187,8 @@ export default function ContractAnalysisPage() {
       save?: boolean;
       title?: string;
     }) => {
-      const res = await apiRequest("POST", "/api/analyze-contract", params);
-      return res.json();
+      // The apiRequest function already parses JSON 
+      return await apiRequest("POST", "/api/analyze-contract", params);
     },
     onSuccess: (data: AnalysisResult) => {
       // Create mock analysis result for testing if needed
