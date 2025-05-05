@@ -87,11 +87,12 @@ export function setupAuth(app: Express) {
           return done(null, false);
         } else {
           // Type conversion to match Express.User interface
+          // Don't include actual password hash in the session user object
           const sessionUser: Express.User = {
             id: user.id,
             username: user.username,
             email: user.email || '',
-            password: user.password,
+            password: '[REDACTED]', // Replace actual password hash for security
             role: user.role,
             fullName: user.fullName || undefined,
             preferredLanguage: user.preferredLanguage || undefined,
@@ -116,11 +117,12 @@ export function setupAuth(app: Express) {
       }
       
       // Type conversion to match Express.User interface
+      // IMPORTANT: Omit password from session user for security
       const sessionUser: Express.User = {
         id: user.id,
         username: user.username,
         email: user.email || '',
-        password: user.password,
+        password: '[REDACTED]', // Replace actual password hash for security
         role: user.role,
         fullName: user.fullName || undefined,
         preferredLanguage: user.preferredLanguage || undefined,
@@ -145,12 +147,12 @@ export function setupAuth(app: Express) {
         password: await hashPassword(req.body.password),
       });
 
-      // Create a session user without password
+      // Create a session user without exposing password hash
       const sessionUser: Express.User = {
         id: user.id,
         username: user.username,
         email: user.email || '',
-        password: user.password,
+        password: '[REDACTED]', // Replace actual password hash for security
         role: user.role,
         fullName: user.fullName || undefined,
         preferredLanguage: user.preferredLanguage || undefined,
@@ -257,12 +259,12 @@ export function setupAuth(app: Express) {
         return res.status(404).json({ message: "User not found" });
       }
       
-      // Update the session user
+      // Update the session user - redact password hash for security
       const sessionUser: Express.User = {
         id: updatedUser.id,
         username: updatedUser.username,
         email: updatedUser.email || '',
-        password: updatedUser.password,
+        password: '[REDACTED]', // Replace actual password hash for security
         role: updatedUser.role,
         fullName: updatedUser.fullName || undefined,
         preferredLanguage: updatedUser.preferredLanguage || undefined,
@@ -391,11 +393,12 @@ export function setupAuth(app: Express) {
       }
       
       // We now know user is defined, create a properly typed user object for passport
+      // IMPORTANT: Redact password hash for security
       const sessionUser: Express.User = {
         id: user.id,
         username: user.username,
         email: user.email || '',
-        password: user.password,
+        password: '[REDACTED]', // Replace actual password hash for security
         role: user.role,
         fullName: user.fullName || undefined,
         preferredLanguage: user.preferredLanguage || undefined,
