@@ -367,8 +367,12 @@ const [exportInProgress, setExportInProgress] = useState(false);
       return;
     }
     
-    setPreviewFormat(format);
+    // Force text preview for now as it's more reliable
+    setPreviewFormat('txt');
     setPreviewModalOpen(true);
+    
+    // Log preview attempt
+    console.log('Opening preview with content length:', documentContent.length);
   };
   
   return (
