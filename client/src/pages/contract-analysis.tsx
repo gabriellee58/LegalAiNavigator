@@ -247,6 +247,8 @@ export default function ContractAnalysisPage() {
       return await apiRequest("POST", "/api/analyze-contract", params);
     },
     onSuccess: (data: AnalysisResult) => {
+      console.log("Text analysis completed successfully, preparing to switch to results tab");
+      
       // Use only real data from API
       setAnalysis(data);
       
@@ -259,10 +261,12 @@ export default function ContractAnalysisPage() {
         description: "Contract analysis has been completed successfully.",
       });
       
-      // Slight delay before switching tabs to ensure DOM updates properly
-      setTimeout(() => {
+      // Use a more reliable way to ensure state is updated before switching tabs
+      // First update the analysis state, then in a separate effect, switch tabs
+      requestAnimationFrame(() => {
+        console.log("Switching to results tab");
         setActiveTab("results");
-      }, 300);
+      });
     },
     onError: (error: Error) => {
       // Check if this is a token limit error
