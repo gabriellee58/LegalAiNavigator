@@ -82,16 +82,21 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
         
         try {
           // First attempt to use the API for document generation
-          console.log("Attempting to generate document using API...");
-          const result = await generateDocument(
-            user?.id || 0, 
-            template.id, 
-            `${template.title} - ${new Date().toLocaleDateString()}`,
-            data
-          );
-          
-          console.log("Document generation result:", result);
-          return result;
+          // If user is logged in, attempt to use the API
+          if (user?.id) {
+            console.log("User is logged in, attempting to generate document using API...");
+            const result = await generateDocument(
+              user.id, 
+              template.id, 
+              `${template.title} - ${new Date().toLocaleDateString()}`,
+              data
+            );
+            console.log("Document generation result:", result);
+            return result;
+          } else {
+            // Throw an authentication error if no user is logged in
+            throw new Error("Authentication required to use the API");
+          }
         } catch (apiError) {
           // If API call fails with authentication error, use mock service
           if (apiError instanceof Error && 
