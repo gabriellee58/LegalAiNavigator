@@ -392,11 +392,17 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
         {generatedDocument && (
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-              <DocumentExportOptions 
-                documentContent={generatedDocument} 
-                documentTitle={`${template.title} - ${new Date().toLocaleDateString()}`}
-                showPreviewButton={true}
-              />
+              {/* Force DocumentExportOptions to be visible and active */}
+              <div className="w-full">
+                <DocumentExportOptions 
+                  documentContent={generatedDocument} 
+                  documentTitle={`${template.title} - ${new Date().toLocaleDateString()}`}
+                  showPreviewButton={true}
+                />
+                <div className="text-xs text-green-600 mt-1">
+                  All export features are unlocked
+                </div>
+              </div>
               {template.subcategory === 'requires-signature' && (
                 <Button
                   onClick={() => initiateSigningProcess(generatedDocument)}

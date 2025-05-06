@@ -51,9 +51,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     password: "",
     role: "user",
     preferredLanguage: "en",
-    profileImage: null,
     createdAt: new Date(),
-    updatedAt: new Date()
+    firebaseUid: null,
+    photoURL: null
   });
 
   const {

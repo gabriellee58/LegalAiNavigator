@@ -11,7 +11,7 @@ import { SubscriptionPlanDefinition, getPlanById } from "@/data/subscription-pla
 import { handleSubscriptionError, createSubscriptionErrorToast, SubscriptionErrorType } from "@/utils/subscriptionErrorHandler";
 import { useTranslation } from "@/hooks/use-translation";
 // Import AuthContext and User type directly to avoid circular dependency
-import { AuthContext, type AuthContextType } from "@/hooks/use-auth";
+import { AuthContext } from "@/hooks/use-auth";
 import type { User } from "@shared/schema";
 
 // Helper function for redirecting to Stripe checkout
@@ -59,34 +59,23 @@ export type UserSubscription = {
   canceledAt: Date | null;
   createdAt: Date | null;
   updatedAt: Date | null;
+  plan?: any;
 };
 
-// Subscription status check response type
-export type SubscriptionStatusCheckResponse = {
-  hasSubscription: boolean;
-  canCreateNew: boolean;
-  subscriptionStatus?: string;
-  details?: {
-    id: number;
-    planId: string | number;
-    status: string;
-    currentPeriodEnd?: string | null;
-    trialEnd?: string | null;
-    canceledAt?: string | null;
-  };
-  message: string;
+export type SubscriptionChangeData = {
+  planId: string;
 };
 
-type SubscriptionContextType = {
+export type SubscriptionContextType = {
   subscription: UserSubscription | null;
-  currentPlan: SubscriptionPlanDefinition | null;
   isLoading: boolean;
-  isTrialActive: boolean;
+  error: Error | null;
   isSubscriptionActive: boolean;
+  isTrialActive: boolean;
   trialDaysRemaining: number | null;
-  checkSubscriptionStatus: () => Promise<SubscriptionStatusCheckResponse>;
-  createSubscription: (planId: string) => Promise<void>;
-  updateSubscription: (planId: string) => Promise<void>;
+  currentPlan: SubscriptionPlanDefinition | null;
+  createSubscription: (planId: string) => void;
+  updateSubscription: (planId: string) => void;
   cancelSubscription: () => Promise<void>;
   reactivateSubscription: () => Promise<void>;
   goToBillingPortal: () => Promise<void>;
@@ -112,7 +101,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     error,
   } = useQuery({
     queryKey: ["/api/subscriptions/current"],
-    queryFn: async ({ queryKey }) => {
+    queryFn: async () => {
       try {
         // Only fetch if user is authenticated
         if (!user) {
@@ -120,151 +109,27 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           return null;
         }
 
-        const url = queryKey[0] as string;
-        console.log("Fetching subscription for user:", user.id);
-        const res = await apiRequest("GET", "/api/subscriptions/current");
-
-        if (res.status === 401) {
-          console.warn("Authentication required for subscription check");
-          return null; // User not authenticated
-        }
-
-        if (res.status === 404) {
-          console.log("No subscription found for user");
-          return null; // No subscription
-        }
-
-        // For API responses that might be pre-parsed objects or already been parsed by apiRequest
-        if (res && typeof res === 'object' && !('ok' in res) && 'status' in res && res.status === 'active') {
-          console.log("Using pre-parsed subscription response with active status");
-          return {
-            id: 1, // Default ID
-            userId: user?.id || 1,
-            planId: "basic", // Default to basic plan
-            status: "active",
-            stripeCustomerId: null,
-            stripeSubscriptionId: null,
-            currentPeriodStart: new Date(),
-            currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-            trialStart: null,
-            trialEnd: null,
-            canceledAt: null,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          };
-        }
+        // DEVELOPMENT MODE: Always return an active subscription for all users
+        console.log("DEVELOPMENT MODE: Returning mock active subscription");
         
-        // Only check if there is an error response for non-2xx status codes
-        if (!res.ok && res.status !== 304) {
-          const errorDetails = typeof res.text === 'function' ? 
-            await res.text().catch(() => 'No response text available') : 
-            'No response text available';
-            
-          console.log("Non-success response handled gracefully:", {
-            status: res.status,
-            statusText: res.statusText,
-            details: errorDetails
-          });
-          
-          // For the specific case of subscription endpoints, return an active mock subscription
-          if (url.includes('/subscriptions/')) {
-            return {
-              id: 1,
-              userId: user?.id || 1,
-              planId: "basic",
-              status: "active",
-              stripeCustomerId: null,
-              stripeSubscriptionId: null,
-              currentPeriodStart: new Date(),
-              currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-              trialStart: null,
-              trialEnd: null,
-              canceledAt: null,
-              createdAt: new Date(),
-              updatedAt: new Date()
-            };
-          }
-          
-          return null; // Any other error status
-        }
-        if (res.status === 304) {
-          console.log("Using cached subscription data");
-        }
-
-        console.log("Subscription API successful response:", res.status);
-
-        try {
-          const data = await res.json();
-          console.log("Subscription data retrieved:", data);
-
-          // Validate subscription data with more detailed logging
-          if (data && typeof data === 'object') {
-            // We now have more robust handling for different subscription response formats
-
-            // 1. Complete subscription object from database
-            if (data.id && data.status) {
-              return data;
-            } 
-            // 2. Simple status response ({"status": "active"})
-            else if (data.status === "active") {
-              console.log("Simple active status response received, creating valid subscription object");
-              return {
-                id: 1, // Default ID
-                userId: user?.id || 1,
-                planId: "basic", // Default to basic plan
-                status: "active",
-                stripeCustomerId: null,
-                stripeSubscriptionId: null,
-                currentPeriodStart: new Date(),
-                currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-                trialStart: null,
-                trialEnd: null,
-                canceledAt: null,
-                createdAt: new Date(),
-                updatedAt: new Date()
-              };
-            } 
-            // 3. Raw Stripe subscription object with a different schema 
-            else if (data.customer || data.items) {
-              console.log("Stripe subscription object received, creating valid subscription object");
-              return {
-                id: 1, // Default ID
-                userId: user?.id || 1,
-                planId: "basic", // Default to basic plan
-                status: data.status || "active",
-                stripeCustomerId: data.customer || null,
-                stripeSubscriptionId: data.id || null,
-                currentPeriodStart: data.current_period_start ? new Date(data.current_period_start * 1000) : new Date(),
-                currentPeriodEnd: data.current_period_end ? new Date(data.current_period_end * 1000) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-                trialStart: data.trial_start ? new Date(data.trial_start * 1000) : null,
-                trialEnd: data.trial_end ? new Date(data.trial_end * 1000) : null,
-                canceledAt: data.canceled_at ? new Date(data.canceled_at * 1000) : null,
-                createdAt: new Date(),
-                updatedAt: new Date()
-              };
-            } else {
-              console.warn("Subscription data missing required fields:", {
-                hasId: !!data.id,
-                hasStatus: !!data.status,
-                data
-              });
-            }
-          } else {
-            console.warn("Subscription data is not an object:", data);
-          }
-          return null;
-        } catch (parseError) {
-          console.error("Error parsing subscription response:", parseError);
-          return null;
-        }
+        // Return an active professional plan subscription
+        return {
+          id: 1, 
+          userId: user?.id || 1,
+          planId: "professional", // Professional plan for all features
+          status: "active",
+          stripeCustomerId: "cus_mock",
+          stripeSubscriptionId: "sub_mock",
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
+          trialStart: null,
+          trialEnd: null,
+          canceledAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
       } catch (error) {
-        // Provide more context for the error
-        if (error instanceof Error) {
-          console.error("Error fetching subscription:", error.message, error.stack);
-        } else {
-          console.error("Unknown error fetching subscription:", error);
-        }
-        // Silent failure for subscription check
+        console.error("Error in subscription query:", error);
         return null;
       }
     },
@@ -272,13 +137,11 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     retry: 1, // Only retry once to avoid flooding logs
   });
 
-  // Override subscription status - always active
+  // Always return active subscription status regardless of actual status
+  const isSubscriptionActive = true; 
   const isTrialActive = false;
   const trialDaysRemaining = null;
   
-  // Always return active subscription status regardless of actual status
-  const isSubscriptionActive = true; // Force subscription to always be active
-
   // Get current plan details
   const currentPlan: SubscriptionPlanDefinition | null = 
     subscription?.planId ? (getPlanById(subscription.planId.toString()) || null) : null;
@@ -286,69 +149,24 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   // Create a new subscription
   const createSubscriptionMutation = useMutation({
     mutationFn: async (planId: string) => {
-      try {
-        // Check if user is authenticated
-        if (!user) {
-          throw new Error("You must be logged in to create a subscription");
-        }
-
-        console.log("Creating subscription for plan:", planId);
-        const res = await apiRequest("POST", "/api/subscriptions/create", { planId });
-
-        // Check if res is already a parsed JSON object or a Response object
-        if (res && typeof res === 'object' && !('ok' in res)) {
-          // If it's already a JSON object, return it directly
-          console.log("Subscription response is already a JSON object:", res);
-          return res;
-        }
-
-        // Handle authentication errors
-        if (res.status === 401) {
-          throw new Error("Authentication required to create a subscription");
-        }
-
-        // Otherwise, handle as a Response object
-        if (!res.ok) {
-          const errorData = await res.json();
-          const errorMessage = errorData.error || "Failed to create subscription";
-          console.error("Subscription error response:", errorData);
-
-          // If the user already has an active subscription, throw a specific error
-          if (errorMessage.includes("already has an active subscription")) {
-            throw new Error(errorMessage);
-          }
-
-          throw new Error(errorMessage);
-        }
-
-        const responseData = await res.json();
-        console.log("Subscription created successfully:", responseData);
-        return responseData;
-      } catch (error) {
-        console.error("Error starting subscription:", error);
-        throw error;
+      if (!user) {
+        throw new Error("You must be logged in to create a subscription");
       }
+      return await apiRequest("POST", "/api/subscriptions/create", { planId });
     },
     onSuccess: (data) => {
-      // If the response contains a URL (for Stripe checkout), redirect to it
-      if (data && data.url) {
+      if (data?.url) {
         redirectToStripeCheckout(data.url);
         return;
       }
-
-      // Otherwise, just show a success message
       toast({
         title: "Subscription created",
         description: "Your subscription has been created successfully.",
       });
-      // Refresh subscription data
       refetch();
     },
     onError: (error: Error) => {
-      // Log the error for debugging
       console.error("Subscription creation error:", error);
-
-      // Use our enhanced error handler but apply the result directly
       const { title, description } = handleSubscriptionError(error, t);
       toast({
         title,
@@ -361,42 +179,21 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   // Update subscription (change plan)
   const updateSubscriptionMutation = useMutation({
     mutationFn: async (planId: string) => {
-      try {
-        const res = await apiRequest("PATCH", "/api/subscriptions/change-plan", { planId });
-
-        // Check if res is already a parsed JSON object
-        if (res && typeof res === 'object' && !('ok' in res)) {
-          return res;
-        }
-
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.error || "Failed to update subscription");
-        }
-
-        return await res.json();
-      } catch (error) {
-        console.error("Error updating subscription:", error);
-        throw error;
-      }
+      return await apiRequest("PATCH", "/api/subscriptions/change-plan", { planId });
     },
     onSuccess: (data) => {
-      // If the response contains a URL (for Stripe checkout), redirect to it
-      if (data && data.url) {
+      if (data?.url) {
         redirectToStripeCheckout(data.url);
         return;
       }
-
       toast({
         title: "Subscription updated",
         description: "Your subscription plan has been updated.",
       });
-      // Refresh subscription data
       refetch();
     },
     onError: (error: Error) => {
       console.error("Subscription update error:", error);
-      // Use our enhanced error handler but apply the result directly
       const { title, description } = handleSubscriptionError(error, t);
       toast({
         title,
@@ -409,36 +206,17 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   // Cancel subscription
   const cancelSubscriptionMutation = useMutation({
     mutationFn: async () => {
-      try {
-        const res = await apiRequest("POST", "/api/subscriptions/cancel");
-
-        // Check if res is already a parsed JSON object
-        if (res && typeof res === 'object' && !('ok' in res)) {
-          return res;
-        }
-
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.error || "Failed to cancel subscription");
-        }
-
-        return await res.json();
-      } catch (error) {
-        console.error("Error canceling subscription:", error);
-        throw error;
-      }
+      return await apiRequest("POST", "/api/subscriptions/cancel");
     },
     onSuccess: () => {
       toast({
         title: "Subscription canceled",
         description: "Your subscription has been canceled. You will still have access until the end of your current billing period.",
       });
-      // Refresh subscription data
       refetch();
     },
     onError: (error: Error) => {
       console.error("Subscription cancel error:", error);
-      // Use our enhanced error handler but apply the result directly
       const { title, description } = handleSubscriptionError(error, t);
       toast({
         title,
@@ -451,36 +229,17 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   // Reactivate subscription
   const reactivateSubscriptionMutation = useMutation({
     mutationFn: async () => {
-      try {
-        const res = await apiRequest("POST", "/api/subscriptions/reactivate");
-
-        // Check if res is already a parsed JSON object
-        if (res && typeof res === 'object' && !('ok' in res)) {
-          return res;
-        }
-
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.error || "Failed to reactivate subscription");
-        }
-
-        return await res.json();
-      } catch (error) {
-        console.error("Error reactivating subscription:", error);
-        throw error;
-      }
+      return await apiRequest("POST", "/api/subscriptions/reactivate");
     },
     onSuccess: () => {
       toast({
         title: "Subscription reactivated",
         description: "Your subscription has been reactivated successfully.",
       });
-      // Refresh subscription data
       refetch();
     },
     onError: (error: Error) => {
       console.error("Subscription reactivation error:", error);
-      // Use our enhanced error handler but apply the result directly
       const { title, description } = handleSubscriptionError(error, t);
       toast({
         title,
@@ -490,35 +249,38 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // Go to billing portal
+  // Open Stripe customer portal
   const billingPortalMutation = useMutation({
     mutationFn: async () => {
       try {
-        const res = await apiRequest("POST", "/api/subscriptions/billing-portal");
-
-        // Check if res is already a parsed JSON object
-        if (res && typeof res === 'object' && !('ok' in res)) {
-          return res;
-        }
-
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.error || "Failed to access billing portal");
-        }
-
-        return await res.json();
+        return await apiRequest("POST", "/api/subscriptions/billing-portal");
       } catch (error) {
         console.error("Error accessing billing portal:", error);
+        if (error instanceof Error && error.message.includes("No Stripe customer ID")) {
+          const customError = new Error("No active subscription found. Please subscribe to a plan first.");
+          (customError as any).type = SubscriptionErrorType.NO_SUBSCRIPTION;
+          throw customError;
+        }
         throw error;
       }
     },
     onSuccess: (data) => {
-      // Redirect to billing portal URL
-      redirectToStripeCheckout(data.url);
+      if (data?.url) {
+        toast({
+          title: "Redirecting to billing portal",
+          description: "You will be redirected to Stripe to manage your subscription.",
+        });
+        redirectToStripeCheckout(data.url);
+      } else {
+        toast({
+          title: "Error",
+          description: "Could not access billing portal. Missing URL in response.",
+          variant: "destructive",
+        });
+      }
     },
     onError: (error: Error) => {
-      console.error("Billing portal access error:", error);
-      // Use our enhanced error handler but apply the result directly
+      console.error("Billing portal error:", error);
       const { title, description } = handleSubscriptionError(error, t);
       toast({
         title,
@@ -528,73 +290,46 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // Simplified subscription status check - always returns active status
-  const checkSubscriptionStatus = async (): Promise<SubscriptionStatusCheckResponse> => {
-    console.log("Checking subscription status (always returns active)");
-    
-    // Always return active subscription status
-    return {
-      hasSubscription: true,
-      canCreateNew: false,
-      subscriptionStatus: "active",
-      message: "All features are unlocked"
-    };
+  // Helper functions that are exposed to consumers
+  const createSubscription = (planId: string) => {
+    createSubscriptionMutation.mutate(planId);
   };
 
-  // Simplified helper functions - all just show notifications that subscriptions are removed
-  const createSubscription = async (_planId: string): Promise<void> => {
-    toast({
-      title: "All Features Available",
-      description: "All features are already unlocked for you. Subscription functionality has been removed.",
-    });
+  const updateSubscription = (planId: string) => {
+    updateSubscriptionMutation.mutate(planId);
   };
 
-  const updateSubscription = async (_planId: string): Promise<void> => {
-    toast({
-      title: "All Features Available",
-      description: "All features are already unlocked for you. Subscription functionality has been removed.",
-    });
+  const cancelSubscription = async () => {
+    await cancelSubscriptionMutation.mutateAsync();
   };
 
-  const cancelSubscription = async (): Promise<void> => {
-    toast({
-      title: "Subscription Not Required",
-      description: "All features are available to all users. Subscription functionality has been removed.",
-    });
+  const reactivateSubscription = async () => {
+    await reactivateSubscriptionMutation.mutateAsync();
   };
 
-  const reactivateSubscription = async (): Promise<void> => {
-    toast({
-      title: "All Features Available",
-      description: "All features are already unlocked for you. Subscription functionality has been removed.",
-    });
+  const goToBillingPortal = async () => {
+    await billingPortalMutation.mutateAsync();
   };
 
-  const goToBillingPortal = async (): Promise<void> => {
-    toast({
-      title: "Subscription Not Required",
-      description: "All features are available to all users. Subscription functionality has been removed.",
-    });
+  // Prepare context value
+  const contextValue: SubscriptionContextType = {
+    subscription,
+    isLoading,
+    error: error as Error | null,
+    isSubscriptionActive,
+    isTrialActive,
+    trialDaysRemaining,
+    currentPlan,
+    createSubscription,
+    updateSubscription,
+    cancelSubscription,
+    reactivateSubscription,
+    goToBillingPortal,
+    refetch,
   };
 
   return (
-    <SubscriptionContext.Provider
-      value={{
-        subscription,
-        currentPlan,
-        isLoading,
-        isTrialActive,
-        isSubscriptionActive,
-        trialDaysRemaining,
-        checkSubscriptionStatus,
-        createSubscription,
-        updateSubscription,
-        cancelSubscription,
-        reactivateSubscription,
-        goToBillingPortal,
-        refetch,
-      }}
-    >
+    <SubscriptionContext.Provider value={contextValue}>
       {children}
     </SubscriptionContext.Provider>
   );
