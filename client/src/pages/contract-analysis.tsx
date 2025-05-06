@@ -230,7 +230,11 @@ export default function ContractAnalysisPage() {
         title: "Analysis complete",
         description: "Contract analysis has been completed successfully.",
       });
-      setActiveTab("results");
+      
+      // Slight delay before switching tabs to ensure DOM updates properly
+      setTimeout(() => {
+        setActiveTab("results");
+      }, 300);
     },
     onError: (error: Error) => {
       // Check if this is a token limit error
@@ -315,7 +319,11 @@ export default function ContractAnalysisPage() {
         title: "File analysis complete",
         description: "Contract file analysis has been completed successfully.",
       });
-      setActiveTab("results");
+      
+      // Slight delay before switching tabs to ensure DOM updates properly
+      setTimeout(() => {
+        setActiveTab("results");
+      }, 300);
     },
     onError: (error: Error) => {
       // Check if this is a token limit error
@@ -358,7 +366,11 @@ export default function ContractAnalysisPage() {
         title: "Comparison complete",
         description: "Contract comparison has been completed successfully.",
       });
-      setActiveTab("comparison-results");
+      
+      // Slight delay before switching tabs to ensure DOM updates properly
+      setTimeout(() => {
+        setActiveTab("comparison-results");
+      }, 300);
     },
     onError: (error: Error) => {
       // Check if this is a token limit error
