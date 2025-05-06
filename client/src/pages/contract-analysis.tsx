@@ -597,7 +597,7 @@ export default function ContractAnalysisPage() {
               <Upload className="h-4 w-4 mr-2" />
               {t("Upload & Analyze")}
             </TabsTrigger>
-            <TabsTrigger value="results" disabled={!analysis}>
+            <TabsTrigger value="results">
               <FileText className="h-4 w-4 mr-2" />
               {t("Results")}
             </TabsTrigger>
@@ -1120,7 +1120,7 @@ export default function ContractAnalysisPage() {
 
           {/* Analysis Results Tab */}
           <TabsContent value="results" className="space-y-6">
-            {analysis && (
+            {analysis ? (
               <>
                 {/* Analysis Progress & Action Bar */}
                 <div className="bg-white dark:bg-gray-800 border rounded-lg p-4 sticky top-0 z-10 shadow-sm">
@@ -1720,6 +1720,25 @@ export default function ContractAnalysisPage() {
                   </CardFooter>
                 </Card>
               </>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t("No Analysis Results")}</CardTitle>
+                  <CardDescription>
+                    Upload a contract and analyze it to see results here
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="text-center py-8">
+                  <FileSearch className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                  <p className="mb-6 text-muted-foreground max-w-md mx-auto">
+                    To view analysis results, first upload a contract document or paste contract text in the Upload & Analyze tab.
+                  </p>
+                  <Button onClick={() => setActiveTab("upload")}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Go to Upload & Analyze
+                  </Button>
+                </CardContent>
+              </Card>
             )}
           </TabsContent>
 
