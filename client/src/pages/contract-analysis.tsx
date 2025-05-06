@@ -187,10 +187,11 @@ export default function ContractAnalysisPage() {
       setCurrentSection("summary");
       setProgressValue(25);
       
-      // Set a small delay to ensure the data is loaded before changing tabs
-      setTimeout(() => {
+      // Use requestAnimationFrame for more reliable tab switching
+      requestAnimationFrame(() => {
+        console.log("Switching to results tab after loading selected analysis");
         setActiveTab("results");
-      }, 100);
+      });
       
       console.log("Selected analysis loaded:", selectedAnalysisData.title);
     }
@@ -1157,9 +1158,17 @@ export default function ContractAnalysisPage() {
           </TabsContent>
 
           {/* Analysis Results Tab */}
-          <TabsContent value="results" className="space-y-6">
+          <TabsContent 
+            value="results" 
+            className="space-y-6"
+            onFocus={() => {
+              console.log("Results tab has focus");
+            }}
+            forceMount
+          >
             {analysis ? (
               <>
+                {console.log("Rendering results tab with analysis data:", !!analysis)}
                 {/* Analysis Progress & Action Bar */}
                 <div className="bg-white dark:bg-gray-800 border rounded-lg p-4 sticky top-0 z-10 shadow-sm">
                   <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
