@@ -120,6 +120,22 @@ export default function ContractAnalysisPage() {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("newest");
   
+  // Safe accessor function to check for properties
+  const getSeverityColor = (severity: string) => {
+    if (!severity) return "";
+    
+    switch(severity.toLowerCase()) {
+      case 'high':
+        return "text-red-600 border-red-200";
+      case 'medium':
+        return "text-amber-600 border-amber-200";
+      case 'low':
+        return "text-emerald-600 border-emerald-200";
+      default:
+        return "text-gray-600 border-gray-200";
+    }
+  };
+  
   // Fetch saved analyses
   const { data: savedAnalyses = [], isLoading: isLoadingAnalyses } = useQuery<ContractAnalysisData[]>({
     queryKey: ["/api/contract-analyses"],
@@ -135,8 +151,20 @@ export default function ContractAnalysisPage() {
   // Handle selected analysis data when it changes
   useEffect(() => {
     if (selectedAnalysisData) {
-      setAnalysis(selectedAnalysisData.analysisResults);
-      setActiveTab("results");
+      // Ensure analysis data is properly set and then navigate to results tab
+      const analysisData = selectedAnalysisData.analysisResults;
+      setAnalysis(analysisData);
+      
+      // Make sure we reset the current section and progress for proper display
+      setCurrentSection("summary");
+      setProgressValue(25);
+      
+      // Set a small delay to ensure the data is loaded before changing tabs
+      setTimeout(() => {
+        setActiveTab("results");
+      }, 100);
+      
+      console.log("Selected analysis loaded:", selectedAnalysisData.title);
     }
   }, [selectedAnalysisData]);
   
@@ -479,18 +507,7 @@ export default function ContractAnalysisPage() {
     compareContractsMutation.mutate({ first: contractText, second: secondContractText });
   };
 
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case "high":
-        return "text-red-500";
-      case "medium":
-        return "text-amber-500";
-      case "low":
-        return "text-emerald-500";
-      default:
-        return "text-slate-500";
-    }
-  };
+  // Function now defined earlier in the file
   
   // Function to filter analyses based on search term and type filter
   const getFilteredAnalyses = () => {
@@ -577,6 +594,15 @@ export default function ContractAnalysisPage() {
               {t("History")}
             </TabsTrigger>
           </TabsList>
+          
+          {/* Debug helper - hidden in production */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-2 p-2 bg-muted rounded-sm text-xs">
+              <div>Current tab: <span className="font-mono">{activeTab}</span></div>
+              <div>Analysis present: <span className="font-mono">{analysis ? 'Yes' : 'No'}</span></div>
+              <div>Selected analysis ID: <span className="font-mono">{selectedAnalysisId || 'None'}</span></div>
+            </div>
+          )}
 
           {/* Upload & Analyze Tab */}
           <TabsContent value="upload" className="space-y-4">
@@ -627,67 +653,7 @@ export default function ContractAnalysisPage() {
                         {t("Supports .txt, .pdf, .doc, and .docx files")}
                       </p>
                       
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="text-xs mb-2" 
-                        onClick={() => {
-                          // Create a simple sample contract as a Blob
-                          const sampleText = `EMPLOYMENT CONTRACT
 
-BETWEEN: ABC Company Inc. ("Employer")
-AND: John Smith ("Employee")
-
-1. POSITION AND DUTIES
-   The Employee is hired as a Software Developer and will perform duties including:
-   - Developing software applications
-   - Maintaining existing codebase
-   - Testing and debugging code
-   - Other reasonable duties as assigned
-
-2. COMPENSATION
-   The Employer shall pay the Employee a salary of $75,000 per annum, payable in equal
-   installments according to the company's regular payroll schedule.
-
-3. TERM
-   This agreement shall commence on June 1, 2025 and continue indefinitely until
-   terminated in accordance with the termination provisions.
-
-4. TERMINATION
-   Either party may terminate this agreement with 2 weeks written notice.
-   The Employer may terminate without notice for cause.
-
-5. CONFIDENTIALITY
-   The Employee agrees to maintain the confidentiality of all proprietary information
-   and trade secrets both during and after employment.
-
-Signed this 1st day of May, 2025.
-
-________________________      ________________________
-Employer                       Employee`;
-                          
-                          // Create a file object
-                          // Create a blob from the sample text
-                          const blob = new Blob([sampleText], { type: 'text/plain' });
-                          // Create a file from the blob with proper parameters
-                          // @ts-ignore - Ignoring TypeScript error related to File constructor parameters
-                          const file = new File([sampleText], 'sample-employment-contract.txt', { type: 'text/plain' });
-                          
-                          // Set selected file state
-                          setSelectedFile(file);
-                          setContractText(sampleText);
-                          setTitle('Sample Employment Contract');
-                          
-                          // Show success message
-                          toast({
-                            title: "Sample contract loaded",
-                            description: "A sample employment contract has been loaded for analysis.",
-                          });
-                        }}
-                      >
-                        <FileText className="mr-2 h-3 w-3" />
-                        Generate sample contract for testing
-                      </Button>
                     </div>
                     
                     {selectedFile && (
@@ -1044,66 +1010,69 @@ Employer                       Employee`;
                     
                     {/* Analysis list with improved styling */}
                     <div className="mt-4 space-y-2">
-                      {getFilteredAnalyses().map((analysis) => (
+                      {getFilteredAnalyses().map((historyItem) => (
                         <div
-                          key={analysis.id}
+                          key={historyItem.id}
                           className="border rounded-lg overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer"
                           onClick={() => {
-                            setSelectedAnalysisId(analysis.id);
-                            setActiveTab("results");
+                            // Clear any previous analysis to avoid showing stale data
+                            setAnalysis(null);
+                            // Set the selected analysis ID which will trigger the useEffect
+                            setSelectedAnalysisId(historyItem.id);
+                            console.log(`Loading analysis ID: ${historyItem.id}, title: ${historyItem.title}`);
                           }}
                         >
                           <div className="flex flex-col md:flex-row">
                             {/* Risk score indicator */}
                             <div 
                               className={`p-4 md:p-6 flex flex-row md:flex-col items-center justify-center md:w-[120px] ${
-                                analysis.analysisResults.riskLevel === "high" 
+                                historyItem.analysisResults.riskLevel === "high" 
                                   ? "bg-red-50 text-red-600" 
-                                  : analysis.analysisResults.riskLevel === "medium"
+                                  : historyItem.analysisResults.riskLevel === "medium"
                                     ? "bg-amber-50 text-amber-600"
                                     : "bg-emerald-50 text-emerald-600"
                               }`}
                             >
-                              <div className="text-3xl font-bold">{analysis.analysisResults.score}</div>
+                              <div className="text-3xl font-bold">{historyItem.analysisResults.score}</div>
                               <div className="text-sm ml-2 md:ml-0 md:mt-1 font-medium">
-                                {analysis.analysisResults.riskLevel.toUpperCase()}
+                                {historyItem.analysisResults.riskLevel.toUpperCase()}
                               </div>
                             </div>
                             
                             {/* Contract details */}
                             <div className="flex-1 p-4">
                               <div className="flex justify-between items-start">
-                                <h4 className="text-lg font-semibold">{analysis.title}</h4>
-                                <Badge>{analysis.contractType}</Badge>
+                                <h4 className="text-lg font-semibold">{historyItem.title}</h4>
+                                <Badge>{historyItem.contractType}</Badge>
                               </div>
                               
                               <div className="mt-2 text-sm text-muted-foreground">
                                 <div className="flex items-center">
                                   <CalendarIcon className="h-3.5 w-3.5 mr-1" />
-                                  <span>{new Date(analysis.createdAt).toLocaleDateString()}</span>
+                                  <span>{new Date(historyItem.createdAt).toLocaleDateString()}</span>
                                 </div>
                                 <div className="flex items-center mt-1">
                                   <Tag className="h-3.5 w-3.5 mr-1" />
-                                  <span>{analysis.jurisdiction}</span>
+                                  <span>{historyItem.jurisdiction}</span>
                                 </div>
                               </div>
                               
                               {/* Summary preview */}
                               <div className="mt-3">
                                 <p className="text-sm line-clamp-2">
-                                  {analysis.analysisResults.summary}
+                                  {historyItem.analysisResults.summary}
                                 </p>
                               </div>
                               
                               {/* Risk indicators */}
                               <div className="mt-3 flex flex-wrap gap-1">
-                                {analysis.analysisResults.risks.slice(0, 3).map((risk, idx) => (
+                                {historyItem.analysisResults.risks.slice(0, 3).map((risk, idx) => (
                                   <Badge key={idx} variant="outline" className={`${getSeverityColor(risk.severity)}`}>
                                     {risk.category || "General"}
                                   </Badge>
                                 ))}
-                                {analysis.analysisResults.risks.length > 3 && (
-                                  <Badge variant="outline">+{analysis.analysisResults.risks.length - 3} more</Badge>
+                                {historyItem.analysisResults.risks.length > 3 && (
+                                  <Badge variant="outline">+{historyItem.analysisResults.risks.length - 3} more</Badge>
                                 )}
                               </div>
                             </div>
