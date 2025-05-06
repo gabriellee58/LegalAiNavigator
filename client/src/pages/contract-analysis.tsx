@@ -147,6 +147,34 @@ export default function ContractAnalysisPage() {
     queryKey: ["/api/contract-analyses", selectedAnalysisId],
     enabled: !!selectedAnalysisId,
   });
+  
+  // Save analysis mutation
+  const saveAnalysisMutation = useMutation({
+    mutationFn: async (params: {
+      title: string;
+      contractContent: string;
+      jurisdiction: string;
+      contractType: string;
+      analysisResults: AnalysisResult;
+    }) => {
+      return await apiRequest("POST", "/api/contract-analyses", params);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Analysis saved",
+        description: "The analysis has been saved to your history."
+      });
+      // Refresh the history list
+      queryClient.invalidateQueries({ queryKey: ["/api/contract-analyses"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to save analysis",
+        description: error.message || "An error occurred while saving the analysis.",
+        variant: "destructive"
+      });
+    }
+  });
 
   // Handle selected analysis data when it changes
   useEffect(() => {
@@ -1208,14 +1236,29 @@ export default function ContractAnalysisPage() {
                               </div>
                             </div>
                             <DialogFooter>
-                              <Button type="submit" onClick={() => {
-                                // Logic to save the analysis
-                                toast({
-                                  title: "Analysis saved",
-                                  description: "The analysis has been saved to your history."
-                                });
-                              }}>
-                                Save
+                              <Button 
+                                type="submit" 
+                                disabled={saveAnalysisMutation.isPending}
+                                onClick={() => {
+                                  if (!analysis) return;
+                                  
+                                  saveAnalysisMutation.mutate({
+                                    title: title || "Untitled Analysis",
+                                    contractContent: contractText,
+                                    jurisdiction: jurisdiction,
+                                    contractType: contractType,
+                                    analysisResults: analysis
+                                  });
+                                }}
+                              >
+                                {saveAnalysisMutation.isPending ? (
+                                  <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Saving...
+                                  </>
+                                ) : (
+                                  "Save"
+                                )}
                               </Button>
                             </DialogFooter>
                           </DialogContent>
