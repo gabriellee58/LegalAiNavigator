@@ -267,6 +267,11 @@ export default function ContractAnalysisPage() {
       // Use only real data from API
       setAnalysis(data);
       
+      // Automatically switch to results tab and ensure UI is ready
+      setTimeout(() => {
+        setActiveTab("results");
+      }, 100);
+      
       // Reset current section and progress
       setCurrentSection("summary");
       setProgressValue(25);
@@ -537,6 +542,10 @@ export default function ContractAnalysisPage() {
       setAnalysis(null);
     }
     
+    // Set the current section to summary for when results are displayed
+    setCurrentSection("summary");
+    setProgressValue(25);
+    
     analyzeContractMutation.mutate({
       content: contractText,
       jurisdiction: jurisdiction,
@@ -561,6 +570,10 @@ export default function ContractAnalysisPage() {
       console.log("Clearing previous analysis data before starting file analysis");
       setAnalysis(null);
     }
+    
+    // Set the current section to summary for when results are displayed
+    setCurrentSection("summary");
+    setProgressValue(25);
 
     const formData = new FormData();
     formData.append('contractFile', selectedFile);
