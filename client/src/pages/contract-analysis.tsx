@@ -580,7 +580,7 @@ export default function ContractAnalysisPage() {
           onValueChange={setActiveTab} 
           className="w-full"
         >
-          <TabsList className="grid grid-cols-3">
+          <TabsList className="grid grid-cols-5 gap-1">
             <TabsTrigger value="upload">
               <Upload className="h-4 w-4 mr-2" />
               {t("Upload & Analyze")}
@@ -589,8 +589,16 @@ export default function ContractAnalysisPage() {
               <FileText className="h-4 w-4 mr-2" />
               {t("Results")}
             </TabsTrigger>
-            <TabsTrigger value="history">
+            <TabsTrigger value="compare">
+              <FileDiff className="h-4 w-4 mr-2" />
+              {t("Compare")}
+            </TabsTrigger>
+            <TabsTrigger value="comparison-results" disabled={!comparisonResult}>
               <FileCheck className="h-4 w-4 mr-2" />
+              {t("Comparison Results")}
+            </TabsTrigger>
+            <TabsTrigger value="history">
+              <History className="h-4 w-4 mr-2" />
               {t("History")}
             </TabsTrigger>
           </TabsList>
@@ -1020,6 +1028,11 @@ export default function ContractAnalysisPage() {
                             // Set the selected analysis ID which will trigger the useEffect
                             setSelectedAnalysisId(historyItem.id);
                             console.log(`Loading analysis ID: ${historyItem.id}, title: ${historyItem.title}`);
+                            
+                            // Important: Switch to results tab with a slight delay to ensure data loads properly
+                            setTimeout(() => {
+                              setActiveTab("results");
+                            }, 300);
                           }}
                         >
                           <div className="flex flex-col md:flex-row">
