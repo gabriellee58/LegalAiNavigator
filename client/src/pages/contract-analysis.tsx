@@ -197,6 +197,20 @@ export default function ContractAnalysisPage() {
     }
   }, [selectedAnalysisData]);
   
+  // Effect to ensure results tab is shown when analysis is available
+  useEffect(() => {
+    // Only run this effect when analysis data becomes available
+    if (analysis && activeTab !== "results") {
+      console.log("Analysis data available but not on results tab - syncing tab state");
+      
+      // Use requestAnimationFrame for more reliable tab switching
+      requestAnimationFrame(() => {
+        console.log("Switching to results tab due to analysis data becoming available");
+        setActiveTab("results");
+      });
+    }
+  }, [analysis, activeTab]);
+  
   // Setup Intersection Observer to track scroll position for progress bar
   useEffect(() => {
     if (!analysis) return;
@@ -517,6 +531,12 @@ export default function ContractAnalysisPage() {
       return;
     }
     
+    // Clear any existing analysis before starting a new one
+    if (analysis) {
+      console.log("Clearing previous analysis data before starting new analysis");
+      setAnalysis(null);
+    }
+    
     analyzeContractMutation.mutate({
       content: contractText,
       jurisdiction: jurisdiction,
@@ -534,6 +554,12 @@ export default function ContractAnalysisPage() {
         variant: "destructive",
       });
       return;
+    }
+    
+    // Clear any existing analysis before starting a new one
+    if (analysis) {
+      console.log("Clearing previous analysis data before starting file analysis");
+      setAnalysis(null);
     }
 
     const formData = new FormData();
@@ -555,6 +581,13 @@ export default function ContractAnalysisPage() {
       });
       return;
     }
+    
+    // Clear any existing comparison result before starting a new comparison
+    if (comparisonResult) {
+      console.log("Clearing previous comparison result before starting new comparison");
+      setComparisonResult(null);
+    }
+    
     compareContractsMutation.mutate({ first: contractText, second: secondContractText });
   };
 
@@ -628,8 +661,12 @@ export default function ContractAnalysisPage() {
 
         <Tabs 
           value={activeTab} 
-          onValueChange={setActiveTab} 
+          onValueChange={(value) => {
+            console.log(`Tab changed from ${activeTab} to ${value}`);
+            setActiveTab(value);
+          }}
           className="w-full"
+          defaultValue="upload"
         >
           <TabsList className="grid grid-cols-3 gap-1">
             <TabsTrigger value="upload">
