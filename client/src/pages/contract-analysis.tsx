@@ -1198,14 +1198,10 @@ export default function ContractAnalysisPage() {
           <TabsContent 
             value="results" 
             className="space-y-6"
-            onFocus={() => {
-              console.log("Results tab has focus");
-            }}
-            forceMount
           >
             {analysis ? (
-              <>
-                {console.log("Rendering results tab with analysis data:", !!analysis)}
+              <div key={`analysis-results-${Date.now()}`}>
+                {/* Logging for debugging - key forces re-render when analysis changes */}
                 {/* Analysis Progress & Action Bar */}
                 <div className="bg-white dark:bg-gray-800 border rounded-lg p-4 sticky top-0 z-10 shadow-sm">
                   <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -1818,7 +1814,7 @@ export default function ContractAnalysisPage() {
                     </Button>
                   </CardFooter>
                 </Card>
-              </>
+              </div>
             ) : (
               <Card>
                 <CardHeader>
