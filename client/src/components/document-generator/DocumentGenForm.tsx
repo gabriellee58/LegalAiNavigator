@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -178,9 +178,21 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
         // Set the generated document content immediately
         setGeneratedDocument(documentContent);
         
-        // Update active tab using React state instead of direct DOM manipulation
-        console.log("Setting document content and switching to preview tab");
-        setActiveTab("preview");
+        // Use a more reliable approach with requestAnimationFrame to ensure DOM is updated
+        console.log("Setting document content and scheduling tab switch");
+        
+        // First update the document state
+        requestAnimationFrame(() => {
+          // Then switch to preview tab in the next animation frame for more reliable UI updates
+          console.log("Switching to preview tab after document generation");
+          setActiveTab("preview");
+        });
+        
+        // Add a fallback timeout outside of the animation frame to ensure it runs
+        setTimeout(() => {
+          console.log("Checking if tab switch to preview was successful");
+          setActiveTab("preview");
+        }, 300);
 
         toast({
           title: "Document Generated",
@@ -237,6 +249,19 @@ function DocumentGenForm({ template }: DocumentGenFormProps) {
     console.log(`Manually switching to tab: ${tabName}`);
     setActiveTab(tabName);
   };
+  
+  // Add useEffect to observe generatedDocument changes and automatically switch to preview tab
+  useEffect(() => {
+    // If document was generated, automatically switch to preview tab
+    if (generatedDocument) {
+      console.log("Document was generated, automatically switching to preview tab");
+      
+      // Use setTimeout to ensure state is updated before switching tabs
+      setTimeout(() => {
+        setActiveTab("preview");
+      }, 200);
+    }
+  }, [generatedDocument]); // Only run when generatedDocument changes
 
   // Placeholder for e-signature initiation (needs implementation)
   const initiateSigningProcess = async (documentContent: string | null) => {
