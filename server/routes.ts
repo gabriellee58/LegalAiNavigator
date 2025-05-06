@@ -542,18 +542,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (parsed.data.save && parsed.data.title) {
         const now = new Date();
         
-        await storage.createContractAnalysis({
-          userId: req.user!.id,
-          contractContent: parsed.data.content,
-          contractTitle: parsed.data.title,
-          score: analysisResult.score,
-          riskLevel: analysisResult.riskLevel,
-          analysisResults: analysisResult as any, // Converting to jsonb
-          jurisdiction: parsed.data.jurisdiction || 'Canada',
-          contractType: parsed.data.contractType || 'general',
-          updatedAt: now,
-          categories: analysisResult.clause_categories as any
-        });
+        // Sanitize contract text to prevent encoding issues (remove null bytes)
+        const sanitizedContractContent = parsed.data.content.replace(/\0/g, '');
+        
+        // Create trimmed version if content is too large
+        const maxContentLength = 100000; // Reasonable max length for DB storage
+        const trimmedContractContent = sanitizedContractContent.length > maxContentLength
+          ? sanitizedContractContent.substring(0, maxContentLength) + "... [content truncated due to size]"
+          : sanitizedContractContent;
+        
+        try {
+          await storage.createContractAnalysis({
+            userId: req.user!.id,
+            contractContent: trimmedContractContent,
+            contractTitle: parsed.data.title,
+            score: analysisResult.score,
+            riskLevel: analysisResult.riskLevel,
+            analysisResults: analysisResult as any, // Converting to jsonb
+            jurisdiction: parsed.data.jurisdiction || 'Canada',
+            contractType: parsed.data.contractType || 'general',
+            updatedAt: now,
+            categories: analysisResult.clause_categories as any
+          });
+        } catch (saveError) {
+          console.error("Failed to save contract analysis:", saveError);
+          // Continue with response even if saving fails
+        }
       }
       
       res.json(analysisResult);
@@ -752,9 +766,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const now = new Date();
           
+          // Sanitize contract text to prevent encoding issues (remove null bytes)
+          const sanitizedContractText = contractText.replace(/\0/g, '');
+          
+          // Create trimmed version if content is too large
+          const maxContentLength = 100000; // Reasonable max length for DB storage
+          const trimmedContractText = sanitizedContractText.length > maxContentLength
+            ? sanitizedContractText.substring(0, maxContentLength) + "... [content truncated due to size]"
+            : sanitizedContractText;
+          
           await storage.createContractAnalysis({
             userId: req.user!.id,
-            contractContent: contractText,
+            contractContent: trimmedContractText,
             contractTitle: title,
             score: analysisResult.score || 0,
             riskLevel: analysisResult.riskLevel || "high",
