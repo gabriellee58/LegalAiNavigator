@@ -191,39 +191,8 @@ export default function ContractAnalysisPage() {
       return await apiRequest("POST", "/api/analyze-contract", params);
     },
     onSuccess: (data: AnalysisResult) => {
-      // Create mock analysis result for testing if needed
-      const mockResult: AnalysisResult = {
-        score: 75,
-        riskLevel: "medium",
-        risks: [
-          {
-            clause: "Section 12.3: Liability",
-            issue: "Unlimited liability clause puts your company at significant financial risk",
-            suggestion: "Add a liability cap that limits maximum damages to the value of the contract",
-            severity: "high",
-            category: "Liability"
-          },
-          {
-            clause: "Section 8.1: Payment Terms",
-            issue: "30-day payment terms without late fee provisions",
-            suggestion: "Add 1.5% monthly late fee for payments beyond 30 days",
-            severity: "medium",
-            category: "Payment"
-          }
-        ],
-        suggestions: [
-          {
-            clause: "Section 15: Termination",
-            suggestion: "Add mutual termination for convenience with 30-day notice",
-            reason: "Currently only the other party can terminate without cause",
-            category: "Termination"
-          }
-        ],
-        summary: "This contract has several areas of moderate risk, particularly around liability, payment terms, and termination rights. The liability section creates unlimited exposure and should be capped. Payment terms should include late fees. Termination rights should be made mutual."
-      };
-      
-      // Use the real analysis result or mock for testing if needed
-      setAnalysis(data.risks && data.risks.length > 0 && data.risks[0].clause ? data : mockResult);
+      // Use only real data from API
+      setAnalysis(data);
       
       // Reset current section and progress
       setCurrentSection("summary");
@@ -307,39 +276,8 @@ export default function ContractAnalysisPage() {
       }
     },
     onSuccess: (data: AnalysisResult) => {
-      // Create mock analysis result for testing if needed
-      const mockResult: AnalysisResult = {
-        score: 75,
-        riskLevel: "medium",
-        risks: [
-          {
-            clause: "Section 12.3: Liability",
-            issue: "Unlimited liability clause puts your company at significant financial risk",
-            suggestion: "Add a liability cap that limits maximum damages to the value of the contract",
-            severity: "high",
-            category: "Liability"
-          },
-          {
-            clause: "Section 8.1: Payment Terms",
-            issue: "30-day payment terms without late fee provisions",
-            suggestion: "Add 1.5% monthly late fee for payments beyond 30 days",
-            severity: "medium",
-            category: "Payment"
-          }
-        ],
-        suggestions: [
-          {
-            clause: "Section 15: Termination",
-            suggestion: "Add mutual termination for convenience with 30-day notice",
-            reason: "Currently only the other party can terminate without cause",
-            category: "Termination"
-          }
-        ],
-        summary: "This contract has several areas of moderate risk, particularly around liability, payment terms, and termination rights. The liability section creates unlimited exposure and should be capped. Payment terms should include late fees. Termination rights should be made mutual."
-      };
-      
-      // Use the real analysis result or mock for testing if needed
-      setAnalysis(data.risks && data.risks.length > 0 && data.risks[0].clause ? data : mockResult);
+      // Use only real data from API without any mock fallbacks
+      setAnalysis(data);
       
       // Reset current section and progress
       setCurrentSection("summary");
