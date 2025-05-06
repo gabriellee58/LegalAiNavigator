@@ -592,7 +592,7 @@ export default function ContractAnalysisPage() {
           onValueChange={setActiveTab} 
           className="w-full"
         >
-          <TabsList className="grid grid-cols-5 gap-1">
+          <TabsList className="grid grid-cols-3 gap-1">
             <TabsTrigger value="upload">
               <Upload className="h-4 w-4 mr-2" />
               {t("Upload & Analyze")}
@@ -600,14 +600,6 @@ export default function ContractAnalysisPage() {
             <TabsTrigger value="results" disabled={!analysis}>
               <FileText className="h-4 w-4 mr-2" />
               {t("Results")}
-            </TabsTrigger>
-            <TabsTrigger value="compare">
-              <FileDiff className="h-4 w-4 mr-2" />
-              {t("Compare")}
-            </TabsTrigger>
-            <TabsTrigger value="comparison-results" disabled={!comparisonResult}>
-              <FileCheck className="h-4 w-4 mr-2" />
-              {t("Comparison Results")}
             </TabsTrigger>
             <TabsTrigger value="history">
               <History className="h-4 w-4 mr-2" />
