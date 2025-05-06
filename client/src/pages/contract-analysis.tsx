@@ -340,6 +340,8 @@ export default function ContractAnalysisPage() {
       }
     },
     onSuccess: (data: AnalysisResult) => {
+      console.log("File analysis completed successfully, preparing to switch to results tab");
+      
       // Use only real data from API without any mock fallbacks
       setAnalysis(data);
       
@@ -352,10 +354,11 @@ export default function ContractAnalysisPage() {
         description: "Contract file analysis has been completed successfully.",
       });
       
-      // Slight delay before switching tabs to ensure DOM updates properly
-      setTimeout(() => {
+      // Use requestAnimationFrame for more reliable tab switching
+      requestAnimationFrame(() => {
+        console.log("Switching to results tab after file analysis");
         setActiveTab("results");
-      }, 300);
+      });
     },
     onError: (error: Error) => {
       // Check if this is a token limit error
@@ -393,16 +396,19 @@ export default function ContractAnalysisPage() {
       return res.json();
     },
     onSuccess: (data) => {
+      console.log("Contract comparison completed successfully, preparing to switch tabs");
+      
       setComparisonResult(data);
       toast({
         title: "Comparison complete",
         description: "Contract comparison has been completed successfully.",
       });
       
-      // Slight delay before switching tabs to ensure DOM updates properly
-      setTimeout(() => {
+      // Use requestAnimationFrame for more reliable tab switching
+      requestAnimationFrame(() => {
+        console.log("Switching to comparison-results tab");
         setActiveTab("comparison-results");
-      }, 300);
+      });
     },
     onError: (error: Error) => {
       // Check if this is a token limit error
