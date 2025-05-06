@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ZoomIn, ZoomOut, Download, Printer, Share2, RotateCw, ChevronLeft, ChevronRight, Clipboard } from "lucide-react";
 import { t } from "@/lib/i18n";
 import { exportAsText, printDocument, generatePDF } from "@/lib/documentExport";
+import { toast } from "@/hooks/use-toast";
 
 
 interface DocumentPreviewModalProps {
@@ -40,37 +41,103 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     }
   }, [isOpen, documentContent]);
 
-  // Export functions (from original code)
+  // Export functions with improved implementation
   const handleDownload = async () => {
     try {
-      if (format === 'pdf' &&  documentContent) {
-        //Fallback to text download since PDF preview is handled differently now.
-        await exportAsText(documentContent, `${documentTitle}.txt`);
-      } else {
-        await exportAsText(documentContent, `${documentTitle}.txt`);
-      }
       toast({
-        title: t("Download Complete"),
-        description: t(`Document has been downloaded as ${format === 'pdf' ? 'PDF' : 'text'}.`)
+        title: t("Preparing download"),
+        description: t("Getting your document ready...")
       });
+      
+      console.log(`Starting document download in ${format} format`);
+      
+      if (format === 'pdf' && documentContent) {
+        try {
+          // Try using PDF generation first
+          const result = await generatePDF(documentContent, `${documentTitle}.pdf`, false);
+          
+          if (typeof result === 'string') {
+            // If we got a URL, create a temporary download link
+            const sanitizedFilename = documentTitle.replace(/[<>:"/\\|?*]/g, '_');
+            
+            // Create a temporary download link
+            const a = document.createElement('a');
+            a.href = result;
+            a.download = `${sanitizedFilename}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            
+            // Cleanup
+            setTimeout(() => {
+              document.body.removeChild(a);
+              URL.revokeObjectURL(result);
+            }, 100);
+            
+            toast({
+              title: t("Download Complete"),
+              description: t("Document has been downloaded as PDF.")
+            });
+          } else {
+            // Fall back to text if we got a boolean result
+            throw new Error("PDF generation returned unexpected result");
+          }
+        } catch (pdfError) {
+          console.error("PDF generation failed, falling back to text:", pdfError);
+          
+          // Use text download as fallback
+          await exportAsText(documentContent, `${documentTitle}.txt`);
+          
+          toast({
+            title: t("Download Complete"),
+            description: t("Document has been downloaded as text file (PDF unavailable).")
+          });
+        }
+      } else {
+        // For text format, use the text exporter directly
+        await exportAsText(documentContent, `${documentTitle}.txt`);
+        
+        toast({
+          title: t("Download Complete"),
+          description: t("Document has been downloaded as text file.")
+        });
+      }
     } catch (error) {
       console.error("Error downloading document:", error);
+      
       toast({
         title: t("Download Failed"),
-        description: t("Could not download the document. Please try again."),
+        description: error instanceof Error 
+          ? t(`Error: ${error.message}`) 
+          : t("Could not download the document. Please try again."),
         variant: "destructive"
       });
     }
   };
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     try {
-      printDocument(documentContent, documentTitle);
+      toast({
+        title: t("Preparing to print"),
+        description: t("Setting up document for printing...")
+      });
+      
+      console.log(`Initiating print for document: "${documentTitle}"`);
+      
+      // Use the enhanced print function which now returns a promise
+      await printDocument(documentContent, documentTitle);
+      
+      toast({
+        title: t("Print Successful"),
+        description: t("Print dialog has been opened.")
+      });
     } catch (error) {
       console.error("Error printing document:", error);
+      
       toast({
         title: t("Print Failed"),
-        description: t("Could not prepare document for printing. Please try again."),
+        description: error instanceof Error 
+          ? t(`Error: ${error.message}`) 
+          : t("Could not prepare document for printing. Please try again."),
         variant: "destructive"
       });
     }
