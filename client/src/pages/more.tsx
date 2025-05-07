@@ -45,14 +45,14 @@ export default function MorePage() {
             </div>
           </Link>
           
-          <Link href="/help-resources">
+          <Link href="/guides/getting-started">
             <div className="border rounded-lg p-4 hover:border-primary transition-colors cursor-pointer">
               <div className="flex items-center mb-2">
-                <span className="material-icons text-primary mr-3">help_outline</span>
-                <h2 className="text-xl font-semibold">{t("help_resources")}</h2>
+                <span className="material-icons text-primary mr-3">menu_book</span>
+                <h2 className="text-xl font-semibold">{t("guides")}</h2>
               </div>
               <p className="text-neutral-600 dark:text-neutral-300">
-                {t("help_resources_description")}
+                {t("guides_description")}
               </p>
             </div>
           </Link>
