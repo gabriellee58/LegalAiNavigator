@@ -220,10 +220,10 @@ export default function DocumentGenerationTutorialPage() {
     <MainLayout>
       <div className="container py-6 max-w-4xl">
         <div className="mb-6">
-          <Link href="/help-resources">
+          <Link href="/">
             <Button variant="ghost" className="gap-1">
               <ArrowLeft className="h-4 w-4" />
-              {t("back_to_resources")}
+              {t("back_to_home")}
             </Button>
           </Link>
         </div>
