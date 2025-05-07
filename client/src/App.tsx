@@ -30,7 +30,7 @@ import DisputeResolutionPage from "./pages/dispute-resolution";
 import DisputeDetailPage from "./pages/dispute-detail";
 import ComplianceCheckerPage from "./pages/compliance-checker";
 import DocumentTemplatesPage from "./pages/document-templates";
-// Help resources page removed
+import HelpResourcesPage from "./pages/help-resources";
 import SettingsPage from "./pages/settings";
 import MorePage from "./pages/more";
 import CourtProceduresPage from "./pages/court-procedures";
@@ -175,7 +175,7 @@ function Router() {
       <ProtectedRoute path="/legal-domains/:id" component={DomainPage} />
       
       {/* Help and Settings */}
-      {/* HelpResources page removed */}
+      <ProtectedRoute path="/help-resources" component={HelpResourcesPage} />
       <ProtectedRoute path="/regulatory-compliance" component={RegulatoryCompliancePage} />
       <ProtectedRoute path="/settings" component={SettingsPage} />
       <ProtectedRoute path="/more" component={MorePage} />

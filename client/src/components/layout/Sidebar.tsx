@@ -186,7 +186,12 @@ export function Sidebar() {
       </nav>
       
       <div className="border-t border-neutral-200 p-4">
-        {/* Help resources link removed */}
+        <Link href="/help-resources">
+          <div className="flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary">
+            <span className="material-icons mr-3 text-neutral-500">help_outline</span>
+            <span>{t("help_resources")}</span>
+          </div>
+        </Link>
         <Link href="/settings">
           <div className="flex items-center px-2 py-2 rounded-md text-neutral-700 hover:bg-blue-50 hover:text-primary">
             <span className="material-icons mr-3 text-neutral-500">settings</span>

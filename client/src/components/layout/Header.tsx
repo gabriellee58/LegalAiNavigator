@@ -579,7 +579,10 @@ function MobileSidebar() {
       </nav>
       
       <div className="border-t border-neutral-100 p-4">
-        {/* Help resources link removed */}
+        <Link href="/help-resources" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
+          <span className="material-icons mr-3 text-primary">help_outline</span>
+          <span className="font-medium">{t("help_resources")}</span>
+        </Link>
         <Link href="/profile" className="flex items-center px-3 py-2 rounded-md text-neutral-700 hover:bg-primary/5 hover:text-primary">
           <span className="material-icons mr-3 text-primary">person</span>
           <span className="font-medium">{t("profile")}</span>

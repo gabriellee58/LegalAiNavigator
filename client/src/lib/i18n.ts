@@ -58,7 +58,7 @@ export const translations: Translations = {
     dispute_resolution: "Dispute Resolution",
     compliance_checker: "Compliance Checker",
     court_procedures: "Court Procedures",
-    guides: "Guides",
+    help_resources: "Help & Resources",
     settings: "Settings",
     
     // Document Templates
@@ -115,10 +115,11 @@ export const translations: Translations = {
     contact_support: "Contact Support",
     visit_website: "Visit Website",
     
-    // Guides
-    guides_description: "Find answers to your questions and helpful guides",
+    // Help & Resources
+    help_resources_description: "Find answers to your questions and helpful guides",
     search_help: "Search for help topics",
     faq: "FAQ",
+    guides: "Guides",
     tutorial_videos: "Tutorial Videos",
     getting_started_description: "Learn how to use the Legal AI Navigator effectively",
     getting_started_guide: "Getting Started Guide",
@@ -449,7 +450,7 @@ export const translations: Translations = {
     dispute_resolution: "Résolution des Litiges",
     compliance_checker: "Vérificateur de Conformité",
     court_procedures: "Procédures Judiciaires",
-    guides: "Guides",
+    help_resources: "Aide et Ressources",
     settings: "Paramètres",
     
     // Document Templates
@@ -506,10 +507,11 @@ export const translations: Translations = {
     contact_support: "Contacter le Support",
     visit_website: "Visiter le Site",
     
-    // Guides
-    guides_description: "Trouvez des réponses à vos questions et des guides utiles",
+    // Help & Resources
+    help_resources_description: "Trouvez des réponses à vos questions et des guides utiles",
     search_help: "Rechercher des sujets d'aide",
     faq: "FAQ",
+    guides: "Guides",
     tutorial_videos: "Vidéos Tutorielles",
     getting_started_description: "Apprenez à utiliser efficacement le Navigateur JuridiqueIA",
     getting_started_guide: "Guide de Démarrage",
