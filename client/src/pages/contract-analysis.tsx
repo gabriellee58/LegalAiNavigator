@@ -80,6 +80,7 @@ type AnalysisResult = {
     confidentiality?: string[];
     [key: string]: string[] | undefined;
   };
+  extractedText?: string; // The full text extracted from uploaded PDF files
 };
 
 // Type for the specific analysis data returned from the API
@@ -296,6 +297,30 @@ export default function ContractAnalysisPage() {
         console.log("Switching to results tab");
         setActiveTab("results");
       });
+      
+      // Auto-save the analysis if the save checkbox is checked
+      if (saveAnalysis && title) {
+        console.log("Auto-saving analysis with title:", title);
+        saveAnalysisMutation.mutate({
+          title: title,
+          contractContent: contractText,
+          jurisdiction: jurisdiction,
+          contractType: contractType,
+          analysisResults: data
+        });
+      } else if (saveAnalysis && !title) {
+        // Create a default title if none is provided
+        const defaultTitle = `Contract Analysis - ${new Date().toLocaleDateString()}`;
+        setTitle(defaultTitle);
+        console.log("Auto-saving analysis with default title:", defaultTitle);
+        saveAnalysisMutation.mutate({
+          title: defaultTitle,
+          contractContent: contractText,
+          jurisdiction: jurisdiction,
+          contractType: contractType,
+          analysisResults: data
+        });
+      }
     },
     onError: (error: Error) => {
       // Check if this is a token limit error
@@ -388,6 +413,33 @@ export default function ContractAnalysisPage() {
         console.log("Switching to results tab after file analysis");
         setActiveTab("results");
       });
+      
+      // Extract content from analysis response if server provided it
+      const extractedText = data.extractedText || contractText;
+      
+      // Auto-save the analysis if the save checkbox is checked
+      if (saveAnalysis && title) {
+        console.log("Auto-saving file analysis with title:", title);
+        saveAnalysisMutation.mutate({
+          title: title,
+          contractContent: extractedText,
+          jurisdiction: jurisdiction,
+          contractType: contractType,
+          analysisResults: data
+        });
+      } else if (saveAnalysis && !title && selectedFile) {
+        // Create a default title from filename if none is provided
+        const defaultTitle = selectedFile.name.replace(/\.[^/.]+$/, "") || `File Analysis - ${new Date().toLocaleDateString()}`;
+        setTitle(defaultTitle);
+        console.log("Auto-saving file analysis with default title:", defaultTitle);
+        saveAnalysisMutation.mutate({
+          title: defaultTitle,
+          contractContent: extractedText,
+          jurisdiction: jurisdiction,
+          contractType: contractType,
+          analysisResults: data
+        });
+      }
     },
     onError: (error: Error) => {
       // Check if this is a token limit error
