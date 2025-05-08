@@ -180,7 +180,7 @@ export default function ContractAnalysisPage() {
   // Handle selected analysis data when it changes
   useEffect(() => {
     if (selectedAnalysisData) {
-      // Ensure analysis data is properly set and then navigate to results tab
+      // Ensure analysis data is properly set - we'll display it in the history tab
       const analysisData = selectedAnalysisData.analysisResults;
       setAnalysis(analysisData);
       
@@ -188,38 +188,33 @@ export default function ContractAnalysisPage() {
       setCurrentSection("summary");
       setProgressValue(25);
       
-      // Use requestAnimationFrame for more reliable tab switching
-      requestAnimationFrame(() => {
-        console.log("Switching to results tab after loading selected analysis");
-        setActiveTab("results");
+      // Display a toast notification that analysis details are loaded
+      toast({
+        title: "Analysis loaded",
+        description: `Viewing analysis: ${selectedAnalysisData.title || 'Untitled'}`,
+        duration: 3000
       });
       
       console.log("Selected analysis loaded:", selectedAnalysisData.title);
     }
   }, [selectedAnalysisData]);
   
-  // Effect to ensure results tab is shown when analysis is available
+  // Effect to update UI when analysis data changes
   useEffect(() => {
-    // Only run this effect when analysis data becomes available
-    if (analysis && activeTab !== "results") {
-      console.log("Analysis data available but not on results tab - syncing tab state");
+    // When analysis data becomes available, update the UI
+    if (analysis) {
+      console.log("Analysis data updated");
       
-      // Use setTimeout for more reliable tab switching across browsers
-      setTimeout(() => {
-        console.log("Switching to results tab due to analysis data becoming available");
-        setActiveTab("results");
-        
-        // Force DOM update to ensure tab content visibility
-        requestAnimationFrame(() => {
-          const resultTabElement = document.querySelector('[data-value="results"]');
-          if (resultTabElement) {
-            console.log("Results tab element found, ensuring visibility");
-            (resultTabElement as HTMLElement).click();
-          }
-        });
-      }, 200);
+      // If we're not already on the history tab and this is a newly loaded analysis
+      // (not triggered by clicking on an item in history tab)
+      if (!selectedAnalysisId && activeTab === "upload") {
+        // Switch to history tab after analysis completes
+        setTimeout(() => {
+          setActiveTab("history");
+        }, 200);
+      }
     }
-  }, [analysis, activeTab]);
+  }, [analysis, activeTab, selectedAnalysisId]);
   
   // Setup Intersection Observer to track scroll position for progress bar
   useEffect(() => {
