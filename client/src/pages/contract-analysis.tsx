@@ -203,11 +203,20 @@ export default function ContractAnalysisPage() {
     if (analysis && activeTab !== "results") {
       console.log("Analysis data available but not on results tab - syncing tab state");
       
-      // Use requestAnimationFrame for more reliable tab switching
-      requestAnimationFrame(() => {
+      // Use setTimeout for more reliable tab switching across browsers
+      setTimeout(() => {
         console.log("Switching to results tab due to analysis data becoming available");
         setActiveTab("results");
-      });
+        
+        // Force DOM update to ensure tab content visibility
+        requestAnimationFrame(() => {
+          const resultTabElement = document.querySelector('[data-value="results"]');
+          if (resultTabElement) {
+            console.log("Results tab element found, ensuring visibility");
+            (resultTabElement as HTMLElement).click();
+          }
+        });
+      }, 200);
     }
   }, [analysis, activeTab]);
   

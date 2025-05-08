@@ -840,6 +840,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Create a contract analysis directly (for saving after analysis)
+  app.post("/api/contract-analyses", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const analysisSchema = z.object({
+        title: z.string().min(1),
+        contractContent: z.string().min(1),
+        jurisdiction: z.string().optional().default('Canada'),
+        contractType: z.string().optional().default('general'),
+        analysisResults: z.any(),
+      });
+      
+      const parsed = analysisSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid contract analysis data", errors: parsed.error.format() });
+      }
+      
+      const data = parsed.data;
+      const analysisResults = data.analysisResults;
+      
+      // Create new contract analysis record
+      try {
+        const now = new Date();
+        
+        // Sanitize contract text to prevent encoding issues
+        const sanitizedContractContent = data.contractContent.replace(/\0/g, '');
+        
+        // Create trimmed version if content is too large
+        const maxContentLength = 100000; // Reasonable max length for DB storage
+        const trimmedContractContent = sanitizedContractContent.length > maxContentLength
+          ? sanitizedContractContent.substring(0, maxContentLength) + "... [content truncated due to size]"
+          : sanitizedContractContent;
+        
+        const newAnalysis = await storage.createContractAnalysis({
+          userId: req.user!.id,
+          contractContent: trimmedContractContent,
+          contractTitle: data.title,
+          score: analysisResults.score || 0,
+          riskLevel: analysisResults.riskLevel || "high",
+          analysisResults: analysisResults,
+          jurisdiction: data.jurisdiction || 'Canada',
+          contractType: data.contractType || 'general',
+          updatedAt: now,
+          categories: analysisResults.clause_categories || null
+        });
+        
+        return res.status(201).json(newAnalysis);
+      } catch (saveError) {
+        console.error("Failed to save contract analysis:", saveError);
+        return res.status(500).json({ message: "Error saving contract analysis" });
+      }
+    } catch (error) {
+      console.error("Contract analysis creation error:", error);
+      res.status(500).json({ message: "Error creating contract analysis" });
+    }
+  });
+
   // Contract comparison
   app.post("/api/compare-contracts", isAuthenticated, async (req: Request, res: Response) => {
     try {
