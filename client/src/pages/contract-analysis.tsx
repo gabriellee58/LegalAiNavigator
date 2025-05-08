@@ -410,8 +410,8 @@ export default function ContractAnalysisPage() {
       
       // Use requestAnimationFrame for more reliable tab switching
       requestAnimationFrame(() => {
-        console.log("Switching to results tab after file analysis");
-        setActiveTab("results");
+        console.log("Switching to history tab after file analysis");
+        setActiveTab("history");
       });
       
       // Extract content from analysis response if server provided it
@@ -758,14 +758,10 @@ export default function ContractAnalysisPage() {
           className="w-full"
           defaultValue="upload"
         >
-          <TabsList className="grid grid-cols-3 gap-1">
+          <TabsList className="grid grid-cols-2 gap-1">
             <TabsTrigger value="upload">
               <Upload className="h-4 w-4 mr-2" />
               {t("Upload & Analyze")}
-            </TabsTrigger>
-            <TabsTrigger value="results">
-              <FileText className="h-4 w-4 mr-2" />
-              {t("Results")}
             </TabsTrigger>
             <TabsTrigger value="history">
               <History className="h-4 w-4 mr-2" />
