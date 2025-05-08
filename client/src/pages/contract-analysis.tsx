@@ -277,11 +277,6 @@ export default function ContractAnalysisPage() {
       // Use only real data from API
       setAnalysis(data);
       
-      // Automatically switch to results tab and ensure UI is ready
-      setTimeout(() => {
-        setActiveTab("results");
-      }, 100);
-      
       // Reset current section and progress
       setCurrentSection("summary");
       setProgressValue(25);
@@ -292,10 +287,10 @@ export default function ContractAnalysisPage() {
       });
       
       // Use a more reliable way to ensure state is updated before switching tabs
-      // First update the analysis state, then in a separate effect, switch tabs
+      // After analysis is done, switch to history tab
       requestAnimationFrame(() => {
-        console.log("Switching to results tab");
-        setActiveTab("results");
+        console.log("Switching to history tab after analysis");
+        setActiveTab("history");
       });
       
       // Auto-save the analysis if the save checkbox is checked
@@ -1195,10 +1190,9 @@ export default function ContractAnalysisPage() {
                             setSelectedAnalysisId(historyItem.id);
                             console.log(`Loading analysis ID: ${historyItem.id}, title: ${historyItem.title}`);
                             
-                            // Important: Switch to results tab with a slight delay to ensure data loads properly
-                            setTimeout(() => {
-                              setActiveTab("results");
-                            }, 300);
+                            // Set the selected analysis and display it directly in the history tab
+                            // No need to change tabs since we're already in the history tab
+                            // Just update the UI to show the selected analysis details
                           }}
                         >
                           <div className="flex flex-col md:flex-row">
