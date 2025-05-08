@@ -415,7 +415,21 @@ export default function ContractAnalysisPage() {
       });
       
       // Extract content from analysis response if server provided it
-      const extractedText = data.extractedText || contractText;
+      // The server now includes the extracted text in the response
+      const extractedText = data.extractedText || "";
+      
+      console.log("Extracted text length:", extractedText.length);
+      
+      // Make sure we have content to save
+      if (extractedText.length === 0) {
+        console.warn("No extracted text was received from the server");
+        toast({
+          title: "Warning",
+          description: "No text content was extracted from the file. The analysis result will not be saved.",
+          variant: "destructive"
+        });
+        return;
+      }
       
       // Auto-save the analysis if the save checkbox is checked
       if (saveAnalysis && title) {
@@ -425,7 +439,8 @@ export default function ContractAnalysisPage() {
           contractContent: extractedText,
           jurisdiction: jurisdiction,
           contractType: contractType,
-          analysisResults: data
+          // Remove extractedText from the analysis results to avoid duplication
+          analysisResults: { ...data, extractedText: undefined }
         });
       } else if (saveAnalysis && !title && selectedFile) {
         // Create a default title from filename if none is provided
@@ -437,7 +452,8 @@ export default function ContractAnalysisPage() {
           contractContent: extractedText,
           jurisdiction: jurisdiction,
           contractType: contractType,
-          analysisResults: data
+          // Remove extractedText from the analysis results to avoid duplication  
+          analysisResults: { ...data, extractedText: undefined }
         });
       }
     },

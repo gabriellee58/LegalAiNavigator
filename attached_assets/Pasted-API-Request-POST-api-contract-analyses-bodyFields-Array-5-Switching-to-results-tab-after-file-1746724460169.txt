@@ -1,0 +1,50 @@
+API Request: POST /api/contract-analyses {bodyFields: Array(5)}
+ Switching to results tab after file analysis
+ 
+            
+            
+           POST https://77a09a55-ebda-413d-94a8-30a1f93e20a6-00-p8bj18kje6z4.riker.replit.dev/api/contract-analyses 400 (Bad Request)
+apiRequest @ src/lib/queryClient.ts:59
+mutationFn @ src/pages/contract-a…t=1746724251408:138
+fn @ @tanstack_react-query.js:1189
+run @ @tanstack_react-query.js:494
+start @ @tanstack_react-query.js:536
+execute @ @tanstack_react-query.js:1225
+await in execute
+mutate @ @tanstack_react-query.js:2630
+(anonymous) @ @tanstack_react-query.js:3295
+onSuccess @ src/pages/contract-a…t=1746724251408:326
+execute @ @tanstack_react-query.js:1233Understand this error
+main.tsx:15 API Error (400) for POST /api/contract-analyses: {message: 'Invalid contract analysis data', errors: {…}}
+console.error @ main.tsx:15
+apiRequest @ src/lib/queryClient.ts:70
+await in apiRequest
+mutationFn @ src/pages/contract-a…t=1746724251408:138
+fn @ @tanstack_react-query.js:1189
+run @ @tanstack_react-query.js:494
+start @ @tanstack_react-query.js:536
+execute @ @tanstack_react-query.js:1225
+await in execute
+mutate @ @tanstack_react-query.js:2630
+(anonymous) @ @tanstack_react-query.js:3295
+onSuccess @ src/pages/contract-a…t=1746724251408:326
+execute @ @tanstack_react-query.js:1233Understand this error
+main.tsx:15 API Request failed (attempt 1/2): ApiError: Invalid contract analysis data
+    at apiRequest (src/lib/queryClient.ts:79:15)
+    at async Object.mutationFn (src/pages/contract-analysis.tsx?t=1746724251408:138:14)
+console.error @ main.tsx:15
+apiRequest @ src/lib/queryClient.ts:111
+await in apiRequest
+mutationFn @ src/pages/contract-a…t=1746724251408:138
+fn @ @tanstack_react-query.js:1189
+run @ @tanstack_react-query.js:494
+start @ @tanstack_react-query.js:536
+execute @ @tanstack_react-query.js:1225
+await in execute
+mutate @ @tanstack_react-query.js:2630
+(anonymous) @ @tanstack_react-query.js:3295
+onSuccess @ src/pages/contract-a…t=1746724251408:326
+execute @ @tanstack_react-query.js:1233Understand this error
+main.tsx:15 All 2 attempts failed for POST /api/contract-analyses ApiError: Invalid contract analysis data
+    at apiRequest (src/lib/queryClient.ts:79:15)
+    at async Object.mutationFn (src/pages/contract-analysis.tsx?t=1746724251408:138:14)

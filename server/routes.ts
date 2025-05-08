@@ -794,7 +794,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      res.json(analysisResult);
+      // Include the extracted text in the response so client can use it for saving
+      res.json({
+        ...analysisResult,
+        extractedText: contractText
+      });
     } catch (error) {
       console.error("Contract file analysis error:", error);
       res.status(500).json({ 
