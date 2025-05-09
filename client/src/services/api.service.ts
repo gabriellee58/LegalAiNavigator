@@ -115,9 +115,9 @@ class ApiService {
     
     // Apply request interceptors
     for (const interceptor of this.requestInterceptors) {
-      const result = interceptor(requestUrl, requestOptions);
-      requestUrl = result[0];
-      requestOptions = result[1];
+      const [updatedUrl, updatedOptions] = interceptor(requestUrl, requestOptions);
+      requestUrl = updatedUrl;
+      requestOptions = updatedOptions;
     }
     
     // Set up timeout controller

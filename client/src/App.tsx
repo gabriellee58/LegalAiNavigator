@@ -5,6 +5,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { SubscriptionProvider } from "@/hooks/use-subscription";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { ErrorBoundary } from "./components/error-boundary";
+import { AuthErrorBoundary } from "./components/error-boundary";
 import { Toaster } from "@/components/ui/toaster";
 import { ErrorProvider } from "@/components/ui/error-handler";
 import { PermissionsProvider } from "@/hooks/use-permissions";

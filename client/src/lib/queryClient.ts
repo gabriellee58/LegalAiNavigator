@@ -75,6 +75,9 @@ export function getRetryAndCacheConfig(error: any) {
   return { retry: false, staleTime: 1000 * 60 * 5 }; // 5 minutes
 }
 
+// Import and use our unified API service
+import { apiService } from "@/services/api.service";
+
 // Enhanced API request function
 export async function apiRequest<T = any>(
   method: string,
@@ -87,111 +90,82 @@ export async function apiRequest<T = any>(
   } = { retries: 1, retryDelay: 1000, logDetails: true },
 ): Promise<T> {
   const { retries = 1, retryDelay = 1000, logDetails = true } = options;
-  let lastError: Error | null = null;
   
   // Log request details when debugging is enabled
   if (logDetails) {
     console.log(`API Request: ${method} ${url}`, data ? { bodyFields: Object.keys(data as object) } : 'No body');
   }
   
-  // Attempt with retries
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      if (attempt > 0 && logDetails) {
-        console.log(`Retry attempt ${attempt}/${retries} for ${method} ${url}`);
-      }
-      
-      const res = await fetch(url, {
-        method,
-        headers: data ? { "Content-Type": "application/json" } : {},
-        body: data ? JSON.stringify(data) : undefined,
-        credentials: "include",
-      });
-      
-      // Check if the response is OK
-      if (!res.ok) {
-        let errorData;
-        try {
-          // Try to get the error details as JSON
-          errorData = await res.json();
-          if (logDetails) {
-            console.error(`API Error (${res.status}) for ${method} ${url}:`, errorData);
-          }
-        } catch {
-          // If the error isn't JSON, get it as text
-          const errorText = await res.text();
-          if (logDetails) {
-            console.error(`API Error (${res.status}) for ${method} ${url}:`, errorText || res.statusText);
-          }
-          errorData = { message: errorText || res.statusText };
-        }
-        
-        throw new ApiError(res.status, 
-          errorData.message || `Error ${res.status}: ${res.statusText}`, 
-          errorData
-        );
-      }
-      
-      let result;
-      // Handle both JSON responses and non-JSON responses (like empty responses)
-      const contentType = res.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        result = await res.json() as T;
-      } else {
-        // If not JSON content type, check if there's any content at all
-        const text = await res.text();
-        if (!text) {
-          // Empty response, return an empty object
-          result = {} as T;
-        } else {
-          // Try to parse as JSON anyway, fallback to text
-          try {
-            result = JSON.parse(text) as T;
-          } catch {
-            // Not JSON, return the text
-            result = text as unknown as T;
-          }
-        }
-      }
-      
-      if (logDetails) {
-        console.log(`API Success: ${method} ${url}`, 
-          result ? (typeof result === 'object' ? 'Response object received' : 'Response received') : 'Empty response');
-      }
-      
-      return result;
-    } catch (error) {
-      lastError = error as Error;
-      
-      if (logDetails) {
-        console.error(`API Request failed (attempt ${attempt + 1}/${retries + 1}):`, error);
-      }
-      
-      // Don't retry certain errors
-      if (error instanceof ApiError) {
-        if (error.isAuthError) break; // Don't retry auth errors
-        
-        // Only retry server errors
-        if (!error.isServerError && !error.isNetworkError) break;
-      }
-      
-      // Last attempt failed, don't delay
-      if (attempt === retries) break;
-      
-      // Exponential backoff with jitter
-      const delayMs = retryDelay * Math.pow(1.5, attempt) * (0.9 + Math.random() * 0.2);
-      await new Promise(resolve => setTimeout(resolve, delayMs));
+  try {
+    // Use our API service for the request
+    let result: T;
+    
+    switch (method.toUpperCase()) {
+      case 'GET':
+        result = await apiService.get<T>(url, { 
+          retry: retries, 
+          retryDelay 
+        });
+        break;
+      case 'POST':
+        result = await apiService.post<T>(url, data, { 
+          retry: retries, 
+          retryDelay 
+        });
+        break;
+      case 'PUT':
+        result = await apiService.put<T>(url, data, { 
+          retry: retries, 
+          retryDelay 
+        });
+        break;
+      case 'PATCH':
+        result = await apiService.patch<T>(url, data, { 
+          retry: retries, 
+          retryDelay 
+        });
+        break;
+      case 'DELETE':
+        result = await apiService.delete<T>(url, { 
+          retry: retries, 
+          retryDelay 
+        });
+        break;
+      default:
+        result = await apiService.request<T>(url, {
+          method: method as any,
+          body: data,
+          retry: retries,
+          retryDelay
+        });
     }
+    
+    if (logDetails) {
+      console.log(`API Success: ${method} ${url}`, 
+        result ? (typeof result === 'object' ? 'Response object received' : 'Response received') : 'Empty response');
+    }
+    
+    return result;
+  } catch (error) {
+    if (logDetails) {
+      console.error(`API Request failed for ${method} ${url}:`, error);
+    }
+    
+    // Convert to our ApiError format if needed
+    if (error instanceof Error && !(error instanceof ApiError)) {
+      // If it's from our API service, it might have status and data
+      const status = (error as any).status || 0;
+      const data = (error as any).data;
+      const message = error.message || 'Unknown error';
+      
+      throw new ApiError(status, message, data);
+    }
+    
+    throw error;
   }
-  
-  // If we got here, all retries failed
-  if (logDetails) {
-    console.error(`All ${retries + 1} attempts failed for ${method} ${url}`, lastError);
-  }
-  throw lastError; 
 }
 
-// Enhanced query function
+// Enhanced query function using our API service
 type UnauthorizedBehavior = "returnNull" | "throw";
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
@@ -205,69 +179,28 @@ export const getQueryFn: <T>(options: {
         console.log(`Query: GET ${url}`);
       }
       
-      const res = await fetch(url, {
-        credentials: "include",
-      });
-
-      if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+      try {
+        // Use our API service for the request
+        const result = await apiService.get<T>(url);
+        
         if (logDetails) {
-          console.log(`Query: GET ${url} - 401 returned, returning null as configured`);
-        }
-        return null;
-      }
-
-      // Handle errors with enhanced error messages
-      if (!res.ok) {
-        let errorData;
-        try {
-          // Try to get the error details as JSON
-          errorData = await res.json();
-          if (logDetails) {
-            console.error(`Query Error (${res.status}) for GET ${url}:`, errorData);
-          }
-        } catch {
-          // If the error isn't JSON, get it as text
-          const errorText = await res.text();
-          if (logDetails) {
-            console.error(`Query Error (${res.status}) for GET ${url}:`, errorText || res.statusText);
-          }
-          errorData = { message: errorText || res.statusText };
+          console.log(`Query Success: GET ${url}`, 
+            result ? 'Response received' : 'Empty response');
         }
         
-        throw new ApiError(res.status, 
-          errorData.message || `Error ${res.status}: ${res.statusText}`, 
-          errorData
-        );
-      }
-      
-      // Handle both JSON responses and non-JSON responses
-      let result;
-      const contentType = res.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        result = await res.json() as T;
-      } else {
-        // If not JSON content type, check if there's any content at all
-        const text = await res.text();
-        if (!text) {
-          // Empty response, return an empty object
-          result = {} as T;
-        } else {
-          // Try to parse as JSON anyway, fallback to text
-          try {
-            result = JSON.parse(text) as T;
-          } catch {
-            // Not JSON, return the text
-            result = text as unknown as T;
+        return result;
+      } catch (error: any) {
+        // For 401 errors, return null if configured that way
+        if (error.status === 401 && unauthorizedBehavior === "returnNull") {
+          if (logDetails) {
+            console.log(`Query: GET ${url} - 401 returned, returning null as configured`);
           }
+          return null;
         }
+        
+        // Re-throw the error
+        throw error;
       }
-      
-      if (logDetails) {
-        console.log(`Query Success: GET ${url}`, 
-          result ? 'Response received' : 'Empty response');
-      }
-      
-      return result;
     } catch (error) {
       // Add query key to error for better debugging
       if (error instanceof Error) {
