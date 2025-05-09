@@ -340,7 +340,7 @@ const ContractTextViewer: React.FC<ContractTextViewerProps> = ({
     if (extractionInfo.errorPages && extractionInfo.errorPages.length > 0 && extractionInfo.pageCount &&
         extractionInfo.errorPages.length > extractionInfo.pageCount / 3) {
       return (
-        <Alert variant="warning" className="mb-4">
+        <Alert className="mb-4 bg-amber-50 border-amber-200">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Partial Extraction</AlertTitle>
           <AlertDescription>

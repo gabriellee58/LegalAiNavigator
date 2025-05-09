@@ -671,10 +671,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (pdfError) {
           const errorMessage = pdfError instanceof Error ? pdfError.message : String(pdfError);
           console.error("PDF extraction error:", errorMessage);
+          
+          // Enhanced error diagnostic information
+          let diagnosticInfo = "Unable to determine cause";
+          let recoveryTip = "Try a different PDF file or convert to text format first";
+          
+          // Attempt to provide more specific diagnostics and recovery tips
+          if (errorMessage.includes("PDF signature") || errorMessage.includes("PDF format")) {
+            diagnosticInfo = "The file does not appear to be a valid PDF document";
+            recoveryTip = "Ensure you're uploading a proper PDF file";
+          } else if (errorMessage.includes("decrypt")) {
+            diagnosticInfo = "The PDF appears to be encrypted or password-protected";
+            recoveryTip = "Remove password protection from the PDF before uploading";
+          } else if (errorMessage.includes("PDF loading failed")) {
+            diagnosticInfo = "The PDF could not be loaded by our processing library";
+            recoveryTip = "The PDF may be corrupted. Try saving it again with a different PDF editor";
+          } else if (errorMessage.includes("timeout")) {
+            diagnosticInfo = "The PDF processing operation timed out";
+            recoveryTip = "Your PDF may be too complex. Try simplifying it or converting to text";
+          }
+          
           return res.status(400).json({ 
             message: "Failed to extract text from PDF file",
             error: errorMessage,
-            details: "The PDF file may be corrupted, password-protected, or contain only images without text"
+            diagnosticInfo,
+            recoveryTip,
+            extractionInfo: {
+              success: false,
+              method: "failed",
+              error: errorMessage
+            }
           });
         }
       } else if (

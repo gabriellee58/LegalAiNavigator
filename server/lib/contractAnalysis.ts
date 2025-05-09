@@ -40,6 +40,19 @@ export async function extractTextFromPdf(
   try {
     console.log('Attempting to extract text from PDF using PDF.js');
     
+    if (!pdfBuffer || pdfBuffer.length === 0) {
+      throw new Error('Empty PDF buffer provided for text extraction');
+    }
+    
+    // Validate buffer has PDF signature (starts with %PDF-)
+    const pdfSignature = pdfBuffer.slice(0, 5).toString();
+    if (pdfSignature !== '%PDF-') {
+      console.warn('PDF buffer does not start with %PDF- signature:', pdfSignature);
+      throw new Error('Invalid PDF format: Missing PDF signature');
+    }
+    
+    console.log('PDF signature validation passed, creating document loading task');
+    
     // Set options for PDF loading with enhanced memory options and timeout
     const loadingTask = pdfjsLib.getDocument({
       data: pdfBuffer,
@@ -56,7 +69,18 @@ export async function extractTextFromPdf(
     });
     
     // Race between loading task and timeout
-    const pdf = await Promise.race([loadingTask.promise, timeoutPromise]) as any;
+    let pdf;
+    try {
+      pdf = await Promise.race([loadingTask.promise, timeoutPromise]) as any;
+      console.log(`PDF loaded successfully with ${pdf.numPages} pages`);
+      
+      if (!pdf || typeof pdf.numPages !== 'number') {
+        throw new Error('Invalid PDF document structure: Missing page information');
+      }
+    } catch (loadError) {
+      console.error('PDF loading error:', loadError);
+      throw new Error(`PDF loading failed: ${loadError instanceof Error ? loadError.message : String(loadError)}`);
+    }
     console.log(`PDF loaded successfully with ${pdf.numPages} pages`);
     
     let extractedText = '';
