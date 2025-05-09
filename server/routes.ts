@@ -638,9 +638,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use file extension as fallback for mimetype detection
       if (req.file.mimetype === 'application/pdf' || fileExtension === 'pdf') {
         try {
-          // Extract text from PDF
+          // Extract text from PDF using enhanced extractor
           console.log("Processing PDF file...");
-          contractText = await extractTextFromPdf(req.file.buffer);
+          const extractionResult = await extractTextFromPdf(req.file.buffer);
+          
+          if (!extractionResult.success) {
+            console.error("PDF extraction failed:", extractionResult.errorDetails);
+            return res.status(400).json({
+              message: "Failed to extract meaningful text from PDF file",
+              error: extractionResult.errorDetails || "Unknown extraction error",
+              details: extractionResult.text,
+              extractionInfo: {
+                method: extractionResult.extractionMethod,
+                usedFallback: extractionResult.usedFallbackMethod
+              }
+            });
+          }
+          
+          // Log extraction details
+          console.log(`PDF extraction stats: ${extractionResult.extractedPageCount || 0}/${extractionResult.pageCount || 0} pages, using ${extractionResult.extractionMethod} method`);
+          
+          if (extractionResult.truncated) {
+            console.warn("PDF content was truncated due to size limits");
+          }
+          
+          if (extractionResult.errorPages && extractionResult.errorPages.length > 0) {
+            console.warn(`Had issues extracting ${extractionResult.errorPages.length} pages: ${extractionResult.errorPages.join(', ')}`);
+          }
+          
+          contractText = extractionResult.text;
           console.log(`Extracted ${contractText.length} characters from PDF file`);
         } catch (pdfError) {
           const errorMessage = pdfError instanceof Error ? pdfError.message : String(pdfError);
