@@ -1,70 +1,84 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
-import {
-  useQuery,
-  useMutation,
-  UseMutationResult,
-} from "@tanstack/react-query";
-import { insertUserSchema, User, InsertUser } from "@shared/schema";
-import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
+import { useQuery, useMutation, UseMutationResult } from "@tanstack/react-query";
+import { User } from "@shared/schema";
+import { queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { authService } from "@/services/auth.service";
+import { firebaseService } from "@/services/firebase.service";
 
-// Define all types here
-interface AuthContextInterface {
-  user: User | null;
-  isLoading: boolean;
-  error: Error | null;
-  loginMutation: UseMutationResult<User, Error, LoginDataType>;
-  logoutMutation: UseMutationResult<void, Error, void>;
-  registerMutation: UseMutationResult<User, Error, RegisterDataType>;
-  updateProfileMutation: UseMutationResult<User, Error, UpdateProfileDataType>;
-  updatePasswordMutation: UseMutationResult<{ message: string }, Error, UpdatePasswordDataType>;
-  googleSignInMutation: UseMutationResult<User, Error, void>;
-}
+// Type definitions
+export type LoginData = {
+  username: string;
+  password: string;
+};
 
-// Define data types
-type LoginDataType = Pick<User, "username" | "password">;
-type RegisterDataType = typeof insertUserSchema._type;
-type UpdateProfileDataType = Pick<User, "fullName" | "preferredLanguage">;
-type UpdatePasswordDataType = {
+export type RegisterData = {
+  username: string;
+  password: string;
+  fullName: string;
+  preferredLanguage: string;
+};
+
+export type UpdateProfileData = {
+  fullName: string;
+  preferredLanguage: string;
+};
+
+export type UpdatePasswordData = {
   currentPassword: string;
   newPassword: string;
 };
 
-// Export types for external use
-export type LoginData = LoginDataType;
-export type RegisterData = RegisterDataType;
-export type UpdateProfileData = UpdateProfileDataType;
-export type UpdatePasswordData = UpdatePasswordDataType;
-export type AuthContextType = AuthContextInterface;
+// Auth context interface
+interface AuthContextType {
+  user: User | null;
+  isLoading: boolean;
+  error: Error | null;
+  loginMutation: UseMutationResult<User, Error, LoginData>;
+  logoutMutation: UseMutationResult<void, Error, void>;
+  registerMutation: UseMutationResult<User, Error, RegisterData>;
+  updateProfileMutation: UseMutationResult<User, Error, UpdateProfileData>;
+  updatePasswordMutation: UseMutationResult<{ message: string }, Error, UpdatePasswordData>;
+  googleSignInMutation: UseMutationResult<void, Error, void>;
+}
 
-// Create context
-export const AuthContext = createContext<AuthContextInterface | null>(null);
+// Create auth context
+export const AuthContext = createContext<AuthContextType | null>(null);
 
+// Auth provider component
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
+  
+  // User query
   const {
     data: user,
     error,
     isLoading,
   } = useQuery<User | null, Error>({
     queryKey: ["/api/user"],
-    queryFn: getQueryFn({ on401: "returnNull" }),
+    queryFn: async () => {
+      try {
+        return await authService.getCurrentUser();
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        return null;
+      }
+    },
+    retry: false,
   });
 
-  const loginMutation = useMutation({
-    mutationFn: async (credentials: LoginData) => {
-      // apiRequest already returns the parsed JSON, so we don't need to call json() on it
-      return await apiRequest("POST", "/api/login", credentials);
+  // Login mutation
+  const loginMutation = useMutation<User, Error, LoginData>({
+    mutationFn: async (credentials) => {
+      return await authService.login(credentials);
     },
-    onSuccess: (user: User) => {
+    onSuccess: (user) => {
       toast({
         title: "Login successful",
         description: `Welcome back, ${user.fullName || user.username}!`,
       });
-      queryClient.setQueryData(["/api/user"], user);
     },
-    onError: (error: Error) => {
-      console.error("Login error:", error);
+    onError: (error) => {
       toast({
         title: "Login failed",
         description: error.message || "Invalid username or password",
@@ -73,20 +87,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  const registerMutation = useMutation({
-    mutationFn: async (credentials: RegisterData) => {
-      // apiRequest already returns the parsed JSON, so we don't need to call json() on it
-      return await apiRequest("POST", "/api/register", credentials);
+  // Register mutation
+  const registerMutation = useMutation<User, Error, RegisterData>({
+    mutationFn: async (data) => {
+      return await authService.register(data);
     },
-    onSuccess: (user: User) => {
+    onSuccess: (user) => {
       toast({
         title: "Registration successful",
         description: "Your account has been created",
       });
-      queryClient.setQueryData(["/api/user"], user);
     },
-    onError: (error: Error) => {
-      console.error("Registration error:", error);
+    onError: (error) => {
       toast({
         title: "Registration failed",
         description: error.message || "Could not create account",
@@ -95,28 +107,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  const logoutMutation = useMutation({
+  // Logout mutation
+  const logoutMutation = useMutation<void, Error, void>({
     mutationFn: async () => {
-      const response = await fetch('/api/logout', {
-        method: 'POST',
-        credentials: 'include',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Logout request failed');
-      }
-      
-      // Don't try to parse the response as JSON, just return
-      return;
+      return await authService.logout();
     },
     onSuccess: () => {
       toast({
         title: "Logged out",
         description: "You have been logged out successfully",
       });
-      queryClient.setQueryData(["/api/user"], null);
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast({
         title: "Logout failed",
         description: error.message,
@@ -125,20 +127,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
   
-  const updateProfileMutation = useMutation({
-    mutationFn: async (profileData: UpdateProfileData) => {
-      // apiRequest already returns the parsed JSON, so we don't need to call json() on it
-      return await apiRequest("PATCH", "/api/user", profileData);
+  // Update profile mutation
+  const updateProfileMutation = useMutation<User, Error, UpdateProfileData>({
+    mutationFn: async (data) => {
+      return await authService.updateProfile(data);
     },
-    onSuccess: (updatedUser: User) => {
+    onSuccess: (user) => {
       toast({
         title: "Profile updated",
         description: "Your profile has been updated successfully",
       });
-      queryClient.setQueryData(["/api/user"], updatedUser);
     },
-    onError: (error: Error) => {
-      console.error("Profile update error:", error);
+    onError: (error) => {
       toast({
         title: "Profile update failed",
         description: error.message || "Could not update profile",
@@ -147,10 +147,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
   
-  const updatePasswordMutation = useMutation({
-    mutationFn: async (passwordData: UpdatePasswordData) => {
-      // apiRequest already returns the parsed JSON, so we don't need to call json() on it
-      return await apiRequest("PATCH", "/api/user/password", passwordData);
+  // Update password mutation
+  const updatePasswordMutation = useMutation<{ message: string }, Error, UpdatePasswordData>({
+    mutationFn: async (data) => {
+      return await authService.updatePassword(data);
     },
     onSuccess: () => {
       toast({
@@ -158,8 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: "Your password has been updated successfully",
       });
     },
-    onError: (error: Error) => {
-      console.error("Password update error:", error);
+    onError: (error) => {
       toast({
         title: "Password update failed",
         description: error.message || "Could not update password",
@@ -168,56 +167,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // Google Sign-in Mutation - This now handles redirect initiation
-  const googleSignInMutation = useMutation({
+  // Google sign-in mutation
+  const googleSignInMutation = useMutation<void, Error, void>({
     mutationFn: async () => {
-      try {
-        // Import Firebase functions dynamically to avoid circular dependencies
-        const { signInWithGoogle, isConfigured, isAuthorizedDomain } = await import('@/lib/firebase');
-        
-        if (!isConfigured) {
-          console.warn("Firebase is not configured. Using password login instead.");
-          // Fall back to password login instead of throwing an error
-          // Redirect to the login page with a status message
-          const loginUrl = `/auth?error=${encodeURIComponent("Google login is unavailable. Please use email/password login.")}`;
-          window.location.href = loginUrl;
-          return {} as User;
-        }
-        
-        // Check if current domain is authorized for Firebase auth
-        if (!isAuthorizedDomain()) {
-          console.warn("Current domain is not authorized for Firebase auth:", window.location.hostname);
-          // Redirect to the login page with a status message
-          const loginUrl = `/auth?error=${encodeURIComponent("This domain is not authorized for Google login. Please use email/password login.")}`;
-          window.location.href = loginUrl;
-          return {} as User;
-        }
-        
-        // This will redirect to Google sign-in page and won't return here
-        // The actual authentication will be handled in the AuthPage component
-        // when redirected back from Google
-        await signInWithGoogle();
-        
-        // This will never be reached due to the redirect
-        return {} as User;
-      } catch (error: any) {
-        // Handle specific Firebase errors
-        if (error.code === 'auth/popup-blocked') {
-          throw new Error("Redirect was blocked. Please try again.");
-        } else if (error.code === 'auth/cancelled-popup-request') {
-          throw new Error("Sign-in was cancelled. Please try again.");
-        } else if (error.code === 'auth/network-request-failed') {
-          throw new Error("Network error. Please check your connection and try again.");
-        } else if (error.code === 'auth/unauthorized-domain' || error.name === 'UnauthorizedDomainError') {
-          throw new Error("Google sign-in is not available on this domain. Please use email/password login or access the site from canadianlegalai.site");
-        } else if (error.message) {
-          throw new Error(error.message);
-        } else {
-          throw new Error("An error occurred during sign-in. Please try again.");
-        }
+      // Check if Firebase is configured
+      if (!firebaseService.isInitialized) {
+        // Redirect to login page with error message
+        const loginUrl = `/auth?error=${encodeURIComponent("Google login is unavailable. Please use email/password login.")}`;
+        window.location.href = loginUrl;
+        return;
       }
+      
+      // Check if domain is authorized
+      if (!firebaseService.isAuthorizedDomain()) {
+        // Redirect to login page with error message
+        const loginUrl = `/auth?error=${encodeURIComponent("This domain is not authorized for Google login. Please use email/password login.")}`;
+        window.location.href = loginUrl;
+        return;
+      }
+      
+      // Redirect to Google sign-in
+      await firebaseService.signInWithGoogle();
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       // Don't show destructive toast for domain authorization issues
       const isUnauthorizedDomain = error.message?.includes("not available on this domain");
       
@@ -230,69 +202,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // Firebase auth state effect
+  // Firebase auth listener effect
   useEffect(() => {
-    let unsubscribe: () => void = () => {};
-    
-    async function setupAuthListener() {
-      try {
-        // Dynamically import Firebase functions to avoid circular dependencies
-        const firebaseFunctions = await import('@/lib/firebase');
-        
-        // Check if Firebase is configured before setting up auth listener
-        if (!firebaseFunctions.isConfigured || !firebaseFunctions.auth) {
-          console.log("Firebase not configured or auth not initialized, skipping auth listener");
-          return;
-        }
-        
-        // Setup the auth listener
-        unsubscribe = firebaseFunctions.onAuthChange(async (firebaseUser) => {
-          // If Firebase user exists but our session doesn't, attempt to 
-          // login on our backend with the Firebase credentials
-          if (firebaseUser && !user) {
-            try {
-              const userData = await apiRequest("POST", "/api/google-auth", {
-                email: firebaseUser.email,
-                displayName: firebaseUser.displayName,
-                photoURL: firebaseUser.photoURL,
-                uid: firebaseUser.uid
-              });
-              
-              queryClient.setQueryData(["/api/user"], userData);
-            } catch (err) {
-              console.error("Error synchronizing with Firebase auth:", err);
-            }
-          }
-        });
-      } catch (error) {
-        console.error("Failed to set up Firebase auth listener:", error);
-      }
+    // Only set up listener if Firebase is available
+    if (!firebaseService.isInitialized) {
+      return undefined;
     }
     
-    setupAuthListener();
+    // Add Firebase auth state listener
+    const unsubscribe = firebaseService.addAuthStateListener(async (firebaseUser) => {
+      // If Firebase user exists but our session doesn't, authenticate with backend
+      if (firebaseUser && !user) {
+        try {
+          await authService.loginWithGoogle(firebaseUser);
+        } catch (error) {
+          console.error("Error authenticating with Firebase:", error);
+        }
+      }
+    });
     
-    return () => unsubscribe();
+    return unsubscribe;
   }, [user]);
 
+  // Create context value
+  const contextValue: AuthContextType = {
+    user: user || null,
+    isLoading,
+    error,
+    loginMutation,
+    logoutMutation,
+    registerMutation,
+    updateProfileMutation,
+    updatePasswordMutation,
+    googleSignInMutation,
+  };
+
   return (
-    <AuthContext.Provider
-      value={{
-        user: user || null,
-        isLoading,
-        error,
-        loginMutation,
-        logoutMutation,
-        registerMutation,
-        updateProfileMutation,
-        updatePasswordMutation,
-        googleSignInMutation
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
 }
 
+// Custom hook to use auth context
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
