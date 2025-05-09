@@ -274,17 +274,26 @@ export default function ContractAnalysisPage() {
     onSuccess: (data: AnalysisResult) => {
       console.log("Text analysis completed successfully, preparing to switch to results tab");
       
-      // Use only real data from API
+      // First set the analysis data
       setAnalysis(data);
-      
-      // Automatically switch to results tab and ensure UI is ready
-      setTimeout(() => {
-        setActiveTab("results");
-      }, 100);
       
       // Reset current section and progress
       setCurrentSection("summary");
       setProgressValue(25);
+      
+      // Use requestAnimationFrame for more reliable tab switching
+      requestAnimationFrame(() => {
+        console.log("Switching to results tab");
+        setActiveTab("results");
+        
+        // Force a second animation frame to ensure DOM update
+        requestAnimationFrame(() => {
+          const resultsTab = document.querySelector('[data-value="results"]');
+          if (resultsTab) {
+            (resultsTab as HTMLElement).click();
+          }
+        });
+      });
       
       toast({
         title: "Analysis complete",
