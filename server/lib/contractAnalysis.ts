@@ -13,63 +13,154 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const MODEL = "gpt-4o";
 
 /**
- * Extracts text from a PDF file using PDF.js
- * @param pdfBuffer The buffer containing the PDF data
- * @returns Extracted text from the PDF
+ * PDF extraction response type with structured error information
  */
-export async function extractTextFromPdf(pdfBuffer: Buffer): Promise<string> {
+export interface PdfExtractionResult {
+  success: boolean;
+  text: string;
+  pageCount?: number;
+  extractedPageCount?: number;
+  errorPages?: number[];
+  errorDetails?: string;
+  usedFallbackMethod?: boolean;
+  truncated?: boolean;
+  extractionMethod?: string;
+}
+
+/**
+ * Enhanced text extraction from PDF with structured response
+ * @param pdfBuffer The buffer containing the PDF data
+ * @param maxTextLength Optional maximum text length to extract (for very large PDFs)
+ * @returns Structured response with extraction results or error details
+ */
+export async function extractTextFromPdf(
+  pdfBuffer: Buffer,
+  maxTextLength: number = 500000 // Default 500KB text limit
+): Promise<PdfExtractionResult> {
   try {
     console.log('Attempting to extract text from PDF using PDF.js');
     
-    // Set options for PDF loading
+    // Set options for PDF loading with enhanced memory options and timeout
     const loadingTask = pdfjsLib.getDocument({
       data: pdfBuffer,
       disableFontFace: true,
       cMapUrl: undefined,
-      standardFontDataUrl: undefined
+      standardFontDataUrl: undefined,
+      rangeChunkSize: 65536, // Increased chunk size for better performance
+      maxImageSize: 16777216 // Limit max image size to 16MB
     });
     
-    const pdf = await loadingTask.promise;
+    // Set a timeout for PDF loading to prevent hanging on problematic files
+    const timeoutPromise = new Promise<null>((_, reject) => {
+      setTimeout(() => reject(new Error('PDF loading timeout after 30 seconds')), 30000);
+    });
+    
+    // Race between loading task and timeout
+    const pdf = await Promise.race([loadingTask.promise, timeoutPromise]) as any;
     console.log(`PDF loaded successfully with ${pdf.numPages} pages`);
     
     let extractedText = '';
+    const errorPages: number[] = [];
+    let totalTextLength = 0;
+    let truncated = false;
+    let extractedPageCount = 0;
+    
+    // Define reasonable single page text length to detect binary or image-only pages
+    const minExpectedTextPerPage = 50; // characters
     
     // Iterate through each page to extract text
-    for (let i = 1; i <= pdf.numPages; i++) {
+    for (let i = 1; i <= pdf.numPages && !truncated; i++) {
       try {
         console.log(`Processing page ${i}/${pdf.numPages}`);
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
         
-        // Extract text from the text items
+        // Extract text from the text items with improved filtering
         const pageText = textContent.items
-          .map((item: any) => item.str)
+          .filter((item: any) => typeof item.str === 'string') // Ensure item.str is a string
+          .map((item: any) => item.str.trim())
+          .filter((str: string) => str.length > 0) // Remove empty strings
           .join(' ');
         
-        extractedText += `Page ${i}:\n${pageText}\n\n`;
+        // Only add meaningful text
+        if (pageText.trim().length > minExpectedTextPerPage) {
+          const pageHeader = `Page ${i}:\n`;
+          
+          // Check if adding this page would exceed our limit
+          if (totalTextLength + pageHeader.length + pageText.length > maxTextLength) {
+            extractedText += `\n\n[Content truncated due to size limits. ${pdf.numPages - i} pages not shown.]\n`;
+            truncated = true;
+            break;
+          }
+          
+          extractedText += pageHeader + pageText + '\n\n';
+          totalTextLength += pageHeader.length + pageText.length;
+          extractedPageCount++;
+        } else {
+          console.log(`Page ${i} has insufficient text (${pageText.length} chars), may be an image or blank`);
+          errorPages.push(i);
+          extractedText += `Page ${i}:\n[Page contains minimal text or may be an image/blank]\n\n`;
+        }
       } catch (pageError) {
         console.error(`Error extracting text from page ${i}:`, pageError);
-        extractedText += `[Error processing page ${i}]\n\n`;
+        errorPages.push(i);
+        extractedText += `Page ${i}:\n[Error processing page: ${pageError instanceof Error ? pageError.message : String(pageError)}]\n\n`;
       }
     }
     
-    // If we didn't extract any meaningful text, try the fallback method
-    if (!extractedText.trim() || extractedText.trim().length < 100) {
-      console.log('Extracted text is too short, attempting secondary extraction method');
-      return extractTextFromPdfFallback(pdfBuffer);
+    // If we didn't extract any meaningful text or most pages failed, try the fallback method
+    if (!extractedText.trim() || extractedText.trim().length < 100 || (errorPages.length > pdf.numPages / 2)) {
+      console.log('Extracted text is too short or too many pages failed, attempting fallback extraction method');
+      try {
+        const fallbackResult = extractTextFromPdfFallback(pdfBuffer);
+        return {
+          success: fallbackResult.length > 100,
+          text: fallbackResult,
+          pageCount: pdf.numPages,
+          extractedPageCount: 0, // We don't know which pages were extracted in fallback mode
+          errorPages,
+          usedFallbackMethod: true,
+          extractionMethod: 'fallback'
+        };
+      } catch (fallbackError) {
+        throw fallbackError; // Pass to outer catch block
+      }
     }
     
-    return extractedText;
+    return {
+      success: true,
+      text: extractedText,
+      pageCount: pdf.numPages,
+      extractedPageCount,
+      errorPages: errorPages.length > 0 ? errorPages : undefined,
+      truncated,
+      extractionMethod: 'pdf.js'
+    };
   } catch (error) {
     console.error('Error extracting text from PDF using primary method:', error);
     
     // Try fallback method
     try {
       console.log('Attempting fallback PDF extraction method');
-      return extractTextFromPdfFallback(pdfBuffer);
+      const fallbackText = extractTextFromPdfFallback(pdfBuffer);
+      
+      return {
+        success: fallbackText.length > 100,
+        text: fallbackText,
+        usedFallbackMethod: true,
+        errorDetails: error instanceof Error ? error.message : String(error),
+        extractionMethod: 'fallback'
+      };
     } catch (fallbackError) {
       console.error('Error with fallback PDF extraction:', fallbackError);
-      throw new Error('Failed to extract text from PDF document using multiple methods');
+      
+      // Return structured error response instead of throwing
+      return {
+        success: false,
+        text: 'Failed to extract text from PDF document using multiple methods. The document may be encrypted, password-protected, or contain only scanned images without OCR.',
+        errorDetails: `Primary error: ${error instanceof Error ? error.message : String(error)}. Fallback error: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`,
+        extractionMethod: 'none'
+      };
     }
   }
 }
