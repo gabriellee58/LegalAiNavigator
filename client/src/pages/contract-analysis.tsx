@@ -82,6 +82,15 @@ type AnalysisResult = {
     [key: string]: string[] | undefined;
   };
   extractedText?: string; // The full text extracted from uploaded PDF files
+  
+  // PDF extraction information properties
+  pageCount?: number;
+  extractedPageCount?: number;
+  errorPages?: number[];
+  usedFallbackMethod?: boolean;
+  truncated?: boolean;
+  extractionMethod?: string;
+  errorDetails?: string;
 };
 
 // Type for the specific analysis data returned from the API
