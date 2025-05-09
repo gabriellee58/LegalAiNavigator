@@ -1940,6 +1940,67 @@ export default function ContractAnalysisPage() {
               </Card>
             )}
           </TabsContent>
+          
+          {/* Full Text Tab */}
+          <TabsContent value="fulltext" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  <div className="flex justify-between items-center">
+                    <span>{analysis?.extractedText ? title || "Contract Full Text" : "Contract Full Text"}</span>
+                    {analysis?.extractedText && (
+                      <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(analysis.extractedText || "")}>
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copy Text
+                      </Button>
+                    )}
+                  </div>
+                </CardTitle>
+                <CardDescription>
+                  {analysis?.extractedText 
+                    ? "Review the complete text of your contract with pagination and search capabilities"
+                    : "Upload or paste a contract to view its full text here"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {!analysis?.extractedText && (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <FileDigit className="h-16 w-16 text-muted-foreground/50 mb-4" />
+                    <h3 className="text-lg font-medium">No Contract Text Available</h3>
+                    <p className="text-sm text-muted-foreground max-w-md mt-2">
+                      Upload a contract document or paste contract text using the "Upload & Analyze" tab to view the full contract content here.
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      className="mt-6"
+                      onClick={() => setActiveTab("upload")}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Go to Upload
+                    </Button>
+                  </div>
+                )}
+                
+                {analysis?.extractedText && (
+                  <ContractTextViewer
+                    text={analysis.extractedText}
+                    title="Contract Text"
+                    maxHeight="600px"
+                    className="w-full"
+                    extractionInfo={{
+                      success: true,
+                      pageCount: analysis.pageCount,
+                      extractedPageCount: analysis.extractedPageCount,
+                      errorPages: analysis.errorPages,
+                      usedFallbackMethod: analysis.usedFallbackMethod,
+                      truncated: analysis.truncated,
+                      extractionMethod: analysis.extractionMethod
+                    }}
+                  />
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* Comparison Results Tab */}
           <TabsContent value="comparison-results" className="space-y-4">
