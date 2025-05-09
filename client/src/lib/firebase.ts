@@ -1,5 +1,5 @@
 // Import Firebase SDK
-import { initializeApp } from "firebase/app";
+import { initializeApp, type FirebaseApp } from "firebase/app";
 import { 
   getAuth, 
   GoogleAuthProvider, 
@@ -9,6 +9,7 @@ import {
   onAuthStateChanged,
   browserLocalPersistence,
   setPersistence,
+  type Auth,
   User as FirebaseAuthUser
 } from "firebase/auth";
 
@@ -20,17 +21,6 @@ export interface FirebaseUser {
   photoURL: string | null;
 }
 
-// Initialize Firebase with config from environment variables
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
-};
-
 // Check if all required Firebase config values are present
 export const isConfigured = Boolean(
   import.meta.env.VITE_FIREBASE_API_KEY && 
@@ -39,17 +29,45 @@ export const isConfigured = Boolean(
   import.meta.env.VITE_FIREBASE_APP_ID
 );
 
-console.log(`Firebase config status: ${isConfigured ? 'Configured' : 'Not configured'}`);
+// Initialize Firebase with config from environment variables
+let app: FirebaseApp | null = null;
+let auth: Auth | null = null;
 
-// Initialize Firebase app
-const app = initializeApp(firebaseConfig);
+try {
+  // Only initialize Firebase if all required config is available
+  if (isConfigured) {
+    const firebaseConfig = {
+      apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+      authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+      projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+      storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebasestorage.app`,
+      messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+      appId: import.meta.env.VITE_FIREBASE_APP_ID,
+      measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+    };
 
-// Initialize Firebase auth
-const auth = getAuth(app);
-// Set persistence to local (persists even when browser is closed)
-setPersistence(auth, browserLocalPersistence).catch(error => {
-  console.error("Firebase persistence setting failed:", error);
-});
+    // Initialize Firebase app
+    app = initializeApp(firebaseConfig);
+    
+    // Initialize Firebase auth
+    auth = getAuth(app);
+    
+    // Set persistence to local (persists even when browser is closed)
+    setPersistence(auth, browserLocalPersistence).catch(error => {
+      console.error("Firebase persistence setting failed:", error);
+    });
+    
+    console.log(`Firebase config status: Configured`);
+  } else {
+    console.log(`Firebase config status: Not configured`);
+  }
+} catch (error) {
+  console.error("Error initializing Firebase:", error);
+  console.log(`Firebase config status: Error`);
+  app = null;
+  auth = null;
+}
+
 export { auth };
 
 // Create Google Auth provider
