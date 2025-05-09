@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { ShieldAlert, RefreshCw, LogIn } from 'lucide-react';
 import { ApiError } from '@/lib/queryClient';
-import { useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 
 interface AuthErrorBoundaryProps {
   children: ReactNode;
@@ -119,21 +119,5 @@ class AuthErrorBoundary extends React.Component<AuthErrorBoundaryProps, AuthErro
   }
 }
 
-// Functional wrapper to use hooks with the class component
-export function AuthErrorBoundaryWithHooks(props: AuthErrorBoundaryProps) {
-  const navigate = useNavigate();
-  
-  return (
-    <AuthErrorBoundary
-      {...props}
-      ref={(ref: any) => {
-        if (ref) {
-          // Attach navigate to the component instance
-          ref.navigate = navigate;
-        }
-      }}
-    />
-  );
-}
-
-export default AuthErrorBoundaryWithHooks;
+// Export the class directly
+export { AuthErrorBoundary };

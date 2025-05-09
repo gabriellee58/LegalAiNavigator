@@ -1,1 +1,1 @@
-export { default as AuthErrorBoundary } from './AuthErrorBoundary';
+export { AuthErrorBoundary } from './AuthErrorBoundary';
