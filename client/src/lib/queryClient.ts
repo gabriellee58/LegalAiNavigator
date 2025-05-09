@@ -167,23 +167,22 @@ export async function apiRequest<T = any>(
 
 // Enhanced query function using our API service
 type UnauthorizedBehavior = "returnNull" | "throw";
-export const getQueryFn: <T>(options: {
+export const getQueryFn = <TData>(options: {
   on401: UnauthorizedBehavior;
   logDetails?: boolean;
-}) => QueryFunction<T> =
-  ({ on401: unauthorizedBehavior, logDetails = true }) =>
+}): QueryFunction<TData> =>
   async ({ queryKey }) => {
     try {
       const url = queryKey[0] as string;
-      if (logDetails) {
+      if (options.logDetails) {
         console.log(`Query: GET ${url}`);
       }
       
       try {
         // Use our API service for the request
-        const result = await apiService.get<T>(url);
+        const result = await apiService.get<TData>(url);
         
-        if (logDetails) {
+        if (options.logDetails) {
           console.log(`Query Success: GET ${url}`, 
             result ? 'Response received' : 'Empty response');
         }
@@ -191,11 +190,11 @@ export const getQueryFn: <T>(options: {
         return result;
       } catch (error: any) {
         // For 401 errors, return null if configured that way
-        if (error.status === 401 && unauthorizedBehavior === "returnNull") {
-          if (logDetails) {
+        if (error.status === 401 && options.on401 === "returnNull") {
+          if (options.logDetails) {
             console.log(`Query: GET ${url} - 401 returned, returning null as configured`);
           }
-          return null;
+          return null as any;
         }
         
         // Re-throw the error
