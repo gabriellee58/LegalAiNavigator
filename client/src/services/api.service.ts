@@ -27,6 +27,7 @@ export class ApiError extends Error {
   status?: number;
   statusText?: string;
   data?: any;
+  isAuthError?: boolean;
   
   constructor(message: string, options: { status?: number; statusText?: string; data?: any } = {}) {
     super(message);
@@ -34,6 +35,7 @@ export class ApiError extends Error {
     this.status = options.status;
     this.statusText = options.statusText;
     this.data = options.data;
+    this.isAuthError = options.status === 401 || options.status === 403;
   }
 }
 
@@ -77,6 +79,22 @@ class ApiService {
       // Handle network errors
       if (error.message?.includes('Failed to fetch') || error.message?.includes('Network Error')) {
         throw new ApiError('Network connection error', { status: 0, statusText: 'Network Error' });
+      }
+      
+      // Special handling for authentication errors
+      if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+        // Add a custom property to identify this as an auth error for the AuthErrorBoundary
+        error.isAuthError = true;
+        
+        // Dispatch an event that can be listened to by components
+        const authErrorEvent = new CustomEvent('auth:error', { 
+          detail: { 
+            status: error.status,
+            message: error.message,
+            timestamp: new Date().toISOString()
+          }
+        });
+        window.dispatchEvent(authErrorEvent);
       }
       
       throw error;
