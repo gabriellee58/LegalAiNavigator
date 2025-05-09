@@ -274,6 +274,26 @@ class ApiService {
   async delete<T = any>(url: string, options: Omit<RequestOptions, 'method'> = {}): Promise<T> {
     return this.request<T>(url, { ...options, method: 'DELETE' });
   }
+  
+  /**
+   * Check if API is reachable
+   * @param endpoint Optional endpoint to test, defaults to '/api/health'
+   * @returns Promise resolving to true if API is reachable, false otherwise
+   */
+  async isReachable(endpoint: string = '/api/health'): Promise<boolean> {
+    try {
+      // Use a shorter timeout for this check
+      const response = await this.get(endpoint, { 
+        timeout: 5000,
+        retry: 0,
+        cache: 'no-store' 
+      });
+      return true;
+    } catch (error) {
+      console.warn('API reachability check failed:', error);
+      return false;
+    }
+  }
 }
 
 // Create singleton instance

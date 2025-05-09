@@ -95,13 +95,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/webhook/stripe', express.raw({type: 'application/json'}), handleStripeWebhook);
   
   // Health check endpoint
-  app.get("/api/health", (req: Request, res: Response) => {
+  app.get("/api/health", async (req: Request, res: Response) => {
+    // Check database connection
+    let databaseStatus = false;
+    try {
+      // Perform a simple database query
+      const result = await storage.checkDatabaseHealth();
+      databaseStatus = result;
+    } catch (error) {
+      console.error("Health check - Database error:", error);
+    }
+    
+    // Check AI service availability
+    let aiServicesStatus = {
+      anthropic: !!process.env.ANTHROPIC_API_KEY,
+      openai: !!process.env.OPENAI_API_KEY,
+      deepseek: !!process.env.DEEPSEEK_API_KEY
+    };
+    
+    // Overall status - ok if database is available
+    const status = databaseStatus ? "ok" : "degraded";
+    
     res.json({
-      status: "ok", 
+      status,
+      version: process.env.npm_package_version || "1.0.0",
+      environment: process.env.NODE_ENV || "development",
       services: {
-        ai: true,
-        database: true,
-        streaming: true
+        database: databaseStatus,
+        ai: aiServicesStatus,
+        streaming: true // Always true since it's handled by the Node.js server
       },
       timestamp: new Date().toISOString()
     });

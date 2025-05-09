@@ -41,6 +41,9 @@ export interface IStorage {
   // Session store for auth
   sessionStore: session.Store;
   
+  // System health operations
+  checkDatabaseHealth(): Promise<boolean>;
+  
   // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -229,6 +232,18 @@ export class DatabaseStorage implements IStorage {
       conString: process.env.DATABASE_URL,
       createTableIfMissing: true,
     });
+  }
+  
+  // System health operations
+  async checkDatabaseHealth(): Promise<boolean> {
+    try {
+      // Simple database query to verify connection is working
+      const result = await db.execute(sql`SELECT 1 as is_alive`);
+      return result.length > 0 && result[0].is_alive === 1;
+    } catch (error) {
+      console.error("Database health check failed:", error);
+      return false;
+    }
   }
 
   // User operations
