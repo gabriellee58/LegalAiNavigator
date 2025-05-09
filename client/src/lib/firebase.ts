@@ -70,13 +70,20 @@ try {
 
 export { auth };
 
-// Create Google Auth provider
-const googleProvider = new GoogleAuthProvider();
-
-// Configure Google Auth provider
-googleProvider.setCustomParameters({
-  prompt: 'select_account'
-});
+// Create Google Auth provider if Firebase is initialized
+let googleProvider: GoogleAuthProvider;
+try {
+  googleProvider = new GoogleAuthProvider();
+  
+  // Configure Google Auth provider
+  googleProvider.setCustomParameters({
+    prompt: 'select_account'
+  });
+} catch (error) {
+  console.error("Failed to initialize Google Auth provider:", error);
+  // Create a minimal provider to prevent errors
+  googleProvider = {} as GoogleAuthProvider;
+}
 
 // Check if the current domain is in the list of authorized domains for Firebase
 export function isAuthorizedDomain(): boolean {
@@ -101,6 +108,12 @@ export function isAuthorizedDomain(): boolean {
 // Sign in with Google function
 export async function signInWithGoogle(): Promise<FirebaseUser | null> {
   try {
+    // Check if Firebase auth is initialized
+    if (!auth) {
+      console.warn("Firebase auth is not initialized");
+      throw new Error("Firebase authentication is not available");
+    }
+    
     // Check if the current domain is authorized for Firebase auth
     if (!isAuthorizedDomain()) {
       console.warn("Current domain is not authorized for Firebase auth:", window.location.hostname);
@@ -132,6 +145,12 @@ export async function signInWithGoogle(): Promise<FirebaseUser | null> {
 export async function handleGoogleRedirect(): Promise<FirebaseUser | null> {
   try {
     console.log("Starting handleGoogleRedirect, checking for redirect results...");
+    
+    // Check if Firebase auth is initialized
+    if (!auth) {
+      console.warn("Firebase auth is not initialized");
+      return null;
+    }
     
     // Get the result of the redirect sign-in
     const result = await getRedirectResult(auth);
@@ -214,10 +233,13 @@ export async function signOutUser(): Promise<boolean> {
   try {
     console.log("Starting sign-out process...");
     
-    // Sign out from Firebase
-    await signOut(auth);
+    // Check if Firebase auth is initialized
+    if (auth) {
+      // Sign out from Firebase
+      await signOut(auth);
+    }
     
-    // Also call backend logout to clear server-side session
+    // Always call backend logout to clear server-side session
     await fetch('/api/logout', {
       method: 'POST',
       credentials: 'include'
@@ -236,6 +258,13 @@ export async function signOutUser(): Promise<boolean> {
 
 // Listen for auth state changes
 export function onAuthChange(callback: (user: FirebaseUser | null) => void): () => void {
+  // Check if Firebase auth is initialized
+  if (!auth) {
+    console.warn("Firebase auth is not initialized, returning empty unsubscribe function");
+    callback(null);
+    return () => {}; // Return empty unsubscribe function
+  }
+  
   return onAuthStateChanged(auth, (user) => {
     if (user) {
       callback({

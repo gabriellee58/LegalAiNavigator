@@ -223,21 +223,21 @@ function App() {
   }, []);
 
   return (
-    <AuthProvider>
-      <SubscriptionProvider>
-        <PermissionsProvider>
-          <ErrorProvider>
-            <ErrorBoundary>
+    <ErrorProvider>
+      <ErrorBoundary>
+        <AuthProvider>
+          <SubscriptionProvider>
+            <PermissionsProvider>
               <Head />
               <div className="app-container" key={language}>
                 <Router />
               </div>
               <Toaster />
-            </ErrorBoundary>
-          </ErrorProvider>
-        </PermissionsProvider>
-      </SubscriptionProvider>
-    </AuthProvider>
+            </PermissionsProvider>
+          </SubscriptionProvider>
+        </AuthProvider>
+      </ErrorBoundary>
+    </ErrorProvider>
   );
 }
 

@@ -176,15 +176,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { signInWithGoogle, isConfigured, isAuthorizedDomain } = await import('@/lib/firebase');
         
         if (!isConfigured) {
-          throw new Error("Google Sign-in is temporarily unavailable. Please use email/password login.");
+          console.warn("Firebase is not configured. Using password login instead.");
+          // Fall back to password login instead of throwing an error
+          // Redirect to the login page with a status message
+          const loginUrl = `/auth?error=${encodeURIComponent("Google login is unavailable. Please use email/password login.")}`;
+          window.location.href = loginUrl;
+          return {} as User;
         }
         
         // Check if current domain is authorized for Firebase auth
         if (!isAuthorizedDomain()) {
           console.warn("Current domain is not authorized for Firebase auth:", window.location.hostname);
-          throw new Error(
-            "Google sign-in is not available on this domain. Please use email/password login or access the site from canadianlegalai.site"
-          );
+          // Redirect to the login page with a status message
+          const loginUrl = `/auth?error=${encodeURIComponent("This domain is not authorized for Google login. Please use email/password login.")}`;
+          window.location.href = loginUrl;
+          return {} as User;
         }
         
         // This will redirect to Google sign-in page and won't return here
@@ -232,6 +238,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         // Dynamically import Firebase functions to avoid circular dependencies
         const firebaseFunctions = await import('@/lib/firebase');
+        
+        // Check if Firebase is configured before setting up auth listener
+        if (!firebaseFunctions.isConfigured || !firebaseFunctions.auth) {
+          console.log("Firebase not configured or auth not initialized, skipping auth listener");
+          return;
+        }
         
         // Setup the auth listener
         unsubscribe = firebaseFunctions.onAuthChange(async (firebaseUser) => {
