@@ -768,7 +768,7 @@ export default function ContractAnalysisPage() {
           className="w-full"
           defaultValue="upload"
         >
-          <TabsList className="grid grid-cols-3 gap-1">
+          <TabsList className="grid grid-cols-4 gap-1">
             <TabsTrigger value="upload">
               <Upload className="h-4 w-4 mr-2" />
               {t("Upload & Analyze")}
@@ -776,6 +776,10 @@ export default function ContractAnalysisPage() {
             <TabsTrigger value="results">
               <FileText className="h-4 w-4 mr-2" />
               {t("Results")}
+            </TabsTrigger>
+            <TabsTrigger value="fulltext">
+              <FileDigit className="h-4 w-4 mr-2" />
+              {t("Full Text")}
             </TabsTrigger>
             <TabsTrigger value="history">
               <History className="h-4 w-4 mr-2" />
