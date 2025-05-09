@@ -23,7 +23,7 @@ import {
   File, Type, FileSearch, Search, FileQuestion, ChevronRight, Calendar as CalendarIcon,
   Circle, Tag, Download, Printer, Share2, Edit, Save, ListTodo, ArrowRight,
   ArrowLeft, FileOutput, FileCheck, ExternalLink, Copy, Edit2, History,
-  Lightbulb as LightbulbIcon
+  Lightbulb as LightbulbIcon, FileDigit
 } from "lucide-react";
 import { t } from "@/lib/i18n";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -49,6 +49,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import ContractTextViewer from "@/components/contract/ContractTextViewer";
 
 type AnalysisResult = {
   score: number;
