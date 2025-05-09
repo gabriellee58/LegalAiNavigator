@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { AlertCircle, AlertTriangle, Info, XCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
+import { ApiError } from "@/services/api.service";
 
 export interface ErrorState {
   title: string;
@@ -27,6 +28,30 @@ export const ErrorProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const { toast } = useToast();
 
   const clearError = () => setError(null);
+  
+  // Handle authentication errors from custom events
+  const handleAuthError = useCallback((event: CustomEvent) => {
+    const { status, message, timestamp } = event.detail;
+    
+    setError({
+      type: "error",
+      title: status === 403 ? "Access Denied" : "Authentication Required",
+      message: message || "Your session has expired or you don't have permission to access this resource.",
+      action: {
+        label: "Log In",
+        onClick: () => window.location.href = '/api/login'
+      }
+    });
+  }, []);
+  
+  // Set up event listener for auth errors
+  useEffect(() => {
+    window.addEventListener('auth:error', handleAuthError as EventListener);
+    
+    return () => {
+      window.removeEventListener('auth:error', handleAuthError as EventListener);
+    };
+  }, [handleAuthError]);
 
   useEffect(() => {
     if (error) {
@@ -96,27 +121,68 @@ export const ErrorDisplay: React.FC = () => {
 export const handleApiError = (error: any, setError: (error: ErrorState) => void) => {
   console.error("API Error:", error);
 
-  if (error.response) {
+  // Handle our custom ApiError class
+  if (error instanceof ApiError) {
+    const status = error.status || 0;
+    
+    // Authentication errors are already handled by the event system
+    if (error.isAuthError) {
+      return;
+    }
+    
+    if (status === 404) {
+      setError({
+        type: "warning",
+        title: "Not Found",
+        message: error.message || "The requested resource could not be found.",
+      });
+    } else if (status === 429) {
+      setError({
+        type: "warning",
+        title: "Rate Limited",
+        message: "You've made too many requests. Please try again later.",
+      });
+    } else if (status === 500) {
+      setError({
+        type: "error",
+        title: "Server Error",
+        message: "An unexpected error occurred on the server. Please try again later.",
+      });
+    } else if (status === 0) {
+      setError({
+        type: "error",
+        title: "Network Error",
+        message: "Unable to connect to the server. Please check your internet connection and try again.",
+        action: {
+          label: "Retry",
+          onClick: () => window.location.reload(),
+        },
+      });
+    } else {
+      setError({
+        type: "error",
+        title: `Error ${status || "Unknown"}`,
+        message: error.message || "An unexpected error occurred. Please try again.",
+      });
+    }
+  }
+  // Legacy error format support
+  else if (error.response) {
     // Server responded with error (non-2xx)
     const status = error.response.status;
     const data = error.response.data;
 
-    if (status === 401) {
-      setError({
-        type: "error",
-        title: "Authentication Error",
-        message: "Your session has expired or you are not logged in. Please sign in again.",
-        action: {
-          label: "Go to Login",
-          onClick: () => window.location.href = "/auth",
-        },
+    if (status === 401 || status === 403) {
+      // Authentication errors will be handled by the auth event system
+      // Dispatch the auth:error event if not already done
+      const authErrorEvent = new CustomEvent('auth:error', { 
+        detail: { 
+          status,
+          message: data?.message || error.message || "Authentication error",
+          timestamp: new Date().toISOString()
+        }
       });
-    } else if (status === 403) {
-      setError({
-        type: "error",
-        title: "Access Denied",
-        message: "You do not have permission to perform this action.",
-      });
+      window.dispatchEvent(authErrorEvent);
     } else if (status === 404) {
       setError({
         type: "warning",

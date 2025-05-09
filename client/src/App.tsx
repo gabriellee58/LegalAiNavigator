@@ -7,7 +7,7 @@ import { ProtectedRoute } from "@/lib/protected-route";
 import { ErrorBoundary } from "./components/error-boundary";
 import { AuthErrorBoundary } from "./components/error-boundary/AuthErrorBoundary";
 import { Toaster } from "@/components/ui/toaster";
-import { ErrorProvider } from "@/components/ui/error-handler";
+import { ErrorProvider, ErrorDisplay } from "@/components/ui/error-handler";
 import { PermissionsProvider } from "@/hooks/use-permissions";
 
 // Import pages
@@ -232,6 +232,9 @@ function App() {
               <PermissionsProvider>
                 <Head />
                 <div className="app-container" key={language}>
+                  <div className="error-container fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md">
+                    <ErrorDisplay />
+                  </div>
                   <Router />
                 </div>
                 <Toaster />
