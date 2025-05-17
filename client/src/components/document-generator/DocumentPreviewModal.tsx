@@ -29,9 +29,17 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     if (isOpen && documentContent) {
       try {
         if (contentRef.current) {
-          contentRef.current.innerHTML = documentContent
+          // Sanitize content by escaping HTML special characters first
+          const sanitizedContent = documentContent
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
             .replace(/\n/g, '<br>')
             .replace(/\s{2,}/g, ' &nbsp;');
+          
+          contentRef.current.innerHTML = sanitizedContent;
         }
         setPreviewError(null);
       } catch (error) {
