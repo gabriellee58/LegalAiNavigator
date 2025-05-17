@@ -17,9 +17,21 @@ export default function DocumentPreview({ content, showSignatureFields }: Docume
         const element = containerRef.current;
         if (!element) return;
 
+        // Escape HTML special characters to prevent XSS
+        const escapedText = text.replace(/[&<>"']/g, (match) => {
+          const escapeMap: Record<string, string> = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+          };
+          return escapeMap[match];
+        });
+        
         element.innerHTML = element.innerHTML.replace(regex, 
           `<div class="inline-block border-2 border-dashed border-primary px-4 py-2 mx-1 rounded">
-            ${text}
+            ${escapedText}
           </div>`
         );
       };
