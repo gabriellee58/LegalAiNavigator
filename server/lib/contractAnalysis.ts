@@ -1,7 +1,7 @@
 import OpenAI from "openai";
-// Use standard import for Node.js compatibility
+// Use standard import for Node.js compatibility with PDF.js v5
 import * as pdfjsLib from "pdfjs-dist";
-import { GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf';
+import { GlobalWorkerOptions } from 'pdfjs-dist/build/pdf';
 
 // Set worker path to prevent worker initialization error in Node.js environment
 GlobalWorkerOptions.workerSrc = ''; // Disable worker for Node.js environment
